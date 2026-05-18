@@ -200,6 +200,8 @@
     .info-row:last-child { border-bottom: none; }
     .info-row .k { color: rgba(255,255,255,0.5); }
     .info-row .v { font-weight: 500; }
+    .info-section { background: rgba(255,255,255,0.02); border-radius: 10px; padding: 4px 12px; }
+    .info-divider { height: 1px; background: linear-gradient(to right, transparent, rgba(199,178,255,0.3), transparent); margin: 12px 0; }
 
     .insight.clickable { cursor: pointer; transition: background 0.15s; }
     .insight.clickable:active { background: rgba(255,255,255,0.06); }
@@ -224,7 +226,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo">Face<span class="accent">Age</span></div>
-    <div class="badge" id="topBadge">POC v0.5</div>
+    <div class="badge" id="topBadge">POC v0.6</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -1389,7 +1391,9 @@ function drawChart(passed, birthDate) {
           // 얼굴 나이 데이터셋(index 0)의 점만 처리
           const point = elements.find(e => e.datasetIndex === 0);
           if (point) {
-            showChartPreview(point.index, sorted, event);
+            // Chart.js v4의 event는 native event를 .native로 노출
+            const nativeEvent = event.native || event;
+            showChartPreview(point.index, sorted, nativeEvent);
           }
         }
       },
@@ -1703,19 +1707,54 @@ function showThumbDetail(idx) {
   const birthDate = new Date(document.getElementById('birthDate').value);
   const realAgeAtPhoto = (r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000);
 
+  // ===== 1부: 핵심 정보 (촬영시각 / 실제나이 / 얼굴나이) =====
   let infoHtml = `
-    <div class="info-row"><span class="k">촬영 시각</span><span class="v">${dateStr}</span></div>
-    <div class="info-row"><span class="k">실제 나이</span><span class="v" style="color:#fff;">${realAgeAtPhoto.toFixed(1)}세</span></div>
-  `;
+    <div class="info-section">
+      <div class="info-row">
+        <span class="k">촬영 시각</span>
+        <span class="v">${dateStr}</span>
+      </div>
+      <div class="info-row">
+        <span class="k">실제 나이</span>
+        <span class="v" style="color:#fff;">${realAgeAtPhoto.toFixed(1)}세</span>
+      </div>`;
+
   if (r.hasFace) {
     const ageDiff = r.estimatedAge - realAgeAtPhoto;
     const ageDiffStr = ageDiff >= 0 ? `+${ageDiff.toFixed(1)}` : ageDiff.toFixed(1);
     const ageDiffColor = ageDiff < -0.5 ? '#4ADE80' : (ageDiff > 0.5 ? '#F87171' : 'rgba(255,255,255,0.7)');
     infoHtml += `
-      <div class="info-row"><span class="k">얼굴 나이 (AI 추정)</span><span class="v" style="color:#C7B2FF; font-weight:600;">${r.estimatedAge.toFixed(1)}세 <span style="color:${ageDiffColor}; font-size:11px; font-weight:500;">(${ageDiffStr})</span></span></div>
-      <div class="info-row"><span class="k">얼굴 검출</span><span class="v">✓ 됨</span></div>
-      <div class="info-row"><span class="k">품질 점수</span><span class="v">${r.qualityScore} / 100 ${r.passed ? '✓' : '(미달)'}</span></div>
-    `;
+      <div class="info-row">
+        <span class="k">얼굴 나이 (AI 추정)</span>
+        <span class="v" style="color:#C7B2FF; font-weight:600;">${r.estimatedAge.toFixed(1)}세 <span style="color:${ageDiffColor}; font-size:11px; font-weight:500;">(${ageDiffStr})</span></span>
+      </div>`;
+  } else {
+    infoHtml += `
+      <div class="info-row">
+        <span class="k">얼굴 나이</span>
+        <span class="v" style="color:rgba(255,255,255,0.4);">측정 불가</span>
+      </div>`;
+  }
+
+  infoHtml += `</div>`;
+
+  // ===== 구분선 =====
+  infoHtml += `<div class="info-divider"></div>`;
+
+  // ===== 2부: 검출 정보 =====
+  infoHtml += `<div class="info-section">`;
+
+  if (r.hasFace) {
+    infoHtml += `
+      <div class="info-row">
+        <span class="k">얼굴 검출</span>
+        <span class="v" style="color:#4ADE80;">✓ 됨</span>
+      </div>
+      <div class="info-row">
+        <span class="k">품질 점수</span>
+        <span class="v">${r.qualityScore} / 100 ${r.passed ? '✓' : '<span style="color:#F87171;">(미달)</span>'}</span>
+      </div>`;
+
     if (r.qualityBreakdown) {
       const q = r.qualityBreakdown;
       const occlusion = q.occlusionReason;
@@ -1731,14 +1770,19 @@ function showThumbDetail(idx) {
       `;
     }
     if (r.rawAge !== undefined) {
-      infoHtml += `<div class="info-row" style="opacity:0.5; font-size:11px;"><span class="k">원본 모델 출력 (보정 전)</span><span class="v">${r.rawAge.toFixed(1)}세</span></div>`;
+      infoHtml += `<div class="info-row" style="opacity:0.5; font-size:11px; margin-top:6px;"><span class="k">원본 모델 출력 (보정 전)</span><span class="v">${r.rawAge.toFixed(1)}세</span></div>`;
     }
   } else {
     infoHtml += `
-      <div class="info-row"><span class="k">얼굴 나이</span><span class="v" style="color:rgba(255,255,255,0.4);">측정 불가</span></div>
-      <div class="info-row"><span class="k">얼굴 검출</span><span class="v" style="color:#F87171;">✕ 안 됨</span></div>
+      <div class="info-row">
+        <span class="k">얼굴 검출</span>
+        <span class="v" style="color:#F87171;">✕ 안 됨</span>
+      </div>
     `;
   }
+
+  infoHtml += `</div>`;
+
   document.getElementById('thumbModalInfo').innerHTML = infoHtml;
   openModal('thumbModal');
 }
@@ -1763,9 +1807,15 @@ function avg(arr) { return arr.reduce((a, v) => a + v, 0) / arr.length; }
 // 차트 점 클릭 시 사진 미리보기
 function showChartPreview(pointIndex, sortedData, event) {
   const preview = document.getElementById('chartPreview');
-  if (!preview) return;
+  if (!preview) {
+    console.warn('chartPreview element not found');
+    return;
+  }
   const r = sortedData[pointIndex];
-  if (!r) return;
+  if (!r) {
+    console.warn('No data for point', pointIndex);
+    return;
+  }
 
   const dateStr = r.timestamp.getFullYear() + '.' +
     String(r.timestamp.getMonth() + 1).padStart(2, '0') + '.' +
@@ -1780,19 +1830,51 @@ function showChartPreview(pointIndex, sortedData, event) {
   `;
   preview.classList.add('show');
 
-  // 차트 영역 안에 적절히 배치
+  // Chart.js의 element에서 정확한 위치 가져오기
   const wrap = preview.parentElement;
   const wrapRect = wrap.getBoundingClientRect();
   const previewWidth = 72;
   const previewHeight = 100;
 
-  // 클릭 좌표가 wrap 내 어디인지
-  let x = event.x - wrapRect.left - previewWidth / 2;
-  let y = event.y - wrapRect.top - previewHeight - 12; // 클릭 위로
+  // Chart instance에서 데이터 포인트의 픽셀 좌표 직접 계산
+  let pointX = null, pointY = null;
+  if (chartInstance && chartInstance.getDatasetMeta) {
+    try {
+      const meta = chartInstance.getDatasetMeta(0);
+      if (meta && meta.data && meta.data[pointIndex]) {
+        pointX = meta.data[pointIndex].x; // 캔버스 내 좌표
+        pointY = meta.data[pointIndex].y;
+      }
+    } catch (e) {
+      console.warn('Failed to get point coords from chart', e);
+    }
+  }
+
+  let x, y;
+  if (pointX !== null && pointY !== null) {
+    // chart 내 좌표 직접 사용 (canvas는 wrap 안에 있음)
+    x = pointX - previewWidth / 2;
+    y = pointY - previewHeight - 12;
+  } else if (event && (event.clientX !== undefined || event.x !== undefined)) {
+    // fallback: 이벤트 좌표 사용
+    const ex = event.clientX !== undefined ? event.clientX : event.x;
+    const ey = event.clientY !== undefined ? event.clientY : event.y;
+    x = ex - wrapRect.left - previewWidth / 2;
+    y = ey - wrapRect.top - previewHeight - 12;
+  } else {
+    // 최후 fallback: 중앙 위쪽
+    x = wrapRect.width / 2 - previewWidth / 2;
+    y = 10;
+  }
 
   // 경계 보정
   x = Math.max(4, Math.min(x, wrapRect.width - previewWidth - 4));
-  if (y < 4) y = event.y - wrapRect.top + 12; // 위에 공간 없으면 아래로
+  if (y < 4) {
+    // 위에 공간 없으면 점 아래로
+    y = (pointY !== null) ? pointY + 12 : 20;
+  }
+  // 아래 경계도 체크
+  y = Math.min(y, wrapRect.height - previewHeight - 4);
 
   preview.style.left = x + 'px';
   preview.style.top = y + 'px';
