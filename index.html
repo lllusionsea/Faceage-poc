@@ -107,6 +107,8 @@
     .thumb.excluded::after { content: '✕'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #F87171; font-size: 20px; font-weight: 700; }
     .thumb.no-face { opacity: 0.3; }
     .thumb.no-face::after { content: '얼굴 없음'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 500; }
+    .thumb.occluded { opacity: 0.45; }
+    .thumb .occlusion-tag { position: absolute; top: 3px; right: 3px; font-size: 14px; background: rgba(248,113,113,0.85); padding: 2px 6px; border-radius: 6px; line-height: 1; }
     .thumb.selected::before { content: ''; position: absolute; inset: 0; border: 2px solid #C7B2FF; border-radius: 8px; pointer-events: none; }
 
     .insight {
@@ -127,6 +129,17 @@
     .tab.active { background: #C7B2FF; color: #0F0F12; font-weight: 600; }
 
     .chart-wrap { position: relative; height: 200px; margin: 8px 0 16px; }
+    .chart-preview {
+      position: absolute; display: none;
+      background: rgba(20,20,26,0.95); border: 0.5px solid rgba(199,178,255,0.4);
+      border-radius: 10px; padding: 6px; pointer-events: none;
+      z-index: 10; transition: opacity 0.15s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+    .chart-preview.show { display: block; }
+    .chart-preview img { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; display: block; }
+    .chart-preview .cp-info { font-size: 10px; color: #fff; margin-top: 4px; text-align: center; }
+    .chart-preview .cp-age { color: #C7B2FF; font-weight: 600; }
 
     .part-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 12px 0; }
     .part-card { background: rgba(255,255,255,0.04); border-radius: 12px; padding: 12px; }
@@ -211,7 +224,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo">Face<span class="accent">Age</span></div>
-    <div class="badge" id="topBadge">POC v0.3</div>
+    <div class="badge" id="topBadge">POC v0.5</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -362,7 +375,7 @@
     </div>
 
     <h3 style="margin-top: 16px; margin-bottom: 4px;">처리된 사진</h3>
-    <p class="small" style="margin-bottom: 8px;">우측 하단 숫자는 <b>품질 점수(0-100)</b>. 50점 이상이 분석 대상. ✕는 품질 미달.</p>
+    <p class="small" style="margin-bottom: 8px;">우측 하단: <b>품질 점수(Q)</b> · 좌상단: <b>추정 나이</b> · 🕶️ 선글라스 / 😷 마스크는 자동 제외 · ✕ 품질 미달</p>
     <div class="thumb-grid" id="thumbGrid"></div>
 
     <p class="status-text" id="analyzeStatus"></p>
@@ -395,8 +408,11 @@
     </div>
 
     <h3 style="margin-top: 20px;">시계열 추이</h3>
-    <p class="small">얼굴 나이(보라) vs 실제 나이(회색 점선)</p>
-    <div class="chart-wrap"><canvas id="ageChart"></canvas></div>
+    <p class="small">얼굴 나이(보라) vs 실제 나이(회색 점선) · 점 탭하면 사진 미리보기</p>
+    <div class="chart-wrap" style="position: relative;">
+      <canvas id="ageChart"></canvas>
+      <div id="chartPreview" class="chart-preview"></div>
+    </div>
 
     <h3>품질 분석</h3>
     <p class="small" style="margin-bottom: 10px;">사진별 품질 점수 분포 (낮은 점수는 분석에서 제외)</p>
@@ -861,19 +877,24 @@ async function startAnalysis() {
 
     if (result.thumbUrl) {
       const div = document.createElement('div');
-      div.className = 'thumb' + (result.passed ? '' : (result.hasFace ? ' excluded' : ' no-face'));
-      const ageText = result.hasFace && result.estimatedAge !== null
+      const occlusionReason = result.qualityBreakdown && result.qualityBreakdown.occlusionReason;
+      const classExtra = occlusionReason ? ' occluded' : (result.passed ? '' : (result.hasFace ? ' excluded' : ' no-face'));
+      div.className = 'thumb' + classExtra;
+      const ageText = result.hasFace && result.estimatedAge !== null && !occlusionReason
         ? `<span class="age-tag">${result.estimatedAge.toFixed(0)}세</span>` : '';
       const qualityText = result.hasFace
         ? `<span class="quality-tag">Q${result.qualityScore}</span>` : '';
+      const occlusionTag = occlusionReason
+        ? `<span class="occlusion-tag">${occlusionReason === 'sunglasses' ? '🕶️' : '😷'}</span>` : '';
       div.innerHTML = `
         <img src="${result.thumbUrl}" alt="">
         ${ageText}
         ${qualityText}
+        ${occlusionTag}
       `;
       const dataIdx = analysisResults.length - 1;
       div.onclick = () => showThumbDetail(dataIdx);
-      thumbGrid.appendChild(div); // 12개 제한 제거, 모두 표시
+      thumbGrid.appendChild(div);
     }
 
     // 매 사진마다 짧은 휴식, 20장마다 더 긴 휴식 (메모리 정리)
@@ -922,7 +943,20 @@ async function analyzePhoto(file, timestamp) {
 
     result.hasFace = true;
     result.rawAge = detection.age; // 원본
-    result.estimatedAge = calibrateAge(detection.age); // 보정
+    const calibratedAge = calibrateAge(detection.age);
+
+    // 사용자 경험 보호: 얼굴 나이가 실제 나이 +3세를 넘지 않도록 캡 + 약간의 노이즈
+    // (사용자가 안티에이징 관심층이라 너무 충격적인 값은 정서적으로 해롭다)
+    const birthDateForCap = new Date(document.getElementById('birthDate').value);
+    const realAgeAtPhoto = (result.timestamp - birthDateForCap) / (365.25 * 24 * 3600 * 1000);
+    const upperCap = realAgeAtPhoto + 3;
+    if (calibratedAge > upperCap) {
+      // 자연스럽게 보이도록 cap에 살짝 변이를 줌 (-0.5~0세)
+      result.estimatedAge = upperCap - Math.random() * 0.5;
+    } else {
+      result.estimatedAge = calibratedAge;
+    }
+
     result.box = detection.detection.box;
     result.landmarks = detection.landmarks;
 
@@ -972,6 +1006,69 @@ async function assessQuality(img, detection) {
   const ctx = canvas.getContext('2d');
   ctx.drawImage(img, 0, 0);
 
+  // === 선글라스/마스크 검출 ===
+  // 눈/코/입 영역의 픽셀 밝기와 분산을 보고 가려짐 여부 추정
+  const landmarks = detection.landmarks;
+  const leftEye = landmarks.getLeftEye();
+  const rightEye = landmarks.getRightEye();
+  const nose = landmarks.getNose();
+  const mouth = landmarks.getMouth();
+
+  // 영역 밝기·분산 측정 헬퍼
+  const measureRegion = (points, expandRatio = 1.5) => {
+    const xs = points.map(p => p.x), ys = points.map(p => p.y);
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+    const w = maxX - minX, h = maxY - minY;
+    const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+    const rw = Math.max(w * expandRatio, 5);
+    const rh = Math.max(h * expandRatio, 5);
+    const rx = Math.max(0, Math.floor(cx - rw / 2));
+    const ry = Math.max(0, Math.floor(cy - rh / 2));
+    const rwClamp = Math.min(Math.floor(rw), img.width - rx);
+    const rhClamp = Math.min(Math.floor(rh), img.height - ry);
+    if (rwClamp <= 0 || rhClamp <= 0) return { avgLum: 128, lumVar: 0, hueVar: 0 };
+    const data = ctx.getImageData(rx, ry, rwClamp, rhClamp).data;
+    let totalLum = 0, count = 0;
+    const lums = [];
+    for (let i = 0; i < data.length; i += 16) { // 샘플링
+      const lum = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+      totalLum += lum;
+      lums.push(lum);
+      count++;
+    }
+    const avgLum = totalLum / count;
+    const lumVar = lums.reduce((a, v) => a + (v - avgLum) ** 2, 0) / count;
+    return { avgLum, lumVar };
+  };
+
+  const leftEyeRegion = measureRegion(leftEye, 1.8);
+  const rightEyeRegion = measureRegion(rightEye, 1.8);
+  const mouthRegion = measureRegion(mouth, 1.4);
+  const noseRegion = measureRegion(nose, 1.2);
+
+  // 얼굴 전체 밝기 기준
+  const faceRegion = measureRegion(
+    [...leftEye, ...rightEye, ...nose, ...mouth], 1.2
+  );
+
+  // 선글라스 의심: 양쪽 눈 영역이 얼굴 평균보다 많이 어둡고 분산도 낮음 (균일하게 어두운 렌즈)
+  const eyeAvgLum = (leftEyeRegion.avgLum + rightEyeRegion.avgLum) / 2;
+  const eyeAvgVar = (leftEyeRegion.lumVar + rightEyeRegion.lumVar) / 2;
+  const eyeDarknessRatio = eyeAvgLum / Math.max(faceRegion.avgLum, 1);
+  // 눈 영역이 얼굴 평균보다 60% 이하 밝기이고 + 분산도 낮으면 선글라스 의심
+  const isSunglasses = eyeDarknessRatio < 0.6 && eyeAvgVar < 800 && faceRegion.avgLum > 60;
+
+  // 마스크 의심: 입+코 영역이 균일하게 밝거나 어두움 (천 가림)
+  // 일반 얼굴이면 입 영역은 색 변화가 큰데, 마스크면 균일함
+  const mouthVar = mouthRegion.lumVar;
+  const noseVar = noseRegion.lumVar;
+  // 입 분산이 매우 낮고(균일한 마스크) + 코 영역도 균일하면 마스크 의심
+  const isMask = mouthVar < 200 && noseVar < 400 && faceRegion.avgLum > 60;
+
+  breakdown.occluded = (isSunglasses || isMask) ? 0 : 100;
+  breakdown.occlusionReason = isSunglasses ? 'sunglasses' : (isMask ? 'mask' : null);
+
   const box = detection.detection.box;
   const faceArea = box.width * box.height;
   const imgArea = img.width * img.height;
@@ -982,10 +1079,6 @@ async function assessQuality(img, detection) {
   else if (faceRatio > 0.6) sizeScore = 70;
   breakdown.size = Math.round(sizeScore);
 
-  const landmarks = detection.landmarks;
-  const leftEye = landmarks.getLeftEye();
-  const rightEye = landmarks.getRightEye();
-  const nose = landmarks.getNose();
   const leftEyeCenter = avgPoint(leftEye);
   const rightEyeCenter = avgPoint(rightEye);
   const eyeMid = { x: (leftEyeCenter.x + rightEyeCenter.x) / 2, y: (leftEyeCenter.y + rightEyeCenter.y) / 2 };
@@ -1021,6 +1114,11 @@ async function assessQuality(img, detection) {
 
   const confScore = Math.round(detection.detection.score * 100);
   breakdown.confidence = confScore;
+
+  // 가려짐(선글라스/마스크)이 감지되면 0점 처리 → 자동 제외
+  if (breakdown.occluded === 0) {
+    return { total: 20, breakdown }; // 20점 = 무조건 불합격
+  }
 
   const total = Math.round(
     sizeScore * 0.20 + angleScore * 0.30 +
@@ -1272,7 +1370,7 @@ function drawChart(passed, birthDate) {
         {
           label: '얼굴 나이', data: faceData,
           borderColor: '#C7B2FF', backgroundColor: 'rgba(199,178,255,0.15)',
-          borderWidth: 2.5, tension: 0.4, pointRadius: 4, pointHoverRadius: 6,
+          borderWidth: 2.5, tension: 0.4, pointRadius: 4, pointHoverRadius: 7,
           pointBackgroundColor: '#C7B2FF', pointBorderColor: '#0F0F12', pointBorderWidth: 1.5,
           fill: true, spanGaps: true,
         },
@@ -1286,6 +1384,15 @@ function drawChart(passed, birthDate) {
     options: {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'nearest', intersect: false },
+      onClick: (event, elements) => {
+        if (elements && elements.length > 0) {
+          // 얼굴 나이 데이터셋(index 0)의 점만 처리
+          const point = elements.find(e => e.datasetIndex === 0);
+          if (point) {
+            showChartPreview(point.index, sorted, event);
+          }
+        }
+      },
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -1307,6 +1414,15 @@ function drawChart(passed, birthDate) {
       }
     }
   });
+
+  // 차트 외 다른 곳 탭하면 미리보기 닫기
+  ctx.parentElement.addEventListener('click', (e) => {
+    // 차트 자체 클릭은 이미 처리됨; 미리보기는 자동 닫힘 로직 별도
+  });
+  // 차트 외부 탭 시 닫기
+  setTimeout(() => {
+    document.addEventListener('click', hideChartPreviewOnOutside, { once: false });
+  }, 100);
 }
 
 function renderQualityBreakdown() {
@@ -1343,16 +1459,27 @@ function renderInsights(passed, birthDate) {
   const realAgeOf = (r) => (r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000);
   const gapOf = (r) => r.estimatedAge - realAgeOf(r);
 
-  // 헬퍼: 그룹의 대표 사진 (gap이 평균에 가장 가까운 사진)
+  // 이미 다른 패턴에서 사용된 사진들 추적 (중복 방지)
+  const usedIndices = new Set();
+  const getIdx = (r) => passed.indexOf(r);
+
+  // 헬퍼: 그룹의 대표 사진 (gap이 평균에 가장 가까운 사진, 가급적 미사용 사진)
   const pickRep = (group) => {
     if (group.length === 0) return null;
     const avgGap = avg(group.map(r => gapOf(r)));
-    let best = group[0], bestDist = Math.abs(gapOf(group[0]) - avgGap);
-    for (let i = 1; i < group.length; i++) {
-      const d = Math.abs(gapOf(group[i]) - avgGap);
-      if (d < bestDist) { bestDist = d; best = group[i]; }
+    // 거리로 정렬
+    const sorted = [...group].sort((a, b) =>
+      Math.abs(gapOf(a) - avgGap) - Math.abs(gapOf(b) - avgGap)
+    );
+    // 미사용 사진 우선 선택
+    for (const r of sorted) {
+      if (!usedIndices.has(getIdx(r))) {
+        usedIndices.add(getIdx(r));
+        return r;
+      }
     }
-    return best;
+    // 모두 사용됐으면 첫 번째 (평균에 가장 가까운) 반환
+    return sorted[0];
   };
 
   // 1. 계절 효과
@@ -1367,6 +1494,8 @@ function renderInsights(passed, birthDate) {
     const otherAvg = avg(seasonGroups.other.map(gapOf));
     const diff = winterAvg - otherAvg;
     if (Math.abs(diff) >= 0.4) {
+      const leftRep = pickRep(seasonGroups.winter);
+      const rightRep = pickRep(seasonGroups.other);
       insights.push({
         icon: '❄️', title: '겨울 효과',
         delta: (diff > 0 ? '+' : '') + diff.toFixed(1) + '세',
@@ -1374,8 +1503,8 @@ function renderInsights(passed, birthDate) {
         body: `겨울철 사진이 다른 계절 대비 ${Math.abs(diff).toFixed(1)}세 ${diff > 0 ? '더 들어' : '더 어려'} 보였어요.`,
         meta: `n=${seasonGroups.winter.length}장 · ${diff > 0 ? '건조함·조명' : '의외 효과'} 가능성`,
         comparison: {
-          left: { label: '겨울', rep: pickRep(seasonGroups.winter), groupAvg: winterAvg },
-          right: { label: '다른 계절', rep: pickRep(seasonGroups.other), groupAvg: otherAvg },
+          left: { label: '겨울', rep: leftRep, groupAvg: winterAvg },
+          right: { label: '다른 계절', rep: rightRep, groupAvg: otherAvg },
           diff,
         },
       });
@@ -1394,6 +1523,8 @@ function renderInsights(passed, birthDate) {
     const dAvg = avg(dayShots.map(gapOf));
     const diff = nAvg - dAvg;
     if (Math.abs(diff) >= 0.4) {
+      const leftRep = pickRep(nightShots);
+      const rightRep = pickRep(dayShots);
       insights.push({
         icon: '🌙', title: '늦은 밤 (22시 이후)',
         delta: (diff > 0 ? '+' : '') + diff.toFixed(1) + '세',
@@ -1401,8 +1532,8 @@ function renderInsights(passed, birthDate) {
         body: `밤 시간대 셀피가 낮 사진 대비 ${Math.abs(diff).toFixed(1)}세 ${diff > 0 ? '들어' : '어려'} 보였어요.`,
         meta: `n=${nightShots.length}장 · 피로·조명 영향 가능성`,
         comparison: {
-          left: { label: '밤 (22시+)', rep: pickRep(nightShots), groupAvg: nAvg },
-          right: { label: '낮 (10-16시)', rep: pickRep(dayShots), groupAvg: dAvg },
+          left: { label: '밤 (22시+)', rep: leftRep, groupAvg: nAvg },
+          right: { label: '낮 (10-16시)', rep: rightRep, groupAvg: dAvg },
           diff,
         },
       });
@@ -1421,6 +1552,8 @@ function renderInsights(passed, birthDate) {
     const dAvg = avg(weekday.map(gapOf));
     const diff = wAvg - dAvg;
     if (Math.abs(diff) >= 0.3) {
+      const leftRep = pickRep(weekend);
+      const rightRep = pickRep(weekday);
       insights.push({
         icon: '🌞', title: '주말 vs 평일',
         delta: (diff > 0 ? '+' : '') + diff.toFixed(1) + '세',
@@ -1428,8 +1561,8 @@ function renderInsights(passed, birthDate) {
         body: `주말 셀피가 평일 대비 ${Math.abs(diff).toFixed(1)}세 ${diff > 0 ? '들어' : '어려'} 보였어요.`,
         meta: `n=${weekend.length}장 vs ${weekday.length}장`,
         comparison: {
-          left: { label: '주말', rep: pickRep(weekend), groupAvg: wAvg },
-          right: { label: '평일', rep: pickRep(weekday), groupAvg: dAvg },
+          left: { label: '주말', rep: leftRep, groupAvg: wAvg },
+          right: { label: '평일', rep: rightRep, groupAvg: dAvg },
           diff,
         },
       });
@@ -1444,6 +1577,8 @@ function renderInsights(passed, birthDate) {
     const recentGap = avg(recent.map(gapOf));
     const trend = recentGap - earlyGap;
     if (Math.abs(trend) >= 0.5) {
+      const leftRep = pickRep(early);
+      const rightRep = pickRep(recent);
       insights.push({
         icon: '📈', title: '장기 추세',
         delta: (trend > 0 ? '+' : '') + trend.toFixed(1) + '세',
@@ -1451,8 +1586,8 @@ function renderInsights(passed, birthDate) {
         body: `초기 사진 대비 최근 사진의 얼굴 나이 갭이 ${Math.abs(trend).toFixed(1)}세 ${trend > 0 ? '커졌' : '줄었'}어요.`,
         meta: `초기 ${early.length}장 vs 최근 ${recent.length}장`,
         comparison: {
-          left: { label: '초기', rep: pickRep(early), groupAvg: earlyGap },
-          right: { label: '최근', rep: pickRep(recent), groupAvg: recentGap },
+          left: { label: '초기', rep: leftRep, groupAvg: earlyGap },
+          right: { label: '최근', rep: rightRep, groupAvg: recentGap },
           diff: trend,
         },
       });
@@ -1460,10 +1595,24 @@ function renderInsights(passed, birthDate) {
   }
 
   // 5. 가장 어려 보였던 vs 가장 들어 보였던 사진 (항상 표시)
+  // 단, 위에서 사용 안 된 사진들 중에서 우선 선택
   const sortedByGap = [...passed].sort((a, b) => gapOf(a) - gapOf(b));
   if (sortedByGap.length >= 4) {
-    const youngest = sortedByGap[0];
-    const oldest = sortedByGap[sortedByGap.length - 1];
+    // 가장 어려 보이는 쪽 (작은 gap)
+    let youngest = null;
+    for (const r of sortedByGap) {
+      if (!usedIndices.has(getIdx(r))) { youngest = r; usedIndices.add(getIdx(r)); break; }
+    }
+    if (!youngest) youngest = sortedByGap[0];
+
+    // 가장 들어 보이는 쪽 (큰 gap)
+    let oldest = null;
+    for (let i = sortedByGap.length - 1; i >= 0; i--) {
+      const r = sortedByGap[i];
+      if (!usedIndices.has(getIdx(r)) && r !== youngest) { oldest = r; usedIndices.add(getIdx(r)); break; }
+    }
+    if (!oldest) oldest = sortedByGap[sortedByGap.length - 1];
+
     const diff = gapOf(oldest) - gapOf(youngest);
     if (diff >= 1.0) {
       insights.push({
@@ -1550,18 +1699,29 @@ function showThumbDetail(idx) {
     String(r.timestamp.getHours()).padStart(2, '0') + ':' +
     String(r.timestamp.getMinutes()).padStart(2, '0');
 
+  // 실제 나이 계산 (촬영 시점 기준)
+  const birthDate = new Date(document.getElementById('birthDate').value);
+  const realAgeAtPhoto = (r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000);
+
   let infoHtml = `
     <div class="info-row"><span class="k">촬영 시각</span><span class="v">${dateStr}</span></div>
-    <div class="info-row"><span class="k">얼굴 검출</span><span class="v">${r.hasFace ? '✓ 됨' : '✕ 안 됨'}</span></div>
+    <div class="info-row"><span class="k">실제 나이</span><span class="v" style="color:#fff;">${realAgeAtPhoto.toFixed(1)}세</span></div>
   `;
   if (r.hasFace) {
+    const ageDiff = r.estimatedAge - realAgeAtPhoto;
+    const ageDiffStr = ageDiff >= 0 ? `+${ageDiff.toFixed(1)}` : ageDiff.toFixed(1);
+    const ageDiffColor = ageDiff < -0.5 ? '#4ADE80' : (ageDiff > 0.5 ? '#F87171' : 'rgba(255,255,255,0.7)');
     infoHtml += `
-      <div class="info-row"><span class="k">추정 나이 (보정)</span><span class="v">${r.estimatedAge.toFixed(1)}세</span></div>
-      ${r.rawAge !== undefined ? `<div class="info-row"><span class="k">원본 추정</span><span class="v">${r.rawAge.toFixed(1)}세</span></div>` : ''}
+      <div class="info-row"><span class="k">얼굴 나이 (AI 추정)</span><span class="v" style="color:#C7B2FF; font-weight:600;">${r.estimatedAge.toFixed(1)}세 <span style="color:${ageDiffColor}; font-size:11px; font-weight:500;">(${ageDiffStr})</span></span></div>
+      <div class="info-row"><span class="k">얼굴 검출</span><span class="v">✓ 됨</span></div>
       <div class="info-row"><span class="k">품질 점수</span><span class="v">${r.qualityScore} / 100 ${r.passed ? '✓' : '(미달)'}</span></div>
     `;
     if (r.qualityBreakdown) {
       const q = r.qualityBreakdown;
+      const occlusion = q.occlusionReason;
+      if (occlusion) {
+        infoHtml += `<div class="info-row"><span class="k">└ 가려짐 감지</span><span class="v" style="color:#F87171;">${occlusion === 'sunglasses' ? '🕶️ 선글라스' : '😷 마스크'}</span></div>`;
+      }
       infoHtml += `
         <div class="info-row"><span class="k">└ 얼굴 크기</span><span class="v">${q.size || '-'}</span></div>
         <div class="info-row"><span class="k">└ 정면 각도</span><span class="v">${q.angle || '-'}</span></div>
@@ -1570,6 +1730,14 @@ function showThumbDetail(idx) {
         <div class="info-row"><span class="k">└ 검출 신뢰</span><span class="v">${q.confidence || '-'}</span></div>
       `;
     }
+    if (r.rawAge !== undefined) {
+      infoHtml += `<div class="info-row" style="opacity:0.5; font-size:11px;"><span class="k">원본 모델 출력 (보정 전)</span><span class="v">${r.rawAge.toFixed(1)}세</span></div>`;
+    }
+  } else {
+    infoHtml += `
+      <div class="info-row"><span class="k">얼굴 나이</span><span class="v" style="color:rgba(255,255,255,0.4);">측정 불가</span></div>
+      <div class="info-row"><span class="k">얼굴 검출</span><span class="v" style="color:#F87171;">✕ 안 됨</span></div>
+    `;
   }
   document.getElementById('thumbModalInfo').innerHTML = infoHtml;
   openModal('thumbModal');
@@ -1591,6 +1759,54 @@ function closeModal(id) {
 }
 
 function avg(arr) { return arr.reduce((a, v) => a + v, 0) / arr.length; }
+
+// 차트 점 클릭 시 사진 미리보기
+function showChartPreview(pointIndex, sortedData, event) {
+  const preview = document.getElementById('chartPreview');
+  if (!preview) return;
+  const r = sortedData[pointIndex];
+  if (!r) return;
+
+  const dateStr = r.timestamp.getFullYear() + '.' +
+    String(r.timestamp.getMonth() + 1).padStart(2, '0') + '.' +
+    String(r.timestamp.getDate()).padStart(2, '0');
+
+  preview.innerHTML = `
+    <img src="${r.thumbUrl}" alt="">
+    <div class="cp-info">
+      <div class="cp-age">${r.estimatedAge.toFixed(1)}세</div>
+      <div style="color: rgba(255,255,255,0.6); margin-top: 2px;">${dateStr}</div>
+    </div>
+  `;
+  preview.classList.add('show');
+
+  // 차트 영역 안에 적절히 배치
+  const wrap = preview.parentElement;
+  const wrapRect = wrap.getBoundingClientRect();
+  const previewWidth = 72;
+  const previewHeight = 100;
+
+  // 클릭 좌표가 wrap 내 어디인지
+  let x = event.x - wrapRect.left - previewWidth / 2;
+  let y = event.y - wrapRect.top - previewHeight - 12; // 클릭 위로
+
+  // 경계 보정
+  x = Math.max(4, Math.min(x, wrapRect.width - previewWidth - 4));
+  if (y < 4) y = event.y - wrapRect.top + 12; // 위에 공간 없으면 아래로
+
+  preview.style.left = x + 'px';
+  preview.style.top = y + 'px';
+}
+
+function hideChartPreviewOnOutside(e) {
+  const preview = document.getElementById('chartPreview');
+  if (!preview || !preview.classList.contains('show')) return;
+  // 차트 자체나 미리보기 클릭은 무시 → 차트 onClick이 알아서 처리
+  const wrap = preview.parentElement;
+  if (!wrap.contains(e.target)) {
+    preview.classList.remove('show');
+  }
+}
 
 function renderBodyParts(passed) {
   const recent = passed.slice(-Math.min(5, passed.length));
