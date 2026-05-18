@@ -23,6 +23,13 @@
     .logo { font-size: 16px; font-weight: 700; letter-spacing: -0.5px; }
     .logo .accent { color: #C7B2FF; }
     .badge { font-size: 11px; padding: 4px 10px; border-radius: 999px; background: rgba(199,178,255,0.15); color: #C7B2FF; font-weight: 500; }
+    .back-btn {
+      background: rgba(255,255,255,0.06); border: none; width: 32px; height: 32px;
+      border-radius: 8px; color: #fff; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; padding: 0; transition: background 0.15s;
+    }
+    .back-btn:active { background: rgba(255,255,255,0.12); }
+    .back-btn.hidden { visibility: hidden; pointer-events: none; }
 
     .screen { display: none; padding: 20px; animation: fadeIn 0.3s ease; }
     .screen.active { display: block; }
@@ -158,6 +165,9 @@
 <div id="app">
 
   <div class="topbar">
+    <button class="back-btn" id="backBtn" onclick="history.back()" aria-label="뒤로가기">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    </button>
     <div class="logo">Face<span class="accent">Age</span></div>
     <div class="badge" id="topBadge">POC v0.2</div>
   </div>
@@ -427,12 +437,64 @@ let chartInstance = null;
 let analysisResults = [];
 let sampledFiles = []; // 샘플링 후 분석할 파일
 
-// ===== 화면 전환 =====
-function showScreen(id) {
+// ===== 화면 전환 (History API 통합) =====
+const SCREEN_FLOW = ['screen-onboard', 'screen-loading', 'screen-pick', 'screen-sampling', 'screen-analyze', 'screen-result', 'screen-insights'];
+let isPoppingState = false; // popstate로 인한 호출인지 구분
+
+function showScreen(id, options = {}) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+  const target = document.getElementById(id);
+  if (!target) return;
+  target.classList.add('active');
   window.scrollTo(0, 0);
+
+  // 첫 화면(온보딩)에서는 뒤로가기 버튼 숨김
+  const backBtn = document.getElementById('backBtn');
+  if (backBtn) {
+    backBtn.classList.toggle('hidden', id === 'screen-onboard');
+  }
+
+  // History 기록: popstate 호출이 아니고, replace 옵션이 없을 때만 push
+  if (!isPoppingState && !options.replace) {
+    history.pushState({ screen: id }, '', '#' + id);
+  } else if (options.replace) {
+    history.replaceState({ screen: id }, '', '#' + id);
+  }
 }
+
+// 뒤로가기 (백키 / 브라우저 뒤로가기) 처리
+window.addEventListener('popstate', (e) => {
+  isPoppingState = true;
+  const targetScreen = (e.state && e.state.screen) || 'screen-onboard';
+
+  // 분석 중에 뒤로가면 분석 중단 의사 확인
+  const currentActive = document.querySelector('.screen.active');
+  if (currentActive && currentActive.id === 'screen-analyze') {
+    // 진행 중이면 중단 플래그 설정 (다음 루프에서 빠져나감)
+    analysisCancelled = true;
+  }
+
+  showScreen(targetScreen);
+  isPoppingState = false;
+});
+
+// 초기 진입 시 첫 화면을 history에 등록
+window.addEventListener('load', () => {
+  if (!history.state) {
+    history.replaceState({ screen: 'screen-onboard' }, '', '#screen-onboard');
+  } else if (history.state.screen) {
+    // 새로고침된 경우 해당 화면 복원 (단, 데이터가 없으면 처음으로)
+    const target = history.state.screen;
+    if (target === 'screen-onboard' || target === 'screen-pick') {
+      showScreen(target, { replace: true });
+    } else {
+      // 데이터가 없으면 처음으로 (분석 결과는 휘발성이라 복원 불가)
+      showScreen('screen-onboard', { replace: true });
+    }
+  }
+});
+
+let analysisCancelled = false;
 
 function showToast(msg, duration = 2200) {
   const t = document.getElementById('toast');
@@ -633,6 +695,7 @@ async function startAnalysis() {
   document.getElementById('analyzeStatus').textContent = '';
   document.getElementById('analyzeStatus').classList.remove('err');
 
+  analysisCancelled = false;
   analysisResults = [];
   const thumbGrid = document.getElementById('thumbGrid');
   thumbGrid.innerHTML = '';
@@ -646,6 +709,10 @@ async function startAnalysis() {
   }, 30000);
 
   for (let i = 0; i < sampledFiles.length; i++) {
+    if (analysisCancelled) {
+      console.log('Analysis cancelled by user');
+      return;
+    }
     const { file, timestamp } = sampledFiles[i];
     let result;
     try {
