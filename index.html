@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0F0F12">
+  <title>FaceAge · 셀피 얼굴 나이 추적</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; overflow-x: hidden; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      background: #0F0F12;
+      color: #fff;
+      line-height: 1.5;
+      overscroll-behavior: none;
+    }
+    #app { max-width: 480px; margin: 0 auto; min-height: 100vh; min-height: 100dvh; position: relative; padding-bottom: 24px; }
+
+    /* Top bar */
+    .topbar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 20px; position: sticky; top: 0; background: rgba(15,15,18,0.92);
+      backdrop-filter: blur(12px); z-index: 100; border-bottom: 0.5px solid rgba(255,255,255,0.08);
+    }
+    .logo { font-size: 16px; font-weight: 700; letter-spacing: -0.5px; }
+    .logo .accent { color: #C7B2FF; }
+    .badge { font-size: 11px; padding: 4px 10px; border-radius: 999px; background: rgba(199,178,255,0.15); color: #C7B2FF; font-weight: 500; }
+
+    /* Screen system */
+    .screen { display: none; padding: 20px; animation: fadeIn 0.3s ease; }
+    .screen.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    h1 { font-size: 28px; font-weight: 700; letter-spacing: -1px; margin-bottom: 8px; line-height: 1.2; }
+    h2 { font-size: 20px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 4px; }
+    h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .muted { color: rgba(255,255,255,0.55); font-size: 13px; }
+    .small { font-size: 11px; color: rgba(255,255,255,0.45); }
+
+    /* Cards */
+    .card {
+      background: rgba(255,255,255,0.04);
+      border: 0.5px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .card-glow {
+      background: linear-gradient(135deg, rgba(199,178,255,0.12), rgba(199,178,255,0.04));
+      border: 0.5px solid rgba(199,178,255,0.25);
+    }
+
+    /* Permission rows */
+    .perm-row { display: flex; gap: 12px; padding: 12px 0; border-bottom: 0.5px solid rgba(255,255,255,0.06); }
+    .perm-row:last-child { border-bottom: none; }
+    .perm-icon { width: 36px; height: 36px; border-radius: 10px; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; }
+    .perm-text p:first-child { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+    .perm-text p:last-child { font-size: 12px; color: rgba(255,255,255,0.5); line-height: 1.4; }
+
+    /* Buttons */
+    .btn {
+      display: block; width: 100%; padding: 16px; border-radius: 14px;
+      font-size: 15px; font-weight: 600; border: none; cursor: pointer;
+      transition: transform 0.1s, background 0.2s; margin-top: 12px;
+      font-family: inherit;
+    }
+    .btn-primary { background: #C7B2FF; color: #0F0F12; }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-ghost { background: transparent; color: rgba(255,255,255,0.7); border: 0.5px solid rgba(255,255,255,0.15); }
+    .btn-secondary { background: rgba(255,255,255,0.08); color: #fff; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* File input */
+    .file-input-wrap { position: relative; }
+    .file-input-wrap input[type="file"] { position: absolute; opacity: 0; width: 100%; height: 100%; top: 0; left: 0; cursor: pointer; }
+
+    /* Form */
+    .input { width: 100%; padding: 12px 14px; background: rgba(255,255,255,0.06); border: 0.5px solid rgba(255,255,255,0.12); border-radius: 10px; color: #fff; font-size: 14px; font-family: inherit; }
+    .input:focus { outline: none; border-color: #C7B2FF; }
+    .form-row { margin-bottom: 12px; }
+    .label { font-size: 12px; color: rgba(255,255,255,0.6); margin-bottom: 6px; display: block; }
+
+    /* Progress / Loading */
+    .progress-circle { display: flex; justify-content: center; margin: 20px 0; }
+    .progress-bar { height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; margin: 12px 0; }
+    .progress-fill { height: 100%; background: #C7B2FF; transition: width 0.4s ease; }
+    .status-text { text-align: center; font-size: 13px; color: rgba(255,255,255,0.6); margin: 8px 0; }
+    .status-text.err { color: #FF8B8B; }
+
+    /* Stats grid */
+    .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 12px 0; }
+    .stat-mini { background: rgba(255,255,255,0.04); border-radius: 10px; padding: 10px 12px; }
+    .stat-mini .label { font-size: 11px; color: rgba(255,255,255,0.5); margin: 0 0 4px; }
+    .stat-mini .value { font-size: 18px; font-weight: 600; }
+
+    /* Big age display */
+    .age-hero { display: flex; align-items: baseline; gap: 12px; margin: 12px 0 4px; }
+    .age-big { font-size: 64px; font-weight: 700; letter-spacing: -3px; line-height: 1; }
+    .age-delta { padding: 4px 10px; border-radius: 8px; font-size: 13px; font-weight: 500; }
+    .delta-younger { background: rgba(74, 222, 128, 0.15); color: #4ADE80; }
+    .delta-older { background: rgba(248, 113, 113, 0.15); color: #F87171; }
+    .delta-neutral { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); }
+
+    /* Selfie thumbs */
+    .thumb-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 8px; }
+    .thumb { aspect-ratio: 1; border-radius: 8px; overflow: hidden; background: rgba(255,255,255,0.05); position: relative; }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .thumb .quality-tag { position: absolute; bottom: 3px; right: 3px; font-size: 9px; padding: 2px 5px; border-radius: 4px; background: rgba(0,0,0,0.7); color: #fff; font-weight: 500; }
+    .thumb.excluded { opacity: 0.3; }
+    .thumb.excluded::after { content: '✕'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #F87171; font-size: 20px; font-weight: 700; }
+
+    /* Insight cards */
+    .insight {
+      background: rgba(255,255,255,0.04);
+      border: 0.5px solid rgba(255,255,255,0.08);
+      border-radius: 14px; padding: 14px; margin-bottom: 10px;
+    }
+    .insight-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .insight-head-left { display: flex; gap: 8px; align-items: center; }
+    .insight-icon { font-size: 16px; }
+    .insight-title { font-size: 13px; font-weight: 600; }
+    .insight-delta { font-size: 14px; font-weight: 600; }
+    .insight-body { font-size: 12px; color: rgba(255,255,255,0.55); margin-bottom: 6px; line-height: 1.45; }
+    .insight-meta { font-size: 10px; color: rgba(255,255,255,0.4); }
+
+    /* Tabs (Before/After) */
+    .tabs { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; }
+    .tab { padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,0.06); font-size: 12px; cursor: pointer; white-space: nowrap; border: 0.5px solid transparent; }
+    .tab.active { background: #C7B2FF; color: #0F0F12; font-weight: 600; }
+
+    /* Chart container */
+    .chart-wrap { position: relative; height: 200px; margin: 8px 0 16px; }
+
+    /* Bottom nav */
+    .bottom-nav {
+      position: sticky; bottom: 0; background: rgba(15,15,18,0.92); backdrop-filter: blur(12px);
+      border-top: 0.5px solid rgba(255,255,255,0.08);
+      display: flex; justify-content: space-around; padding: 10px 0 14px;
+      margin-top: 24px;
+    }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; color: rgba(255,255,255,0.5); cursor: pointer; padding: 4px 14px; border-radius: 8px; }
+    .nav-item.active { color: #C7B2FF; }
+    .nav-item .icon { font-size: 18px; }
+
+    /* Toggle pills for body parts */
+    .part-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 12px 0; }
+    .part-card { background: rgba(255,255,255,0.04); border-radius: 12px; padding: 12px; }
+    .part-card h4 { font-size: 12px; color: rgba(255,255,255,0.6); margin-bottom: 4px; font-weight: 500; }
+    .part-card .v { font-size: 20px; font-weight: 600; }
+    .part-card .d { font-size: 11px; margin-top: 2px; }
+
+    /* Monthly report card (for share) */
+    .report-card {
+      background: linear-gradient(135deg, #C7B2FF, #7A6FE0);
+      border-radius: 20px; padding: 24px; color: #fff;
+      margin: 12px 0;
+    }
+    .report-card h3 { font-size: 11px; opacity: 0.8; margin-bottom: 8px; letter-spacing: 1px; }
+    .report-card .big { font-size: 44px; font-weight: 700; letter-spacing: -2px; margin: 8px 0; }
+    .report-card .sub { font-size: 13px; opacity: 0.9; }
+
+    /* Quality breakdown bar */
+    .qbar-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: 12px; }
+    .qbar-label { width: 60px; color: rgba(255,255,255,0.6); font-size: 11px; }
+    .qbar-track { flex: 1; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
+    .qbar-fill { height: 100%; background: #C7B2FF; border-radius: 3px; }
+    .qbar-val { width: 32px; text-align: right; font-weight: 500; font-size: 12px; }
+
+    /* Hidden image canvas for processing */
+    #hiddenCanvas { display: none; }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(40,40,46,0.95); padding: 10px 18px; border-radius: 22px; font-size: 13px; z-index: 1000; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <div class="topbar">
+    <div class="logo">Face<span class="accent">Age</span></div>
+    <div class="badge" id="topBadge">POC v0.1</div>
+  </div>
+
+  <!-- SCREEN 1: 온보딩 -->
+  <div class="screen active" id="screen-onboard">
+    <h1>갤러리 셀피로<br/>얼굴 나이를 추적해요</h1>
+    <p class="muted">사진은 폰을 떠나지 않아요. 모든 분석은 이 기기 안에서만 일어납니다.</p>
+
+    <div class="card" style="margin-top: 20px;">
+      <div class="perm-row">
+        <div class="perm-icon">📸</div>
+        <div class="perm-text">
+          <p>사진 직접 선택</p>
+          <p>웹 브라우저 제약상, 갤러리 전체 스캔 대신 사진을 직접 골라주세요 (10~30장 권장)</p>
+        </div>
+      </div>
+      <div class="perm-row">
+        <div class="perm-icon">🧠</div>
+        <div class="perm-text">
+          <p>온디바이스 AI 분석</p>
+          <p>face-api.js가 브라우저에서 얼굴 검출·나이 추정을 수행합니다</p>
+        </div>
+      </div>
+      <div class="perm-row">
+        <div class="perm-icon">🎂</div>
+        <div class="perm-text">
+          <p>생년월일 입력</p>
+          <p>실제 나이와 비교하기 위해 사용됩니다</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label class="label">생년월일 (분석 정확도에 사용)</label>
+      <input type="date" class="input" id="birthDate" value="1995-01-01">
+    </div>
+
+    <button class="btn btn-primary" onclick="startLoading()">시작하기</button>
+    <p class="small" style="text-align: center; margin-top: 12px;">데이터는 어디에도 저장·전송되지 않습니다</p>
+  </div>
+
+  <!-- SCREEN 2: 모델 로딩 -->
+  <div class="screen" id="screen-loading">
+    <h1>AI 모델 로딩 중</h1>
+    <p class="muted">face-api.js 모델을 다운로드하고 있어요 (~13MB, 최초 1회만)</p>
+
+    <div class="card card-glow" style="margin-top: 20px;">
+      <p style="font-size: 13px; margin-bottom: 8px;" id="loadStatus">초기화 중...</p>
+      <div class="progress-bar"><div class="progress-fill" id="loadProgress" style="width: 0%"></div></div>
+      <p class="small" id="loadDetail">잠시만 기다려주세요</p>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: 사진 선택 -->
+  <div class="screen" id="screen-pick">
+    <h1>셀피 사진 선택</h1>
+    <p class="muted">갤러리에서 본인 셀피를 10~30장 골라주세요. 다양한 시기·조명일수록 분석이 풍부해져요.</p>
+
+    <div class="card" style="margin-top: 20px;">
+      <h3>📁 사진 선택</h3>
+      <p class="muted" style="margin-bottom: 12px;">기기 갤러리가 열립니다. 셀피를 골라주세요.</p>
+      <div class="file-input-wrap">
+        <button class="btn btn-primary" style="margin-top: 0;">갤러리 열기</button>
+        <input type="file" id="filePicker" accept="image/*" multiple>
+      </div>
+      <p class="small" style="margin-top: 8px;">💡 데스크탑은 폴더에서 다중 선택, 모바일은 갤러리에서 ⌘/Ctrl 또는 길게 눌러 다중 선택</p>
+    </div>
+
+    <div class="card" style="margin-top: 12px;">
+      <h3>또는 데모 데이터로 체험</h3>
+      <p class="muted" style="margin-bottom: 12px;">사진 없이도 가짜 셀피 20장으로 분석 플로우를 체험할 수 있어요</p>
+      <button class="btn btn-secondary" onclick="runDemo()">데모 분석 실행</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 4: 분석 진행 -->
+  <div class="screen" id="screen-analyze">
+    <h1>분석 중</h1>
+    <p class="muted" id="analyzeSub">사진을 한 장씩 처리하고 있어요</p>
+
+    <div class="progress-circle">
+      <svg width="120" height="120" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="6"/>
+        <circle id="ringFg" cx="60" cy="60" r="52" fill="none" stroke="#C7B2FF" stroke-width="6"
+          stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="326.7"
+          transform="rotate(-90 60 60)" style="transition: stroke-dashoffset 0.3s"/>
+        <text x="60" y="58" text-anchor="middle" font-size="24" font-weight="700" fill="#fff" id="ringPct">0%</text>
+        <text x="60" y="78" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.5)">분석됨</text>
+      </svg>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-mini"><div class="label">전체</div><div class="value" id="aTotal">0</div></div>
+      <div class="stat-mini"><div class="label">얼굴 검출</div><div class="value" id="aFace">0</div></div>
+      <div class="stat-mini"><div class="label">품질 합격</div><div class="value" id="aPass">0</div></div>
+      <div class="stat-mini"><div class="label">품질 미달</div><div class="value" id="aFail">0</div></div>
+    </div>
+
+    <h3 style="margin-top: 16px; margin-bottom: 4px;">처리된 사진</h3>
+    <p class="small" style="margin-bottom: 8px;">✕ 표시는 품질 점수가 낮아 분석에서 제외된 사진</p>
+    <div class="thumb-grid" id="thumbGrid"></div>
+  </div>
+
+  <!-- SCREEN 5: 결과 - 타임라인 -->
+  <div class="screen" id="screen-result">
+    <h1>당신의 얼굴 나이</h1>
+    <p class="muted" id="resultSub">분석 완료. 시간순으로 정리된 결과입니다.</p>
+
+    <div class="card card-glow" style="margin-top: 16px;">
+      <div class="age-hero">
+        <span class="age-big" id="avgFaceAge">--</span>
+        <span class="age-delta" id="ageDelta">--</span>
+      </div>
+      <p class="small">최근 추정 평균 · 실제 나이 <span id="realAgeText">--</span>세 기준</p>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-mini"><div class="label">분석된 사진</div><div class="value" id="rPass">0</div></div>
+      <div class="stat-mini"><div class="label">기간</div><div class="value" id="rPeriod">--</div></div>
+      <div class="stat-mini"><div class="label">최저</div><div class="value" id="rMin">--</div></div>
+      <div class="stat-mini"><div class="label">최고</div><div class="value" id="rMax">--</div></div>
+    </div>
+
+    <h3 style="margin-top: 20px;">시계열 추이</h3>
+    <p class="small">얼굴 나이(보라) vs 실제 나이(회색 점선)</p>
+    <div class="chart-wrap"><canvas id="ageChart"></canvas></div>
+
+    <h3>품질 분석</h3>
+    <p class="small" style="margin-bottom: 10px;">사진별 품질 점수 분포 (낮은 점수는 분석에서 제외)</p>
+    <div class="card">
+      <div id="qualityBreakdown"></div>
+    </div>
+
+    <button class="btn btn-primary" onclick="showScreen('screen-insights')">상관 분석 & 인사이트 보기</button>
+  </div>
+
+  <!-- SCREEN 6: 인사이트 -->
+  <div class="screen" id="screen-insights">
+    <h1>발견된 패턴</h1>
+    <p class="muted">메타데이터(시간·계절·시간대) 기반 상관 분석입니다. 인과가 아닌 상관입니다.</p>
+
+    <div class="tabs" style="margin-top: 16px;">
+      <div class="tab active" onclick="switchInsightTab(this, 'pattern')">패턴</div>
+      <div class="tab" onclick="switchInsightTab(this, 'parts')">부위별</div>
+      <div class="tab" onclick="switchInsightTab(this, 'report')">월간 리포트</div>
+    </div>
+
+    <div id="tab-pattern">
+      <div id="patternInsights"></div>
+    </div>
+
+    <div id="tab-parts" style="display:none;">
+      <p class="muted" style="margin-bottom: 12px;">간이 분석 결과. 부위별 변화는 face-api.js의 랜드마크 좌표 변화를 기반으로 추정한 시뮬레이션 값입니다.</p>
+      <div class="part-grid">
+        <div class="part-card">
+          <h4>👁️ 눈가</h4>
+          <div class="v" id="partEyes">--</div>
+          <div class="d delta-neutral" id="partEyesD">--</div>
+        </div>
+        <div class="part-card">
+          <h4>🤔 이마</h4>
+          <div class="v" id="partForehead">--</div>
+          <div class="d delta-neutral" id="partForeheadD">--</div>
+        </div>
+        <div class="part-card">
+          <h4>😊 법령선</h4>
+          <div class="v" id="partSmile">--</div>
+          <div class="d delta-neutral" id="partSmileD">--</div>
+        </div>
+        <div class="part-card">
+          <h4>👄 턱선</h4>
+          <div class="v" id="partJaw">--</div>
+          <div class="d delta-neutral" id="partJawD">--</div>
+        </div>
+      </div>
+      <p class="small" style="margin-top: 12px;">⚠️ 부위별 점수는 POC 시뮬레이션입니다. Phase 2에서 진짜 부위별 모델 추가 예정.</p>
+    </div>
+
+    <div id="tab-report" style="display:none;">
+      <div class="report-card">
+        <h3>MONTHLY REPORT · <span id="reportMonth">2025.05</span></h3>
+        <div class="big" id="reportAge">--</div>
+        <p class="sub" id="reportSub">이번 달 평균 얼굴 나이</p>
+        <p class="sub" id="reportDelta" style="margin-top: 12px; font-weight: 600;">--</p>
+      </div>
+      <button class="btn btn-secondary" onclick="showToast('이미지로 저장 기능은 Phase 2에서 추가됩니다')">💾 이미지로 저장 (Phase 2)</button>
+      <p class="small" style="text-align: center; margin-top: 12px;">매월 1일 자동 생성 알림 예정 (Phase 2)</p>
+    </div>
+
+    <button class="btn btn-ghost" style="margin-top: 16px;" onclick="resetApp()">처음부터 다시 시작</button>
+  </div>
+
+</div>
+
+<canvas id="hiddenCanvas"></canvas>
+<div class="toast" id="toast"></div>
+
+<!-- face-api.js -->
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.js"></script>
+
+<script>
+// =============================================
+// FaceAge POC - 작동하는 클라이언트 사이드 분석
+// =============================================
+
+const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model/';
+let modelsLoaded = false;
+let chartInstance = null;
+let analysisResults = [];
+
+// ===== 화면 전환 =====
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function showToast(msg, duration = 2200) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ===== 모델 로딩 =====
+async function startLoading() {
+  showScreen('screen-loading');
+  updateLoading('TinyFaceDetector 로딩 중...', 0, '얼굴 검출 모델');
+
+  try {
+    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+    updateLoading('얼굴 랜드마크 모델 로딩 중...', 35, '눈·코·입 등 68개 포인트');
+    await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+    updateLoading('나이/성별 추정 모델 로딩 중...', 75, '핵심 분석 모델');
+    await faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL);
+    updateLoading('완료', 100, '준비되었습니다');
+    modelsLoaded = true;
+    setTimeout(() => showScreen('screen-pick'), 600);
+  } catch (e) {
+    console.error('Model loading failed', e);
+    document.getElementById('loadStatus').textContent = '모델 로딩 실패';
+    document.getElementById('loadStatus').classList.add('err');
+    document.getElementById('loadDetail').textContent = '네트워크를 확인하거나 데모 모드로 진행할 수 있어요. 데모로 전환합니다.';
+    setTimeout(() => showScreen('screen-pick'), 2000);
+  }
+}
+
+function updateLoading(status, pct, detail) {
+  document.getElementById('loadStatus').textContent = status;
+  document.getElementById('loadProgress').style.width = pct + '%';
+  document.getElementById('loadDetail').textContent = detail || '';
+}
+
+// ===== 사진 처리 =====
+document.getElementById('filePicker').addEventListener('change', async (e) => {
+  const files = Array.from(e.target.files);
+  if (files.length === 0) return;
+  if (files.length > 50) {
+    showToast('최대 50장까지 처리합니다');
+    files.length = 50;
+  }
+  await processFiles(files);
+});
+
+async function processFiles(files) {
+  if (!modelsLoaded) {
+    showToast('모델이 아직 로딩 중입니다. 데모 모드로 진행합니다.');
+    runDemo();
+    return;
+  }
+
+  showScreen('screen-analyze');
+  document.getElementById('analyzeSub').textContent =
+    `${files.length}장의 사진을 분석합니다. 한 장당 약 1-2초 소요됩니다.`;
+  document.getElementById('aTotal').textContent = files.length;
+
+  analysisResults = [];
+  const thumbGrid = document.getElementById('thumbGrid');
+  thumbGrid.innerHTML = '';
+  let faceCount = 0, passCount = 0, failCount = 0;
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const result = await analyzePhoto(file);
+    analysisResults.push(result);
+
+    // 통계 업데이트
+    if (result.hasFace) faceCount++;
+    if (result.passed) passCount++;
+    if (result.hasFace && !result.passed) failCount++;
+
+    document.getElementById('aFace').textContent = faceCount;
+    document.getElementById('aPass').textContent = passCount;
+    document.getElementById('aFail').textContent = failCount;
+
+    // 진행률
+    const pct = Math.round(((i + 1) / files.length) * 100);
+    const dashOffset = 326.7 - (326.7 * pct / 100);
+    document.getElementById('ringFg').setAttribute('stroke-dashoffset', dashOffset);
+    document.getElementById('ringPct').textContent = pct + '%';
+
+    // 썸네일
+    if (result.thumbUrl) {
+      const div = document.createElement('div');
+      div.className = 'thumb' + (result.passed ? '' : ' excluded');
+      div.innerHTML = `
+        <img src="${result.thumbUrl}" alt="">
+        ${result.hasFace ? `<span class="quality-tag">${result.qualityScore}</span>` : ''}
+      `;
+      thumbGrid.insertBefore(div, thumbGrid.firstChild);
+      while (thumbGrid.children.length > 12) thumbGrid.removeChild(thumbGrid.lastChild);
+    }
+
+    // 비동기 양보
+    await new Promise(r => setTimeout(r, 30));
+  }
+
+  setTimeout(() => showResults(), 600);
+}
+
+// ===== 단일 사진 분석 =====
+async function analyzePhoto(file) {
+  const result = {
+    fileName: file.name,
+    timestamp: null,
+    hasFace: false,
+    passed: false,
+    estimatedAge: null,
+    qualityScore: 0,
+    qualityBreakdown: {},
+    thumbUrl: null,
+  };
+
+  try {
+    // EXIF 메타데이터
+    try {
+      const exif = await exifr.parse(file, ['DateTimeOriginal', 'CreateDate']);
+      if (exif && (exif.DateTimeOriginal || exif.CreateDate)) {
+        result.timestamp = new Date(exif.DateTimeOriginal || exif.CreateDate);
+      }
+    } catch {}
+    if (!result.timestamp) {
+      result.timestamp = new Date(file.lastModified);
+    }
+
+    // 이미지 로드
+    const img = await loadImage(file);
+    result.thumbUrl = await createThumb(img);
+
+    // 얼굴 검출 + 나이/성별
+    const detection = await faceapi
+      .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.45 }))
+      .withFaceLandmarks()
+      .withAgeAndGender();
+
+    if (!detection) return result;
+
+    result.hasFace = true;
+    result.estimatedAge = detection.age;
+    result.gender = detection.gender;
+    result.genderProb = detection.genderProbability;
+    result.box = detection.detection.box;
+    result.landmarks = detection.landmarks;
+
+    // 품질 점수
+    const q = await assessQuality(img, detection);
+    result.qualityScore = q.total;
+    result.qualityBreakdown = q.breakdown;
+    result.passed = q.total >= 60;
+
+  } catch (e) {
+    console.error('analyzePhoto error:', e);
+  }
+
+  return result;
+}
+
+// ===== 이미지 로드 =====
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+// ===== 썸네일 생성 =====
+function createThumb(img, size = 200) {
+  const canvas = document.getElementById('hiddenCanvas');
+  const scale = Math.min(size / img.width, size / img.height);
+  canvas.width = img.width * scale;
+  canvas.height = img.height * scale;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL('image/jpeg', 0.7);
+}
+
+// ===== 품질 평가 =====
+async function assessQuality(img, detection) {
+  const breakdown = {};
+  const canvas = document.getElementById('hiddenCanvas');
+  canvas.width = img.width;
+  canvas.height = img.height;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+
+  // 1. 얼굴 크기 점수 (얼굴이 너무 작으면 감점)
+  const box = detection.detection.box;
+  const faceArea = box.width * box.height;
+  const imgArea = img.width * img.height;
+  const faceRatio = faceArea / imgArea;
+  // 셀피는 얼굴이 화면의 5~50% 정도
+  let sizeScore = 100;
+  if (faceRatio < 0.03) sizeScore = 30;
+  else if (faceRatio < 0.05) sizeScore = 60;
+  else if (faceRatio > 0.6) sizeScore = 70;
+  breakdown.size = Math.round(sizeScore);
+
+  // 2. 각도 점수 (랜드마크로 정면 여부 추정)
+  const landmarks = detection.landmarks;
+  const leftEye = landmarks.getLeftEye();
+  const rightEye = landmarks.getRightEye();
+  const nose = landmarks.getNose();
+  const leftEyeCenter = avgPoint(leftEye);
+  const rightEyeCenter = avgPoint(rightEye);
+  const eyeMid = { x: (leftEyeCenter.x + rightEyeCenter.x) / 2, y: (leftEyeCenter.y + rightEyeCenter.y) / 2 };
+  const noseTip = nose[nose.length - 1];
+  const eyeDist = Math.hypot(rightEyeCenter.x - leftEyeCenter.x, rightEyeCenter.y - leftEyeCenter.y);
+  const noseDeviation = Math.abs(noseTip.x - eyeMid.x) / eyeDist;
+  let angleScore = 100 - noseDeviation * 200;
+  angleScore = Math.max(0, Math.min(100, angleScore));
+  breakdown.angle = Math.round(angleScore);
+
+  // 3. 밝기/조명 점수
+  const facePixels = ctx.getImageData(
+    Math.max(0, box.x), Math.max(0, box.y),
+    Math.min(box.width, img.width - box.x),
+    Math.min(box.height, img.height - box.y)
+  );
+  let totalLum = 0, lumCount = 0, lumVarSum = 0;
+  const lumValues = [];
+  for (let i = 0; i < facePixels.data.length; i += 4 * 4) { // 샘플링
+    const lum = 0.299 * facePixels.data[i] + 0.587 * facePixels.data[i+1] + 0.114 * facePixels.data[i+2];
+    totalLum += lum;
+    lumValues.push(lum);
+    lumCount++;
+  }
+  const avgLum = totalLum / lumCount;
+  const meanLumDev = lumValues.reduce((a, v) => a + Math.abs(v - avgLum), 0) / lumCount;
+  let brightScore = 100;
+  if (avgLum < 60) brightScore = 40 + avgLum / 2; // 너무 어두움
+  else if (avgLum > 220) brightScore = 50; // 너무 밝음
+  else if (avgLum < 90 || avgLum > 200) brightScore = 70;
+  breakdown.brightness = Math.round(brightScore);
+
+  // 4. 블러 점수 (라플라시안 분산 근사)
+  const blurScore = estimateSharpness(facePixels);
+  breakdown.sharpness = Math.round(blurScore);
+
+  // 5. 검출 신뢰도
+  const confScore = Math.round(detection.detection.score * 100);
+  breakdown.confidence = confScore;
+
+  // 가중 평균
+  const total = Math.round(
+    sizeScore * 0.20 +
+    angleScore * 0.30 +
+    brightScore * 0.20 +
+    blurScore * 0.15 +
+    confScore * 0.15
+  );
+
+  return { total, breakdown };
+}
+
+function avgPoint(points) {
+  const x = points.reduce((a, p) => a + p.x, 0) / points.length;
+  const y = points.reduce((a, p) => a + p.y, 0) / points.length;
+  return { x, y };
+}
+
+function estimateSharpness(imgData) {
+  // 라플라시안 근사: 인접 픽셀 차이의 분산
+  const d = imgData.data, w = imgData.width;
+  let sum = 0, sqSum = 0, count = 0;
+  for (let y = 1; y < imgData.height - 1; y += 2) {
+    for (let x = 1; x < w - 1; x += 2) {
+      const idx = (y * w + x) * 4;
+      const center = 0.299 * d[idx] + 0.587 * d[idx+1] + 0.114 * d[idx+2];
+      const up = 0.299 * d[idx - w*4] + 0.587 * d[idx - w*4 + 1] + 0.114 * d[idx - w*4 + 2];
+      const down = 0.299 * d[idx + w*4] + 0.587 * d[idx + w*4 + 1] + 0.114 * d[idx + w*4 + 2];
+      const left = 0.299 * d[idx - 4] + 0.587 * d[idx - 3] + 0.114 * d[idx - 2];
+      const right = 0.299 * d[idx + 4] + 0.587 * d[idx + 5] + 0.114 * d[idx + 6];
+      const lap = Math.abs(4 * center - up - down - left - right);
+      sum += lap;
+      sqSum += lap * lap;
+      count++;
+    }
+  }
+  if (count === 0) return 50;
+  const mean = sum / count;
+  const variance = sqSum / count - mean * mean;
+  // 분산이 클수록 sharp. 경험치로 정규화
+  let score = Math.log(Math.max(1, variance)) * 12;
+  return Math.max(0, Math.min(100, score));
+}
+
+// ===== 데모 모드 =====
+async function runDemo() {
+  showScreen('screen-analyze');
+  document.getElementById('analyzeSub').textContent = '데모 데이터 20장으로 분석 플로우를 시연합니다.';
+
+  const birthDate = new Date(document.getElementById('birthDate').value);
+  const realAgeNow = (new Date() - birthDate) / (365.25 * 24 * 3600 * 1000);
+
+  // 가짜 데이터 생성: 36개월에 걸쳐 셀피
+  analysisResults = [];
+  const monthsBack = 36;
+  const totalSelfies = 20;
+
+  document.getElementById('aTotal').textContent = totalSelfies;
+  const thumbGrid = document.getElementById('thumbGrid');
+  thumbGrid.innerHTML = '';
+  let faceCount = 0, passCount = 0, failCount = 0;
+
+  // 색상 팔레트 (썸네일용 placeholder)
+  const palettes = [
+    ['#C7B2FF', '#7A6FE0'], ['#FFB2C7', '#E07A8E'], ['#B2FFD7', '#7AE0A0'],
+    ['#FFD7B2', '#E0A07A'], ['#B2D7FF', '#7AA0E0'],
+  ];
+
+  for (let i = 0; i < totalSelfies; i++) {
+    const monthsAgo = monthsBack - (i / (totalSelfies - 1)) * monthsBack;
+    const timestamp = new Date();
+    timestamp.setMonth(timestamp.getMonth() - Math.floor(monthsAgo));
+    timestamp.setDate(Math.floor(Math.random() * 28) + 1);
+    timestamp.setHours(Math.floor(Math.random() * 24));
+
+    const realAgeThen = realAgeNow - monthsAgo / 12;
+
+    // 시뮬레이션: 얼굴 나이는 실제 나이 ± 노이즈 + 계절·시간 효과
+    const month = timestamp.getMonth() + 1;
+    const isWinter = month <= 2 || month === 12;
+    const isLateNight = timestamp.getHours() >= 22 || timestamp.getHours() <= 4;
+    const winterEffect = isWinter ? 1.4 : 0;
+    const nightEffect = isLateNight ? 0.9 : 0;
+    const randomNoise = (Math.random() - 0.5) * 4;
+    const faceAge = realAgeThen + winterEffect + nightEffect + randomNoise;
+
+    // 품질 점수 (15% 정도가 미달이 되도록)
+    const qualityScore = Math.random() < 0.15 ? Math.floor(Math.random() * 40 + 20) : Math.floor(Math.random() * 30 + 65);
+    const passed = qualityScore >= 60;
+
+    // 가짜 썸네일 생성
+    const palette = palettes[i % palettes.length];
+    const thumbUrl = generateDemoThumb(palette[0], palette[1], i);
+
+    analysisResults.push({
+      fileName: `demo_${i}.jpg`,
+      timestamp,
+      hasFace: true,
+      passed,
+      estimatedAge: faceAge,
+      qualityScore,
+      qualityBreakdown: {
+        size: Math.floor(Math.random() * 30 + 60),
+        angle: passed ? Math.floor(Math.random() * 25 + 70) : Math.floor(Math.random() * 40 + 30),
+        brightness: passed ? Math.floor(Math.random() * 25 + 70) : Math.floor(Math.random() * 40 + 40),
+        sharpness: passed ? Math.floor(Math.random() * 25 + 70) : Math.floor(Math.random() * 40 + 30),
+        confidence: Math.floor(Math.random() * 15 + 80),
+      },
+      thumbUrl,
+    });
+
+    faceCount++;
+    if (passed) passCount++; else failCount++;
+    document.getElementById('aFace').textContent = faceCount;
+    document.getElementById('aPass').textContent = passCount;
+    document.getElementById('aFail').textContent = failCount;
+
+    const pct = Math.round(((i + 1) / totalSelfies) * 100);
+    document.getElementById('ringFg').setAttribute('stroke-dashoffset', 326.7 - (326.7 * pct / 100));
+    document.getElementById('ringPct').textContent = pct + '%';
+
+    const div = document.createElement('div');
+    div.className = 'thumb' + (passed ? '' : ' excluded');
+    div.innerHTML = `<img src="${thumbUrl}" alt=""><span class="quality-tag">${qualityScore}</span>`;
+    thumbGrid.insertBefore(div, thumbGrid.firstChild);
+    while (thumbGrid.children.length > 12) thumbGrid.removeChild(thumbGrid.lastChild);
+
+    await new Promise(r => setTimeout(r, 150));
+  }
+
+  setTimeout(() => showResults(), 600);
+}
+
+function generateDemoThumb(c1, c2, idx) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 100; canvas.height = 100;
+  const ctx = canvas.getContext('2d');
+  const grad = ctx.createLinearGradient(0, 0, 100, 100);
+  grad.addColorStop(0, c1); grad.addColorStop(1, c2);
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, 100, 100);
+  // 단순 얼굴 형상
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.beginPath(); ctx.arc(50, 45, 20, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(50, 78, 25, 20, 0, 0, Math.PI * 2); ctx.fill();
+  return canvas.toDataURL('image/jpeg', 0.7);
+}
+
+// ===== 결과 화면 =====
+function showResults() {
+  const passed = analysisResults.filter(r => r.passed);
+  if (passed.length === 0) {
+    showToast('품질 합격 사진이 없습니다. 다시 시도해주세요.');
+    setTimeout(() => showScreen('screen-pick'), 1500);
+    return;
+  }
+
+  // 정렬: 시간순
+  passed.sort((a, b) => a.timestamp - b.timestamp);
+
+  // 통계
+  const birthDate = new Date(document.getElementById('birthDate').value);
+  const ages = passed.map(r => r.estimatedAge);
+  const avgAge = ages.reduce((a, v) => a + v, 0) / ages.length;
+  const minAge = Math.min(...ages);
+  const maxAge = Math.max(...ages);
+  const realAge = (new Date() - birthDate) / (365.25 * 24 * 3600 * 1000);
+
+  // 최근 5장 평균을 "현재 추정"으로
+  const recent = passed.slice(-5);
+  const recentAvg = recent.reduce((a, r) => a + r.estimatedAge, 0) / recent.length;
+
+  document.getElementById('avgFaceAge').textContent = recentAvg.toFixed(1);
+  document.getElementById('realAgeText').textContent = realAge.toFixed(0);
+
+  const delta = recentAvg - realAge;
+  const deltaEl = document.getElementById('ageDelta');
+  if (delta < -0.5) {
+    deltaEl.textContent = `↓ ${Math.abs(delta).toFixed(1)}세 어려보임`;
+    deltaEl.className = 'age-delta delta-younger';
+  } else if (delta > 0.5) {
+    deltaEl.textContent = `↑ ${delta.toFixed(1)}세 들어보임`;
+    deltaEl.className = 'age-delta delta-older';
+  } else {
+    deltaEl.textContent = '실제 나이와 비슷';
+    deltaEl.className = 'age-delta delta-neutral';
+  }
+
+  document.getElementById('rPass').textContent = passed.length;
+  const firstDate = passed[0].timestamp;
+  const lastDate = passed[passed.length - 1].timestamp;
+  const months = ((lastDate - firstDate) / (30 * 24 * 3600 * 1000)).toFixed(0);
+  document.getElementById('rPeriod').textContent = months + '개월';
+  document.getElementById('rMin').textContent = minAge.toFixed(1);
+  document.getElementById('rMax').textContent = maxAge.toFixed(1);
+
+  // 차트
+  drawChart(passed, birthDate);
+
+  // 품질 분포
+  renderQualityBreakdown();
+
+  // 인사이트
+  renderInsights(passed, birthDate);
+
+  // 부위별 (시뮬레이션)
+  renderBodyParts(passed);
+
+  // 월간 리포트
+  renderMonthlyReport(passed, realAge);
+
+  showScreen('screen-result');
+}
+
+function drawChart(passed, birthDate) {
+  const ctx = document.getElementById('ageChart');
+  if (chartInstance) chartInstance.destroy();
+
+  const faceData = passed.map(r => ({
+    x: r.timestamp.getTime(),
+    y: parseFloat(r.estimatedAge.toFixed(1)),
+  }));
+  const realData = passed.map(r => ({
+    x: r.timestamp.getTime(),
+    y: parseFloat(((r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000)).toFixed(1)),
+  }));
+
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      datasets: [
+        {
+          label: '얼굴 나이',
+          data: faceData,
+          borderColor: '#C7B2FF',
+          backgroundColor: 'rgba(199,178,255,0.12)',
+          borderWidth: 2,
+          tension: 0.35,
+          pointRadius: 3,
+          pointBackgroundColor: '#C7B2FF',
+          fill: true,
+        },
+        {
+          label: '실제 나이',
+          data: realData,
+          borderColor: 'rgba(255,255,255,0.4)',
+          borderWidth: 1.5,
+          borderDash: [4, 4],
+          tension: 0.1,
+          pointRadius: 0,
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: {
+          type: 'time',
+          time: { unit: 'month', tooltipFormat: 'yyyy.MM', displayFormats: { month: 'yy.MM' } },
+          ticks: { color: 'rgba(255,255,255,0.5)', font: { size: 10 }, maxTicksLimit: 5 },
+          grid: { display: false },
+        },
+        y: {
+          ticks: { color: 'rgba(255,255,255,0.5)', font: { size: 10 }, callback: v => v + '세' },
+          grid: { color: 'rgba(255,255,255,0.05)' },
+        }
+      }
+    }
+  });
+}
+
+function renderQualityBreakdown() {
+  const all = analysisResults.filter(r => r.hasFace);
+  if (all.length === 0) return;
+  const dims = ['size', 'angle', 'brightness', 'sharpness', 'confidence'];
+  const labelMap = { size: '얼굴 크기', angle: '정면 각도', brightness: '조명', sharpness: '선명도', confidence: '검출 신뢰' };
+  const html = dims.map(dim => {
+    const avg = all.reduce((a, r) => a + (r.qualityBreakdown[dim] || 0), 0) / all.length;
+    return `
+      <div class="qbar-row">
+        <span class="qbar-label">${labelMap[dim]}</span>
+        <div class="qbar-track"><div class="qbar-fill" style="width: ${avg}%"></div></div>
+        <span class="qbar-val">${avg.toFixed(0)}</span>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('qualityBreakdown').innerHTML = html;
+}
+
+function renderInsights(passed, birthDate) {
+  const container = document.getElementById('patternInsights');
+  if (passed.length < 6) {
+    container.innerHTML = `<div class="insight"><p class="insight-body">사진이 너무 적어 패턴 분석이 어렵습니다. 10장 이상 권장합니다.</p></div>`;
+    return;
+  }
+
+  const insights = [];
+
+  // 1. 계절 효과
+  const seasonGroups = { winter: [], summer: [], other: [] };
+  passed.forEach(r => {
+    const m = r.timestamp.getMonth() + 1;
+    const ageGap = r.estimatedAge - ((r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000));
+    if (m <= 2 || m === 12) seasonGroups.winter.push(ageGap);
+    else if (m >= 6 && m <= 8) seasonGroups.summer.push(ageGap);
+    else seasonGroups.other.push(ageGap);
+  });
+  if (seasonGroups.winter.length >= 2 && seasonGroups.other.length >= 2) {
+    const winterAvg = avg(seasonGroups.winter);
+    const otherAvg = avg(seasonGroups.other);
+    const diff = winterAvg - otherAvg;
+    if (Math.abs(diff) >= 0.4) {
+      insights.push({
+        icon: '❄️', title: '겨울 효과',
+        delta: (diff > 0 ? '+' : '') + diff.toFixed(1) + '세',
+        deltaClass: diff > 0 ? 'delta-older' : 'delta-younger',
+        body: `겨울철 사진이 다른 계절 대비 ${Math.abs(diff).toFixed(1)}세 ${diff > 0 ? '더 들어' : '더 어려'} 보였어요.`,
+        meta: `n=${seasonGroups.winter.length}장 · ${diff > 0 ? '건조함·조명' : '의외 효과'} 가능성`,
+      });
+    }
+  }
+
+  // 2. 시간대 효과 (밤 vs 낮)
+  const nightShots = [], dayShots = [];
+  passed.forEach(r => {
+    const h = r.timestamp.getHours();
+    const ageGap = r.estimatedAge - ((r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000));
+    if (h >= 22 || h <= 4) nightShots.push(ageGap);
+    else if (h >= 10 && h <= 16) dayShots.push(ageGap);
+  });
+  if (nightShots.length >= 2 && dayShots.length >= 2) {
+    const diff = avg(nightShots) - avg(dayShots);
+    if (Math.abs(diff) >= 0.4) {
+      insights.push({
+        icon: '🌙', title: '늦은 밤 (22시 이후)',
+        delta: (diff > 0 ? '+' : '') + diff.toFixed(1) + '세',
+        deltaClass: diff > 0 ? 'delta-older' : 'delta-younger',
+        body: `밤 시간대 셀피가 낮 사진 대비 ${Math.abs(diff).toFixed(1)}세 ${diff > 0 ? '들어' : '어려'} 보였어요.`,
+        meta: `n=${nightShots.length}장 · 피로·조명 영향 가능성`,
+      });
+    }
+  }
+
+  // 3. 주말 vs 평일
+  const weekend = [], weekday = [];
+  passed.forEach(r => {
+    const d = r.timestamp.getDay();
+    const ageGap = r.estimatedAge - ((r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000));
+    if (d === 0 || d === 6) weekend.push(ageGap);
+    else weekday.push(ageGap);
+  });
+  if (weekend.length >= 2 && weekday.length >= 3) {
+    const diff = avg(weekend) - avg(weekday);
+    if (Math.abs(diff) >= 0.3) {
+      insights.push({
+        icon: '🌞', title: '주말 vs 평일',
+        delta: (diff > 0 ? '+' : '') + diff.toFixed(1) + '세',
+        deltaClass: diff > 0 ? 'delta-older' : 'delta-younger',
+        body: `주말 셀피가 평일 대비 ${Math.abs(diff).toFixed(1)}세 ${diff > 0 ? '들어' : '어려'} 보였어요.`,
+        meta: `n=${weekend.length}장 vs ${weekday.length}장`,
+      });
+    }
+  }
+
+  // 4. 촬영 공백기
+  let maxGap = 0, gapStartIdx = -1;
+  for (let i = 1; i < passed.length; i++) {
+    const gap = (passed[i].timestamp - passed[i-1].timestamp) / (24 * 3600 * 1000);
+    if (gap > maxGap) { maxGap = gap; gapStartIdx = i; }
+  }
+  if (maxGap >= 30 && gapStartIdx > 0) {
+    const beforeGap = passed[gapStartIdx - 1];
+    const afterGap = passed[gapStartIdx];
+    const before = beforeGap.estimatedAge - ((beforeGap.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000));
+    const after = afterGap.estimatedAge - ((afterGap.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000));
+    const diff = after - before;
+    if (Math.abs(diff) >= 0.5) {
+      insights.push({
+        icon: '📆', title: `${maxGap.toFixed(0)}일 공백 이후`,
+        delta: (diff > 0 ? '+' : '') + diff.toFixed(1) + '세',
+        deltaClass: diff > 0 ? 'delta-older' : 'delta-younger',
+        body: `공백 후 첫 사진이 직전 대비 ${Math.abs(diff).toFixed(1)}세 ${diff > 0 ? '들어' : '어려'} 보였어요.`,
+        meta: '단발성 변화 · 신뢰도 낮음',
+      });
+    }
+  }
+
+  if (insights.length === 0) {
+    container.innerHTML = `<div class="insight"><p class="insight-body">아직 뚜렷한 패턴을 찾지 못했어요. 사진을 더 추가하거나 다양한 시기 사진을 넣어주세요.</p></div>`;
+    return;
+  }
+
+  container.innerHTML = insights.map(ins => `
+    <div class="insight">
+      <div class="insight-head">
+        <div class="insight-head-left">
+          <span class="insight-icon">${ins.icon}</span>
+          <span class="insight-title">${ins.title}</span>
+        </div>
+        <span class="insight-delta ${ins.deltaClass}">${ins.delta}</span>
+      </div>
+      <p class="insight-body">${ins.body}</p>
+      <p class="insight-meta">${ins.meta}</p>
+    </div>
+  `).join('');
+}
+
+function avg(arr) { return arr.reduce((a, v) => a + v, 0) / arr.length; }
+
+function renderBodyParts(passed) {
+  // POC: 랜드마크 기반 시뮬레이션
+  const recent = passed.slice(-Math.min(5, passed.length));
+  const baseAge = avg(recent.map(r => r.estimatedAge));
+
+  const parts = [
+    { key: 'Eyes', age: baseAge + (Math.random() - 0.5) * 2, delta: (Math.random() - 0.5) * 1.5 },
+    { key: 'Forehead', age: baseAge + (Math.random() - 0.5) * 2, delta: (Math.random() - 0.5) * 1.5 },
+    { key: 'Smile', age: baseAge + (Math.random() - 0.5) * 2, delta: (Math.random() - 0.5) * 1.5 },
+    { key: 'Jaw', age: baseAge + (Math.random() - 0.5) * 2, delta: (Math.random() - 0.5) * 1.5 },
+  ];
+
+  const setPart = (id, didKey, p) => {
+    document.getElementById(id).textContent = p.age.toFixed(1);
+    const dEl = document.getElementById(didKey);
+    if (p.delta > 0.3) {
+      dEl.textContent = `↑ ${p.delta.toFixed(1)}세`;
+      dEl.className = 'd delta-older';
+    } else if (p.delta < -0.3) {
+      dEl.textContent = `↓ ${Math.abs(p.delta).toFixed(1)}세`;
+      dEl.className = 'd delta-younger';
+    } else {
+      dEl.textContent = '변화 없음';
+      dEl.className = 'd delta-neutral';
+    }
+  };
+
+  setPart('partEyes', 'partEyesD', parts[0]);
+  setPart('partForehead', 'partForeheadD', parts[1]);
+  setPart('partSmile', 'partSmileD', parts[2]);
+  setPart('partJaw', 'partJawD', parts[3]);
+}
+
+function renderMonthlyReport(passed, realAge) {
+  const recent = passed.slice(-5);
+  const avgAge = avg(recent.map(r => r.estimatedAge));
+  const now = new Date();
+  document.getElementById('reportMonth').textContent =
+    `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}`;
+  document.getElementById('reportAge').textContent = avgAge.toFixed(1) + '세';
+
+  const delta = avgAge - realAge;
+  document.getElementById('reportSub').textContent =
+    `실제 나이 ${realAge.toFixed(0)}세 대비`;
+  if (delta < -0.5) {
+    document.getElementById('reportDelta').textContent = `🌱 ${Math.abs(delta).toFixed(1)}세 어려 보여요`;
+  } else if (delta > 0.5) {
+    document.getElementById('reportDelta').textContent = `📊 ${delta.toFixed(1)}세 더 들어 보여요`;
+  } else {
+    document.getElementById('reportDelta').textContent = `⚖️ 실제 나이와 거의 일치`;
+  }
+}
+
+function switchInsightTab(el, key) {
+  el.parentElement.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-pattern').style.display = key === 'pattern' ? 'block' : 'none';
+  document.getElementById('tab-parts').style.display = key === 'parts' ? 'block' : 'none';
+  document.getElementById('tab-report').style.display = key === 'report' ? 'block' : 'none';
+}
+
+function resetApp() {
+  analysisResults = [];
+  document.getElementById('filePicker').value = '';
+  showScreen('screen-onboard');
+}
+</script>
+</body>
+</html>
