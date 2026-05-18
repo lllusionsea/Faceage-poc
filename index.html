@@ -99,11 +99,14 @@
     .delta-neutral { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); }
 
     .thumb-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 8px; }
-    .thumb { aspect-ratio: 1; border-radius: 8px; overflow: hidden; background: rgba(255,255,255,0.05); position: relative; }
+    .thumb { aspect-ratio: 1; border-radius: 8px; overflow: hidden; background: rgba(255,255,255,0.05); position: relative; cursor: pointer; }
     .thumb img { width: 100%; height: 100%; object-fit: cover; }
     .thumb .quality-tag { position: absolute; bottom: 3px; right: 3px; font-size: 9px; padding: 2px 5px; border-radius: 4px; background: rgba(0,0,0,0.7); color: #fff; font-weight: 500; }
-    .thumb.excluded { opacity: 0.3; }
+    .thumb .age-tag { position: absolute; top: 3px; left: 3px; font-size: 9px; padding: 2px 5px; border-radius: 4px; background: rgba(199,178,255,0.85); color: #0F0F12; font-weight: 600; }
+    .thumb.excluded { opacity: 0.4; }
     .thumb.excluded::after { content: '✕'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #F87171; font-size: 20px; font-weight: 700; }
+    .thumb.no-face { opacity: 0.3; }
+    .thumb.no-face::after { content: '얼굴 없음'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 500; }
     .thumb.selected::before { content: ''; position: absolute; inset: 0; border: 2px solid #C7B2FF; border-radius: 8px; pointer-events: none; }
 
     .insight {
@@ -150,6 +153,45 @@
     .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(40,40,46,0.95); padding: 10px 18px; border-radius: 22px; font-size: 13px; z-index: 1000; opacity: 0; transition: opacity 0.3s; pointer-events: none; max-width: 90%; text-align: center; }
     .toast.show { opacity: 1; }
 
+    /* Modal */
+    .modal {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      z-index: 2000; padding: 20px; align-items: flex-start; justify-content: center;
+      overflow-y: auto;
+    }
+    .modal.show { display: flex; }
+    .modal-content {
+      background: #1A1A20; border-radius: 16px; padding: 20px;
+      max-width: 440px; width: 100%; margin: auto;
+      border: 0.5px solid rgba(255,255,255,0.1); position: relative;
+    }
+    .modal-close {
+      position: absolute; top: 12px; right: 12px;
+      background: rgba(255,255,255,0.06); border: none; color: #fff;
+      width: 28px; height: 28px; border-radius: 8px; font-size: 14px;
+      cursor: pointer; padding: 0;
+    }
+    .modal-close:active { background: rgba(255,255,255,0.15); }
+
+    .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .compare-side {
+      background: rgba(255,255,255,0.04); border-radius: 12px;
+      padding: 10px; border: 0.5px solid rgba(255,255,255,0.08);
+    }
+    .compare-side img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; margin-bottom: 8px; }
+    .compare-side .side-label { font-size: 10px; color: rgba(255,255,255,0.5); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .compare-side .side-age { font-size: 24px; font-weight: 700; }
+    .compare-side .side-date { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 2px; }
+
+    .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 0.5px solid rgba(255,255,255,0.06); font-size: 13px; }
+    .info-row:last-child { border-bottom: none; }
+    .info-row .k { color: rgba(255,255,255,0.5); }
+    .info-row .v { font-weight: 500; }
+
+    .insight.clickable { cursor: pointer; transition: background 0.15s; }
+    .insight.clickable:active { background: rgba(255,255,255,0.06); }
+    .insight-hint { font-size: 10px; color: #C7B2FF; margin-top: 4px; opacity: 0.8; }
+
     .pill-row { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
     .pill-mini { font-size: 11px; padding: 3px 9px; border-radius: 999px; background: rgba(199,178,255,0.12); color: #C7B2FF; }
 
@@ -169,7 +211,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo">Face<span class="accent">Age</span></div>
-    <div class="badge" id="topBadge">POC v0.2</div>
+    <div class="badge" id="topBadge">POC v0.3</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -319,10 +361,11 @@
     </div>
 
     <h3 style="margin-top: 16px; margin-bottom: 4px;">처리된 사진</h3>
-    <p class="small" style="margin-bottom: 8px;">✕ 표시는 품질 점수가 낮아 분석에서 제외된 사진</p>
+    <p class="small" style="margin-bottom: 8px;">우측 하단 숫자는 <b>품질 점수(0-100)</b>. 50점 이상이 분석 대상. ✕는 품질 미달.</p>
     <div class="thumb-grid" id="thumbGrid"></div>
 
     <p class="status-text" id="analyzeStatus"></p>
+    <button class="btn btn-primary" id="goResultsBtn" style="display: none;" onclick="showResults()">결과 다시 보기</button>
     <button class="btn btn-ghost" id="forceResultsBtn" style="display: none;" onclick="showResults()">결과 강제 표시</button>
   </div>
 
@@ -338,6 +381,10 @@
       </div>
       <p class="small">최근 추정 평균 · 실제 나이 <span id="realAgeText">--</span>세 기준</p>
     </div>
+
+    <p class="small" style="margin: 4px 0 12px; padding: 8px 12px; background: rgba(255,255,255,0.04); border-radius: 8px; line-height: 1.5;">
+      ℹ️ face-api.js는 서양인 데이터로 학습되어 동양인을 5-7세 더 들어 보이게 추정하는 편향이 있어요. 본 결과는 한국인 평균치로 보정한 값입니다 (POC 추정 보정).
+    </p>
 
     <div class="stat-grid">
       <div class="stat-mini"><div class="label">분석된 사진</div><div class="value" id="rPass">0</div></div>
@@ -420,6 +467,30 @@
 <canvas id="hiddenCanvas"></canvas>
 <div class="toast" id="toast"></div>
 
+<!-- 썸네일 상세 모달 -->
+<div class="modal" id="thumbModal" onclick="if(event.target===this)closeModal('thumbModal')">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal('thumbModal')">✕</button>
+    <h3 id="thumbModalTitle" style="margin-bottom: 12px;">사진 상세</h3>
+    <img id="thumbModalImg" style="width: 100%; border-radius: 12px; margin-bottom: 12px;">
+    <div id="thumbModalInfo"></div>
+  </div>
+</div>
+
+<!-- 비교 모달 (패턴 근거) -->
+<div class="modal" id="compareModal" onclick="if(event.target===this)closeModal('compareModal')">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal('compareModal')">✕</button>
+    <h3 id="compareTitle" style="margin-bottom: 6px;">패턴 근거 비교</h3>
+    <p id="compareDesc" class="muted" style="margin-bottom: 12px;"></p>
+    <div class="compare-grid">
+      <div class="compare-side" id="compareLeft"></div>
+      <div class="compare-side" id="compareRight"></div>
+    </div>
+    <p id="compareConclusion" class="small" style="margin-top: 12px; line-height: 1.5;"></p>
+  </div>
+</div>
+
 <!-- face-api.js + Chart.js + date-fns adapter (시간축에 필수!) -->
 <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -428,14 +499,27 @@
 
 <script>
 // =============================================
-// FaceAge POC v0.2
+// FaceAge POC v0.3
 // =============================================
 
 const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model/';
+
+// face-api.js는 서양인 데이터로 학습되어 한국인/동양인을 평균 4-7세 더 들어보이게 추정.
+// 다수 사용자 데이터로 사후 보정 가능하나, POC에서는 경험적 상수로 보정.
+const AGE_CALIBRATION_OFFSET = -5.5;     // 평균 -5.5세 이동
+const AGE_CALIBRATION_SCALE = 0.92;       // 분산 살짝 축소 (극단값 완화)
+const AGE_CALIBRATION_ANCHOR = 30;        // 기준점
+
+function calibrateAge(rawAge) {
+  // (raw - anchor) * scale + anchor + offset
+  return (rawAge - AGE_CALIBRATION_ANCHOR) * AGE_CALIBRATION_SCALE + AGE_CALIBRATION_ANCHOR + AGE_CALIBRATION_OFFSET;
+}
+
 let modelsLoaded = false;
 let chartInstance = null;
 let analysisResults = [];
-let sampledFiles = []; // 샘플링 후 분석할 파일
+let sampledFiles = [];
+let lastInsights = []; // 인사이트 결과 + 근거 사진 저장
 
 // ===== 화면 전환 (History API 통합) =====
 const SCREEN_FLOW = ['screen-onboard', 'screen-loading', 'screen-pick', 'screen-sampling', 'screen-analyze', 'screen-result', 'screen-insights'];
@@ -465,12 +549,20 @@ function showScreen(id, options = {}) {
 // 뒤로가기 (백키 / 브라우저 뒤로가기) 처리
 window.addEventListener('popstate', (e) => {
   isPoppingState = true;
+
+  // 모달이 열려 있으면 모달 닫기 우선
+  const openModalEl = document.querySelector('.modal.show');
+  if (openModalEl) {
+    openModalEl.classList.remove('show');
+    isPoppingState = false;
+    return;
+  }
+
   const targetScreen = (e.state && e.state.screen) || 'screen-onboard';
 
   // 분석 중에 뒤로가면 분석 중단 의사 확인
   const currentActive = document.querySelector('.screen.active');
   if (currentActive && currentActive.id === 'screen-analyze') {
-    // 진행 중이면 중단 플래그 설정 (다음 루프에서 빠져나감)
     analysisCancelled = true;
   }
 
@@ -738,13 +830,19 @@ async function startAnalysis() {
 
     if (result.thumbUrl) {
       const div = document.createElement('div');
-      div.className = 'thumb' + (result.passed ? '' : (result.hasFace ? ' excluded' : ' excluded'));
+      div.className = 'thumb' + (result.passed ? '' : (result.hasFace ? ' excluded' : ' no-face'));
+      const ageText = result.hasFace && result.estimatedAge !== null
+        ? `<span class="age-tag">${result.estimatedAge.toFixed(0)}세</span>` : '';
+      const qualityText = result.hasFace
+        ? `<span class="quality-tag">Q${result.qualityScore}</span>` : '';
       div.innerHTML = `
         <img src="${result.thumbUrl}" alt="">
-        ${result.hasFace ? `<span class="quality-tag">${result.qualityScore}</span>` : ''}
+        ${ageText}
+        ${qualityText}
       `;
-      thumbGrid.insertBefore(div, thumbGrid.firstChild);
-      while (thumbGrid.children.length > 12) thumbGrid.removeChild(thumbGrid.lastChild);
+      const dataIdx = analysisResults.length - 1;
+      div.onclick = () => showThumbDetail(dataIdx);
+      thumbGrid.appendChild(div); // 12개 제한 제거, 모두 표시
     }
 
     await new Promise(r => setTimeout(r, 30));
@@ -752,6 +850,7 @@ async function startAnalysis() {
 
   // 분석 완료 — 결과 화면으로
   document.getElementById('analyzeStatus').textContent = '분석 완료! 결과를 정리하는 중...';
+  document.getElementById('goResultsBtn').style.display = 'block';
   setTimeout(() => {
     try {
       showResults();
@@ -779,21 +878,22 @@ async function analyzePhoto(file, timestamp) {
     result.thumbUrl = await createThumb(img);
 
     const detection = await faceapi
-      .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.45 }))
+      .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.3 }))
       .withFaceLandmarks()
       .withAgeAndGender();
 
     if (!detection) return result;
 
     result.hasFace = true;
-    result.estimatedAge = detection.age;
+    result.rawAge = detection.age; // 원본
+    result.estimatedAge = calibrateAge(detection.age); // 보정
     result.box = detection.detection.box;
     result.landmarks = detection.landmarks;
 
     const q = await assessQuality(img, detection);
     result.qualityScore = q.total;
     result.qualityBreakdown = q.breakdown;
-    result.passed = q.total >= 60;
+    result.passed = q.total >= 50;
   } catch (e) {
     console.error('analyzePhoto error:', e);
   }
@@ -982,13 +1082,19 @@ async function runDemo() {
 
     const div = document.createElement('div');
     div.className = 'thumb' + (passed ? '' : ' excluded');
-    div.innerHTML = `<img src="${thumbUrl}" alt=""><span class="quality-tag">${qualityScore}</span>`;
-    thumbGrid.insertBefore(div, thumbGrid.firstChild);
-    while (thumbGrid.children.length > 12) thumbGrid.removeChild(thumbGrid.lastChild);
+    div.innerHTML = `
+      <img src="${thumbUrl}" alt="">
+      <span class="age-tag">${faceAge.toFixed(0)}세</span>
+      <span class="quality-tag">Q${qualityScore}</span>
+    `;
+    const dataIdx = analysisResults.length - 1;
+    div.onclick = () => showThumbDetail(dataIdx);
+    thumbGrid.appendChild(div);
 
     await new Promise(r => setTimeout(r, 150));
   }
 
+  document.getElementById('goResultsBtn').style.display = 'block';
   setTimeout(() => showResults(), 600);
 }
 
@@ -1073,16 +1179,23 @@ function drawChart(passed, birthDate) {
     try { chartInstance.destroy(); } catch {}
   }
 
-  const faceData = passed.map(r => ({
+  // 데이터 정렬 (안전장치)
+  const sorted = [...passed].sort((a, b) => a.timestamp - b.timestamp);
+
+  const faceData = sorted.map(r => ({
     x: r.timestamp.getTime(),
     y: parseFloat(r.estimatedAge.toFixed(1)),
   }));
-  const realData = passed.map(r => ({
+  const realData = sorted.map(r => ({
     x: r.timestamp.getTime(),
     y: parseFloat(((r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000)).toFixed(1)),
   }));
 
-  // time scale 어댑터가 로드되었는지 확인
+  // Y축 범위: 데이터에 맞춰 동적으로
+  const allYs = [...faceData.map(d => d.y), ...realData.map(d => d.y)];
+  const minY = Math.floor(Math.min(...allYs) - 2);
+  const maxY = Math.ceil(Math.max(...allYs) + 2);
+
   const useTimeAxis = typeof Chart !== 'undefined' && Chart._adapters && Chart._adapters._date;
 
   const xAxisConfig = useTimeAxis ? {
@@ -1108,23 +1221,36 @@ function drawChart(passed, birthDate) {
       datasets: [
         {
           label: '얼굴 나이', data: faceData,
-          borderColor: '#C7B2FF', backgroundColor: 'rgba(199,178,255,0.12)',
-          borderWidth: 2, tension: 0.35, pointRadius: 3,
-          pointBackgroundColor: '#C7B2FF', fill: true,
+          borderColor: '#C7B2FF', backgroundColor: 'rgba(199,178,255,0.15)',
+          borderWidth: 2.5, tension: 0.4, pointRadius: 4, pointHoverRadius: 6,
+          pointBackgroundColor: '#C7B2FF', pointBorderColor: '#0F0F12', pointBorderWidth: 1.5,
+          fill: true, spanGaps: true,
         },
         {
           label: '실제 나이', data: realData,
-          borderColor: 'rgba(255,255,255,0.4)', borderWidth: 1.5,
-          borderDash: [4, 4], tension: 0.1, pointRadius: 0,
+          borderColor: 'rgba(255,255,255,0.5)', borderWidth: 1.5,
+          borderDash: [5, 5], tension: 0.1, pointRadius: 0, fill: false,
         }
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      interaction: { mode: 'nearest', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(30,30,36,0.95)',
+          titleColor: '#fff', bodyColor: '#fff',
+          padding: 10, borderColor: 'rgba(199,178,255,0.3)', borderWidth: 1,
+          callbacks: {
+            label: (c) => `${c.dataset.label}: ${c.parsed.y.toFixed(1)}세`,
+          }
+        }
+      },
       scales: {
         x: xAxisConfig,
         y: {
+          min: minY, max: maxY,
           ticks: { color: 'rgba(255,255,255,0.5)', font: { size: 10 }, callback: v => v + '세' },
           grid: { color: 'rgba(255,255,255,0.05)' },
         }
@@ -1159,22 +1285,36 @@ function renderInsights(passed, birthDate) {
   const container = document.getElementById('patternInsights');
   if (passed.length < 6) {
     container.innerHTML = `<div class="insight"><p class="insight-body">사진이 너무 적어 패턴 분석이 어렵습니다. 10장 이상 권장합니다.</p></div>`;
+    lastInsights = [];
     return;
   }
 
   const insights = [];
+  const realAgeOf = (r) => (r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000);
+  const gapOf = (r) => r.estimatedAge - realAgeOf(r);
+
+  // 헬퍼: 그룹의 대표 사진 (gap이 평균에 가장 가까운 사진)
+  const pickRep = (group) => {
+    if (group.length === 0) return null;
+    const avgGap = avg(group.map(r => gapOf(r)));
+    let best = group[0], bestDist = Math.abs(gapOf(group[0]) - avgGap);
+    for (let i = 1; i < group.length; i++) {
+      const d = Math.abs(gapOf(group[i]) - avgGap);
+      if (d < bestDist) { bestDist = d; best = group[i]; }
+    }
+    return best;
+  };
 
   // 1. 계절 효과
   const seasonGroups = { winter: [], other: [] };
   passed.forEach(r => {
     const m = r.timestamp.getMonth() + 1;
-    const ageGap = r.estimatedAge - ((r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000));
-    if (m <= 2 || m === 12) seasonGroups.winter.push(ageGap);
-    else seasonGroups.other.push(ageGap);
+    if (m <= 2 || m === 12) seasonGroups.winter.push(r);
+    else seasonGroups.other.push(r);
   });
   if (seasonGroups.winter.length >= 2 && seasonGroups.other.length >= 2) {
-    const winterAvg = avg(seasonGroups.winter);
-    const otherAvg = avg(seasonGroups.other);
+    const winterAvg = avg(seasonGroups.winter.map(gapOf));
+    const otherAvg = avg(seasonGroups.other.map(gapOf));
     const diff = winterAvg - otherAvg;
     if (Math.abs(diff) >= 0.4) {
       insights.push({
@@ -1183,6 +1323,11 @@ function renderInsights(passed, birthDate) {
         deltaClass: diff > 0 ? 'delta-older' : 'delta-younger',
         body: `겨울철 사진이 다른 계절 대비 ${Math.abs(diff).toFixed(1)}세 ${diff > 0 ? '더 들어' : '더 어려'} 보였어요.`,
         meta: `n=${seasonGroups.winter.length}장 · ${diff > 0 ? '건조함·조명' : '의외 효과'} 가능성`,
+        comparison: {
+          left: { label: '겨울', rep: pickRep(seasonGroups.winter), groupAvg: winterAvg },
+          right: { label: '다른 계절', rep: pickRep(seasonGroups.other), groupAvg: otherAvg },
+          diff,
+        },
       });
     }
   }
@@ -1191,12 +1336,13 @@ function renderInsights(passed, birthDate) {
   const nightShots = [], dayShots = [];
   passed.forEach(r => {
     const h = r.timestamp.getHours();
-    const ageGap = r.estimatedAge - ((r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000));
-    if (h >= 22 || h <= 4) nightShots.push(ageGap);
-    else if (h >= 10 && h <= 16) dayShots.push(ageGap);
+    if (h >= 22 || h <= 4) nightShots.push(r);
+    else if (h >= 10 && h <= 16) dayShots.push(r);
   });
   if (nightShots.length >= 2 && dayShots.length >= 2) {
-    const diff = avg(nightShots) - avg(dayShots);
+    const nAvg = avg(nightShots.map(gapOf));
+    const dAvg = avg(dayShots.map(gapOf));
+    const diff = nAvg - dAvg;
     if (Math.abs(diff) >= 0.4) {
       insights.push({
         icon: '🌙', title: '늦은 밤 (22시 이후)',
@@ -1204,6 +1350,11 @@ function renderInsights(passed, birthDate) {
         deltaClass: diff > 0 ? 'delta-older' : 'delta-younger',
         body: `밤 시간대 셀피가 낮 사진 대비 ${Math.abs(diff).toFixed(1)}세 ${diff > 0 ? '들어' : '어려'} 보였어요.`,
         meta: `n=${nightShots.length}장 · 피로·조명 영향 가능성`,
+        comparison: {
+          left: { label: '밤 (22시+)', rep: pickRep(nightShots), groupAvg: nAvg },
+          right: { label: '낮 (10-16시)', rep: pickRep(dayShots), groupAvg: dAvg },
+          diff,
+        },
       });
     }
   }
@@ -1212,12 +1363,13 @@ function renderInsights(passed, birthDate) {
   const weekend = [], weekday = [];
   passed.forEach(r => {
     const d = r.timestamp.getDay();
-    const ageGap = r.estimatedAge - ((r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000));
-    if (d === 0 || d === 6) weekend.push(ageGap);
-    else weekday.push(ageGap);
+    if (d === 0 || d === 6) weekend.push(r);
+    else weekday.push(r);
   });
   if (weekend.length >= 2 && weekday.length >= 3) {
-    const diff = avg(weekend) - avg(weekday);
+    const wAvg = avg(weekend.map(gapOf));
+    const dAvg = avg(weekday.map(gapOf));
+    const diff = wAvg - dAvg;
     if (Math.abs(diff) >= 0.3) {
       insights.push({
         icon: '🌞', title: '주말 vs 평일',
@@ -1225,35 +1377,69 @@ function renderInsights(passed, birthDate) {
         deltaClass: diff > 0 ? 'delta-older' : 'delta-younger',
         body: `주말 셀피가 평일 대비 ${Math.abs(diff).toFixed(1)}세 ${diff > 0 ? '들어' : '어려'} 보였어요.`,
         meta: `n=${weekend.length}장 vs ${weekday.length}장`,
+        comparison: {
+          left: { label: '주말', rep: pickRep(weekend), groupAvg: wAvg },
+          right: { label: '평일', rep: pickRep(weekday), groupAvg: dAvg },
+          diff,
+        },
       });
     }
   }
 
-  // 4. 시계열 추세 — 초기 vs 최근
+  // 4. 장기 추세 (초기 vs 최근)
   if (passed.length >= 8) {
     const early = passed.slice(0, Math.floor(passed.length / 3));
     const recent = passed.slice(-Math.floor(passed.length / 3));
-    const earlyGap = avg(early.map(r => r.estimatedAge - ((r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000))));
-    const recentGap = avg(recent.map(r => r.estimatedAge - ((r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000))));
+    const earlyGap = avg(early.map(gapOf));
+    const recentGap = avg(recent.map(gapOf));
     const trend = recentGap - earlyGap;
     if (Math.abs(trend) >= 0.5) {
       insights.push({
         icon: '📈', title: '장기 추세',
         delta: (trend > 0 ? '+' : '') + trend.toFixed(1) + '세',
         deltaClass: trend > 0 ? 'delta-older' : 'delta-younger',
-        body: `초기 사진 대비 최근 사진의 얼굴 나이 갭이 ${Math.abs(trend).toFixed(1)}세 ${trend > 0 ? '커' : '줄었어'}요.`,
+        body: `초기 사진 대비 최근 사진의 얼굴 나이 갭이 ${Math.abs(trend).toFixed(1)}세 ${trend > 0 ? '커졌' : '줄었'}어요.`,
         meta: `초기 ${early.length}장 vs 최근 ${recent.length}장`,
+        comparison: {
+          left: { label: '초기', rep: pickRep(early), groupAvg: earlyGap },
+          right: { label: '최근', rep: pickRep(recent), groupAvg: recentGap },
+          diff: trend,
+        },
       });
     }
   }
+
+  // 5. 가장 어려 보였던 vs 가장 들어 보였던 사진 (항상 표시)
+  const sortedByGap = [...passed].sort((a, b) => gapOf(a) - gapOf(b));
+  if (sortedByGap.length >= 4) {
+    const youngest = sortedByGap[0];
+    const oldest = sortedByGap[sortedByGap.length - 1];
+    const diff = gapOf(oldest) - gapOf(youngest);
+    if (diff >= 1.0) {
+      insights.push({
+        icon: '🎯', title: '베스트 vs 워스트',
+        delta: diff.toFixed(1) + '세 차이',
+        deltaClass: 'delta-neutral',
+        body: `가장 어려 보였던 사진과 가장 들어 보였던 사진의 얼굴 나이 차이.`,
+        meta: '단일 사진 비교 · 노이즈 가능성 있음',
+        comparison: {
+          left: { label: '가장 어려 보임', rep: youngest, groupAvg: gapOf(youngest) },
+          right: { label: '가장 들어 보임', rep: oldest, groupAvg: gapOf(oldest) },
+          diff,
+        },
+      });
+    }
+  }
+
+  lastInsights = insights;
 
   if (insights.length === 0) {
     container.innerHTML = `<div class="insight"><p class="insight-body">아직 뚜렷한 패턴을 찾지 못했어요. 사진을 더 추가하거나 다양한 시기 사진을 넣어주세요.</p></div>`;
     return;
   }
 
-  container.innerHTML = insights.map(ins => `
-    <div class="insight">
+  container.innerHTML = insights.map((ins, idx) => `
+    <div class="insight clickable" onclick="showInsightDetail(${idx})">
       <div class="insight-head">
         <div class="insight-head-left">
           <span class="insight-icon">${ins.icon}</span>
@@ -1263,8 +1449,95 @@ function renderInsights(passed, birthDate) {
       </div>
       <p class="insight-body">${ins.body}</p>
       <p class="insight-meta">${ins.meta}</p>
+      ${ins.comparison ? '<p class="insight-hint">👆 탭하면 근거 사진 비교</p>' : ''}
     </div>
   `).join('');
+}
+
+function showInsightDetail(idx) {
+  const ins = lastInsights[idx];
+  if (!ins || !ins.comparison) return;
+  const c = ins.comparison;
+
+  document.getElementById('compareTitle').textContent = ins.icon + ' ' + ins.title;
+  document.getElementById('compareDesc').textContent = ins.body;
+
+  const renderSide = (side, data) => {
+    const r = data.rep;
+    if (!r) {
+      side.innerHTML = '<p class="small">사진 없음</p>';
+      return;
+    }
+    const dateStr = r.timestamp.getFullYear() + '.' +
+      String(r.timestamp.getMonth() + 1).padStart(2, '0') + '.' +
+      String(r.timestamp.getDate()).padStart(2, '0');
+    side.innerHTML = `
+      <div class="side-label">${data.label}</div>
+      <img src="${r.thumbUrl}" alt="">
+      <div class="side-age">${r.estimatedAge.toFixed(1)}세</div>
+      <div class="side-date">${dateStr}</div>
+    `;
+  };
+
+  renderSide(document.getElementById('compareLeft'), c.left);
+  renderSide(document.getElementById('compareRight'), c.right);
+
+  document.getElementById('compareConclusion').textContent =
+    `이 그룹들의 평균 차이: ${Math.abs(c.diff).toFixed(1)}세. 위 사진은 각 그룹의 대표 샘플(평균에 가장 가까운 사진)입니다.`;
+
+  openModal('compareModal');
+}
+
+function showThumbDetail(idx) {
+  const r = analysisResults[idx];
+  if (!r) return;
+  document.getElementById('thumbModalTitle').textContent = '사진 #' + (idx + 1) + ' 상세';
+  document.getElementById('thumbModalImg').src = r.thumbUrl;
+
+  const dateStr = r.timestamp.getFullYear() + '.' +
+    String(r.timestamp.getMonth() + 1).padStart(2, '0') + '.' +
+    String(r.timestamp.getDate()).padStart(2, '0') + ' ' +
+    String(r.timestamp.getHours()).padStart(2, '0') + ':' +
+    String(r.timestamp.getMinutes()).padStart(2, '0');
+
+  let infoHtml = `
+    <div class="info-row"><span class="k">촬영 시각</span><span class="v">${dateStr}</span></div>
+    <div class="info-row"><span class="k">얼굴 검출</span><span class="v">${r.hasFace ? '✓ 됨' : '✕ 안 됨'}</span></div>
+  `;
+  if (r.hasFace) {
+    infoHtml += `
+      <div class="info-row"><span class="k">추정 나이 (보정)</span><span class="v">${r.estimatedAge.toFixed(1)}세</span></div>
+      ${r.rawAge !== undefined ? `<div class="info-row"><span class="k">원본 추정</span><span class="v">${r.rawAge.toFixed(1)}세</span></div>` : ''}
+      <div class="info-row"><span class="k">품질 점수</span><span class="v">${r.qualityScore} / 100 ${r.passed ? '✓' : '(미달)'}</span></div>
+    `;
+    if (r.qualityBreakdown) {
+      const q = r.qualityBreakdown;
+      infoHtml += `
+        <div class="info-row"><span class="k">└ 얼굴 크기</span><span class="v">${q.size || '-'}</span></div>
+        <div class="info-row"><span class="k">└ 정면 각도</span><span class="v">${q.angle || '-'}</span></div>
+        <div class="info-row"><span class="k">└ 조명</span><span class="v">${q.brightness || '-'}</span></div>
+        <div class="info-row"><span class="k">└ 선명도</span><span class="v">${q.sharpness || '-'}</span></div>
+        <div class="info-row"><span class="k">└ 검출 신뢰</span><span class="v">${q.confidence || '-'}</span></div>
+      `;
+    }
+  }
+  document.getElementById('thumbModalInfo').innerHTML = infoHtml;
+  openModal('thumbModal');
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.add('show');
+  // history에 모달 상태 푸시 → 백키로 닫기
+  history.pushState({ modal: id }, '', '#' + id);
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+  // 모달 닫기가 popstate에 의한 것이면 history.back 호출 X
+  if (history.state && history.state.modal === id) {
+    isPoppingState = true;
+    history.back();
+    // popstate 이벤트가 곧 발생하고 isPoppingState는 거기서 false로 돌아감
+  }
 }
 
 function avg(arr) { return arr.reduce((a, v) => a + v, 0) / arr.length; }
