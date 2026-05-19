@@ -230,7 +230,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo">Face<span class="accent">Age</span></div>
-    <div class="badge" id="topBadge">POC v1.4</div>
+    <div class="badge" id="topBadge">POC v1.6</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -546,6 +546,8 @@ let isDemoMode = false; // 데모 모드 여부
 let analysisCancelled = false;
 let collectedFiles = []; // 누적 선택된 파일들
 let referenceDescriptor = null; // 본인 식별 기준 descriptor
+let allFilesWithTime = []; // 전체 파일 시간 정보 (fallback용)
+let fallbackStats = { attempted: 0, recovered: 0 }; // fallback 성공 통계
 
 // ===== 화면 전환 (History API 통합) =====
 const SCREEN_FLOW = ['screen-onboard', 'screen-loading', 'screen-pick', 'screen-sampling', 'screen-analyze', 'screen-result', 'screen-insights'];
@@ -699,24 +701,44 @@ document.getElementById('filePicker').addEventListener('change', async (e) => {
   const files = Array.from(e.target.files);
   if (files.length === 0) return;
 
-  // 중복 제거: 같은 파일명 + 크기로 판단
+  const countEl = document.getElementById('selectedCount');
+  const btn = document.getElementById('galleryBtn');
+
+  // 많은 사진 선택 시 진행 표시
+  if (files.length > 100) {
+    countEl.style.display = 'block';
+    countEl.textContent = `📷 사진 추가 중... 0/${files.length.toLocaleString()}`;
+    btn.disabled = true;
+  }
+
+  // 중복 제거 (청크 단위)
   const existingKeys = new Set(collectedFiles.map(f => `${f.name}_${f.size}`));
   let added = 0;
-  for (const f of files) {
-    const key = `${f.name}_${f.size}`;
-    if (!existingKeys.has(key)) {
-      collectedFiles.push(f);
-      existingKeys.add(key);
-      added++;
+  const CHUNK = 500;
+
+  for (let i = 0; i < files.length; i += CHUNK) {
+    const end = Math.min(i + CHUNK, files.length);
+    for (let j = i; j < end; j++) {
+      const f = files[j];
+      const key = `${f.name}_${f.size}`;
+      if (!existingKeys.has(key)) {
+        collectedFiles.push(f);
+        existingKeys.add(key);
+        added++;
+      }
+    }
+    if (files.length > 100) {
+      countEl.textContent = `📷 사진 추가 중... ${end.toLocaleString()}/${files.length.toLocaleString()}`;
+      await new Promise(r => setTimeout(r, 0));
     }
   }
 
-  const countEl = document.getElementById('selectedCount');
+  btn.disabled = false;
   countEl.textContent = added === files.length
-    ? `✓ ${files.length}장 추가됨`
-    : `✓ ${added}장 추가됨 (중복 ${files.length - added}장 제외)`;
+    ? `✓ ${files.length.toLocaleString()}장 추가됨`
+    : `✓ ${added.toLocaleString()}장 추가됨 (중복 ${(files.length - added).toLocaleString()}장 제외)`;
   countEl.style.display = 'block';
-  document.getElementById('galleryBtn').textContent = `사진 추가 선택 (${files.length}장 추가됨)`;
+  btn.textContent = `사진 추가 선택 (${files.length.toLocaleString()}장 추가됨)`;
 
   updateCollectedDisplay();
 });
@@ -726,34 +748,69 @@ document.getElementById('folderPicker').addEventListener('change', async (e) => 
   const allFiles = Array.from(e.target.files);
   if (allFiles.length === 0) return;
 
+  const total = allFiles.length;
+  const countEl = document.getElementById('folderSelectedCount');
+  const btn = document.getElementById('folderBtn');
+
+  // 진행 상황 초기 표시
+  countEl.style.display = 'block';
+  countEl.textContent = `📂 폴더 읽는 중... 0/${total.toLocaleString()}`;
+  btn.disabled = true;
+  btn.textContent = '폴더 처리 중...';
+
   const imageExts = /\.(jpe?g|png|webp|heic|heif|bmp)$/i;
-  const imageFiles = allFiles.filter(f =>
-    (f.type && f.type.startsWith('image/')) || imageExts.test(f.name)
-  );
+  const imageFiles = [];
+
+  // 청크 단위로 필터링 + 진행률 업데이트 (UI 멈춤 방지)
+  const CHUNK = 500;
+  for (let i = 0; i < allFiles.length; i += CHUNK) {
+    const end = Math.min(i + CHUNK, allFiles.length);
+    for (let j = i; j < end; j++) {
+      const f = allFiles[j];
+      if ((f.type && f.type.startsWith('image/')) || imageExts.test(f.name)) {
+        imageFiles.push(f);
+      }
+    }
+    countEl.textContent = `📂 사진 추가 중... ${end.toLocaleString()}/${total.toLocaleString()} (이미지 ${imageFiles.length.toLocaleString()}장)`;
+    // UI에 양보
+    await new Promise(r => setTimeout(r, 0));
+  }
+
+  btn.disabled = false;
 
   if (imageFiles.length === 0) {
+    countEl.textContent = '';
+    countEl.style.display = 'none';
+    btn.textContent = '셀카 폴더 선택';
     showToast('선택한 폴더에 이미지 파일이 없습니다');
     return;
   }
 
-  // 중복 제거
+  // 중복 제거 (청크 단위)
   const existingKeys = new Set(collectedFiles.map(f => `${f.name}_${f.size}`));
   let added = 0;
-  for (const f of imageFiles) {
-    const key = `${f.name}_${f.size}`;
-    if (!existingKeys.has(key)) {
-      collectedFiles.push(f);
-      existingKeys.add(key);
-      added++;
+  countEl.textContent = `🔍 중복 검사 중... 0/${imageFiles.length.toLocaleString()}`;
+  await new Promise(r => setTimeout(r, 0));
+
+  for (let i = 0; i < imageFiles.length; i += CHUNK) {
+    const end = Math.min(i + CHUNK, imageFiles.length);
+    for (let j = i; j < end; j++) {
+      const f = imageFiles[j];
+      const key = `${f.name}_${f.size}`;
+      if (!existingKeys.has(key)) {
+        collectedFiles.push(f);
+        existingKeys.add(key);
+        added++;
+      }
     }
+    countEl.textContent = `🔍 중복 검사 중... ${end.toLocaleString()}/${imageFiles.length.toLocaleString()}`;
+    await new Promise(r => setTimeout(r, 0));
   }
 
-  const countEl = document.getElementById('folderSelectedCount');
   countEl.textContent = added === imageFiles.length
-    ? `✓ 폴더에서 ${imageFiles.length}장 추가됨`
-    : `✓ ${added}장 추가됨 (중복 ${imageFiles.length - added}장 제외)`;
-  countEl.style.display = 'block';
-  document.getElementById('folderBtn').textContent = `폴더 추가 (${imageFiles.length}장)`;
+    ? `✓ 폴더에서 ${imageFiles.length.toLocaleString()}장 추가됨`
+    : `✓ ${added.toLocaleString()}장 추가됨 (중복 ${(imageFiles.length - added).toLocaleString()}장 제외)`;
+  btn.textContent = `폴더 추가 (${imageFiles.length.toLocaleString()}장)`;
 
   updateCollectedDisplay();
 });
@@ -870,6 +927,9 @@ async function prepareSampling(files) {
 
   // 2단계: 시간순 정렬
   filesWithTime.sort((a, b) => a.timestamp - b.timestamp);
+
+  // fallback용: 전체 파일 목록 (시간순)을 전역에 보관
+  allFilesWithTime = filesWithTime;
 
   // 3단계: 균등 샘플링 (30~100% 진행률)
   document.getElementById('samplingSub').textContent =
@@ -1105,6 +1165,7 @@ async function startAnalysis() {
 
   isDemoMode = false; // 실제 분석
   referenceDescriptor = null; // 본인 식별 초기화
+  fallbackStats = { attempted: 0, recovered: 0 }; // fallback 통계 초기화
 
   showScreen('screen-analyze');
   document.getElementById('analyzeSub').textContent =
@@ -1143,6 +1204,20 @@ async function startAnalysis() {
       console.error('Analysis error for file', file.name, e);
       result = { fileName: file.name, timestamp, hasFace: false, passed: false };
     }
+
+    // Fallback: 거부된 사진이면 인접 사진으로 재시도
+    const recoverableReasons = ['low_confidence', 'different_person', 'age_out_of_range', 'too_small', 'bad_proportion', 'bad_mouth_pos'];
+    if (result.rejectionReason && recoverableReasons.includes(result.rejectionReason) && allFilesWithTime.length > 0) {
+      fallbackStats.attempted++;
+      const fallbackResult = await tryAdjacentFallback(file, timestamp, i);
+      if (fallbackResult && fallbackResult.passed) {
+        // 원본 거부 결과는 그대로 두고, 추가로 fallback 결과를 결과에 푸시
+        analysisResults.push(result);
+        result = fallbackResult; // 화면 카운터는 fallback 성공한 걸로
+        fallbackStats.recovered++;
+      }
+    }
+
     analysisResults.push(result);
 
     if (result.hasFace) faceCount++;
@@ -1213,6 +1288,7 @@ async function startAnalysis() {
       await new Promise(r => setTimeout(r, 30));
     }
   }
+  console.log(`📊 Fallback 통계: ${fallbackStats.attempted}회 시도 / ${fallbackStats.recovered}회 성공`);
   document.getElementById('analyzeStatus').textContent = '분석 완료! 결과를 정리하는 중...';
   document.getElementById('goResultsBtn').style.display = 'block';
   setTimeout(() => {
@@ -1229,7 +1305,7 @@ async function startAnalysis() {
 
 // ===== 단일 사진 분석 =====
 // 본인 기준 face descriptor (referenceDescriptor는 상단에서 선언됨)
-const FACE_MATCH_THRESHOLD = 0.55; // 거리 임계값. 낮을수록 같은 사람으로 본다
+const FACE_MATCH_THRESHOLD = 0.6; // 거리 임계값. 낮을수록 같은 사람으로 본다 (0.55→0.6 완화)
 
 function faceDistance(d1, d2) {
   if (!d1 || !d2) return Infinity;
@@ -1239,6 +1315,53 @@ function faceDistance(d1, d2) {
     sum += diff * diff;
   }
   return Math.sqrt(sum);
+}
+
+// 거부된 사진의 시간상 인접한 사진으로 재시도
+// 샘플링된 다른 사진과 중복되지 않는 가장 가까운 후보 최대 2장 시도
+async function tryAdjacentFallback(rejectedFile, rejectedTimestamp, sampleIdx) {
+  if (!allFilesWithTime || allFilesWithTime.length === 0) return null;
+
+  // 이미 샘플링된 파일들의 이름 set (중복 방지)
+  const sampledNames = new Set(sampledFiles.map(s => s.file.name));
+  const triedNames = new Set([rejectedFile.name]);
+
+  // 거부된 파일이 전체 목록의 어느 인덱스인지 찾기
+  let centerIdx = -1;
+  for (let i = 0; i < allFilesWithTime.length; i++) {
+    if (allFilesWithTime[i].file.name === rejectedFile.name) {
+      centerIdx = i;
+      break;
+    }
+  }
+  if (centerIdx === -1) return null;
+
+  // 양쪽으로 최대 ±5장 탐색 (가까운 것부터 번갈아)
+  const candidates = [];
+  for (let offset = 1; offset <= 5; offset++) {
+    if (centerIdx - offset >= 0) candidates.push(allFilesWithTime[centerIdx - offset]);
+    if (centerIdx + offset < allFilesWithTime.length) candidates.push(allFilesWithTime[centerIdx + offset]);
+  }
+
+  // 샘플링에 안 포함되고, 안 시도한 사진을 최대 2장 시도
+  let tried = 0;
+  for (const cand of candidates) {
+    if (tried >= 2) break;
+    if (sampledNames.has(cand.file.name) || triedNames.has(cand.file.name)) continue;
+    triedNames.add(cand.file.name);
+    tried++;
+
+    try {
+      const altResult = await analyzePhoto(cand.file, cand.timestamp);
+      if (altResult.passed) {
+        altResult.isFallback = true;
+        return altResult;
+      }
+    } catch (e) {
+      // 실패해도 계속 시도
+    }
+  }
+  return null;
 }
 
 async function analyzePhoto(file, timestamp) {
@@ -1304,7 +1427,7 @@ async function analyzePhoto(file, timestamp) {
     }
 
     const faceRatio = (box.width * box.height) / (img.width * img.height);
-    const minConfidence = faceRatio < 0.05 ? 0.7 : 0.5;
+    const minConfidence = faceRatio < 0.05 ? 0.6 : 0.45; // 완화 (0.7/0.5 → 0.6/0.45)
     if (detection.detection.score < minConfidence) {
       result.rejectionReason = 'low_confidence';
       return result;
@@ -1328,11 +1451,11 @@ async function analyzePhoto(file, timestamp) {
     result.rawAge = detection.age;
     const calibratedAge = calibrateAge(detection.age);
 
-    // === 신뢰도 검증: 실제 나이 ±8세 범위만 valid ===
+    // === 신뢰도 검증: 실제 나이 ±10세 범위만 valid (8→10 완화) ===
     const birthDateForCheck = new Date(document.getElementById('birthDate').value);
     const realAgeAtPhoto = (result.timestamp - birthDateForCheck) / (365.25 * 24 * 3600 * 1000);
     const ageDiff = Math.abs(calibratedAge - realAgeAtPhoto);
-    if (ageDiff > 8) {
+    if (ageDiff > 10) {
       result.rejectionReason = 'age_out_of_range';
       result.outlierAge = calibratedAge;
       return result;
