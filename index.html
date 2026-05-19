@@ -92,6 +92,28 @@
     .stat-mini .label { font-size: 11px; color: rgba(255,255,255,0.5); margin: 0 0 4px; }
     .stat-mini .value { font-size: 18px; font-weight: 600; }
 
+    .stat-row {
+      display: flex; gap: 6px; margin: 12px 0; overflow-x: auto;
+      padding-bottom: 4px; -webkit-overflow-scrolling: touch;
+    }
+    .stat-cell {
+      flex: 1; min-width: 0; background: rgba(255,255,255,0.04);
+      border-radius: 10px; padding: 8px 10px;
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+    }
+    .stat-cell .stat-label { font-size: 10px; color: rgba(255,255,255,0.5); white-space: nowrap; }
+    .stat-cell .stat-value { font-size: 15px; font-weight: 700; white-space: nowrap; }
+    .stat-cell.clickable { cursor: pointer; transition: background 0.15s; }
+    .stat-cell.clickable:active { background: rgba(199,178,255,0.15); }
+
+    .expandable { margin: 16px 0; border-radius: 12px; background: rgba(255,255,255,0.03); border: 0.5px solid rgba(255,255,255,0.08); overflow: hidden; }
+    .expandable-header { display: flex; align-items: center; gap: 8px; padding: 14px 16px; cursor: pointer; user-select: none; }
+    .expandable-header:active { background: rgba(255,255,255,0.04); }
+    .expandable-header .expand-icon { color: rgba(255,255,255,0.5); transition: transform 0.2s; flex-shrink: 0; }
+    .expandable.open .expand-icon { transform: rotate(180deg); }
+    .expandable-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; padding: 0 16px; }
+    .expandable.open .expandable-body { max-height: 2000px; padding: 0 16px 16px; }
+
     .age-hero { display: flex; align-items: baseline; gap: 12px; margin: 12px 0 4px; }
     .age-big { font-size: 64px; font-weight: 700; letter-spacing: -3px; line-height: 1; }
     .age-delta { padding: 4px 10px; border-radius: 8px; font-size: 13px; font-weight: 500; }
@@ -152,10 +174,36 @@
     .chart-preview .cp-date { font-size: 9px; color: rgba(255,255,255,0.5); margin-top: 3px; padding-top: 3px; border-top: 0.5px solid rgba(255,255,255,0.1); }
 
     .part-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 12px 0; }
-    .part-card { background: rgba(255,255,255,0.04); border-radius: 12px; padding: 12px; }
-    .part-card h4 { font-size: 12px; color: rgba(255,255,255,0.6); margin-bottom: 4px; font-weight: 500; }
+    .part-card { background: rgba(255,255,255,0.04); border-radius: 12px; padding: 12px; position: relative; }
+    .part-card h4 { font-size: 12px; color: rgba(255,255,255,0.6); margin-bottom: 4px; font-weight: 500; display: flex; align-items: center; gap: 4px; }
     .part-card .v { font-size: 20px; font-weight: 600; }
     .part-card .d { font-size: 11px; margin-top: 2px; }
+    .part-card.clickable { cursor: pointer; transition: background 0.15s; }
+    .part-card.clickable:active { background: rgba(199,178,255,0.1); }
+    .part-card .part-hint { font-size: 10px; color: #C7B2FF; margin-top: 6px; opacity: 0.85; }
+    .info-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: rgba(199,178,255,0.2); color: #C7B2FF;
+      font-size: 10px; cursor: pointer; user-select: none;
+      transition: background 0.15s;
+    }
+    .info-btn:active { background: rgba(199,178,255,0.4); }
+
+    .timeline-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 12px; }
+    .timeline-cell {
+      background: rgba(255,255,255,0.04); border-radius: 10px; overflow: hidden;
+      border: 0.5px solid rgba(255,255,255,0.08); position: relative;
+    }
+    .timeline-cell > div:first-child {
+      position: relative;
+      aspect-ratio: 1;
+      overflow: hidden;
+    }
+    .timeline-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .timeline-cell canvas.tl-overlay { width: 100% !important; height: 100% !important; }
+    .timeline-cell .tl-date { padding: 6px 8px 0; font-size: 11px; color: rgba(255,255,255,0.7); }
+    .timeline-cell .tl-age { padding: 0 8px 6px; font-size: 14px; color: #C7B2FF; font-weight: 600; }
 
     .report-card {
       background: linear-gradient(135deg, #C7B2FF, #7A6FE0);
@@ -239,7 +287,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo">Face<span class="accent">Age</span></div>
-    <div class="badge" id="topBadge">POC v1.8</div>
+    <div class="badge" id="topBadge">POC v2.0</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -414,11 +462,23 @@
       ℹ️ face-api.js는 서양인 데이터로 학습되어 동양인을 5-7세 더 들어 보이게 추정하는 편향이 있어요. 본 결과는 한국인 평균치로 보정한 값입니다 (POC 추정 보정).
     </p>
 
-    <div class="stat-grid">
-      <div class="stat-mini"><div class="label">분석된 사진</div><div class="value" id="rPass">0</div></div>
-      <div class="stat-mini"><div class="label">기간</div><div class="value" id="rPeriod">--</div></div>
-      <div class="stat-mini"><div class="label">최저</div><div class="value" id="rMin">--</div></div>
-      <div class="stat-mini"><div class="label">최고</div><div class="value" id="rMax">--</div></div>
+    <div class="stat-row">
+      <div class="stat-cell">
+        <span class="stat-label">분석된 사진</span>
+        <span class="stat-value" id="rPass">--</span>
+      </div>
+      <div class="stat-cell">
+        <span class="stat-label">기간</span>
+        <span class="stat-value" id="rPeriod">--</span>
+      </div>
+      <div class="stat-cell clickable" id="rMinCell" onclick="showMinMaxPhoto('min')">
+        <span class="stat-label">최저 👆</span>
+        <span class="stat-value" id="rMin">--</span>
+      </div>
+      <div class="stat-cell clickable" id="rMaxCell" onclick="showMinMaxPhoto('max')">
+        <span class="stat-label">최고 👆</span>
+        <span class="stat-value" id="rMax">--</span>
+      </div>
     </div>
 
     <h3 style="margin-top: 20px;">시계열 추이</h3>
@@ -428,10 +488,18 @@
       <div id="chartPreview" class="chart-preview"></div>
     </div>
 
-    <h3>품질 분석</h3>
-    <p class="small" style="margin-bottom: 10px;">사진별 품질 점수 분포 (낮은 점수는 분석에서 제외)</p>
-    <div class="card">
-      <div id="qualityBreakdown"></div>
+    <div class="expandable" id="qualitySection">
+      <div class="expandable-header" onclick="toggleExpand('qualitySection')">
+        <h3 style="margin: 0; flex: 1;">품질 분석</h3>
+        <span class="small" style="color: rgba(255,255,255,0.5);">기술 상세</span>
+        <svg class="expand-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </div>
+      <div class="expandable-body">
+        <p class="small" style="margin-bottom: 10px;">사진별 품질 점수 분포 (낮은 점수는 분석에서 제외)</p>
+        <div class="card">
+          <div id="qualityBreakdown"></div>
+        </div>
+      </div>
     </div>
 
     <button class="btn btn-primary" onclick="showScreen('screen-insights')">상관 분석 & 인사이트 보기</button>
@@ -455,25 +523,29 @@
     <div id="tab-parts" style="display:none;">
       <p class="muted" style="margin-bottom: 12px;">간이 분석 결과. 부위별 변화는 face-api.js의 랜드마크 좌표 변화를 기반으로 추정한 시뮬레이션 값입니다.</p>
       <div class="part-grid">
-        <div class="part-card">
-          <h4>👁️ 눈가</h4>
+        <div class="part-card clickable" onclick="showPartTimeline('eyes')">
+          <h4>👁️ 눈가 <span class="info-btn" onclick="event.stopPropagation(); showPartInfo('eyes')">ⓘ</span></h4>
           <div class="v" id="partEyes">--</div>
           <div class="d delta-neutral" id="partEyesD">--</div>
+          <p class="part-hint">👆 클릭: 시계열 4장</p>
         </div>
-        <div class="part-card">
-          <h4>🤔 이마</h4>
+        <div class="part-card clickable" onclick="showPartTimeline('forehead')">
+          <h4>🤔 이마 <span class="info-btn" onclick="event.stopPropagation(); showPartInfo('forehead')">ⓘ</span></h4>
           <div class="v" id="partForehead">--</div>
           <div class="d delta-neutral" id="partForeheadD">--</div>
+          <p class="part-hint">👆 클릭: 시계열 4장</p>
         </div>
-        <div class="part-card">
-          <h4>😊 법령선</h4>
+        <div class="part-card clickable" onclick="showPartTimeline('smile')">
+          <h4>😊 법령선 <span class="info-btn" onclick="event.stopPropagation(); showPartInfo('smile')">ⓘ</span></h4>
           <div class="v" id="partSmile">--</div>
           <div class="d delta-neutral" id="partSmileD">--</div>
+          <p class="part-hint">👆 클릭: 시계열 4장</p>
         </div>
-        <div class="part-card">
-          <h4>👄 턱선</h4>
+        <div class="part-card clickable" onclick="showPartTimeline('jaw')">
+          <h4>👄 턱선 <span class="info-btn" onclick="event.stopPropagation(); showPartInfo('jaw')">ⓘ</span></h4>
           <div class="v" id="partJaw">--</div>
           <div class="d delta-neutral" id="partJawD">--</div>
+          <p class="part-hint">👆 클릭: 시계열 4장</p>
         </div>
       </div>
       <p class="small" style="margin-top: 12px;">⚠️ 부위별 점수는 POC 시뮬레이션입니다. Phase 2에서 진짜 부위별 모델 추가 예정.</p>
@@ -519,6 +591,28 @@
       <div class="compare-side" id="compareRight"></div>
     </div>
     <p id="compareConclusion" class="small" style="margin-top: 12px; line-height: 1.5;"></p>
+  </div>
+</div>
+
+<!-- 부위별 시계열 모달 -->
+<div class="modal" id="partTimelineModal" onclick="if(event.target===this)closeModal('partTimelineModal')">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal('partTimelineModal')">✕</button>
+    <h3 id="partTimelineTitle" style="margin-bottom: 6px;">부위별 시계열</h3>
+    <p id="partTimelineDesc" class="muted" style="margin-bottom: 12px;"></p>
+    <div id="partTimelineBody"></div>
+    <p class="small" style="margin-top: 12px; color: rgba(255,255,255,0.5); line-height: 1.5;">
+      ⚠️ 시뮬레이션 모드: 해당 부위 좌표만 강조 표시. Phase 2에서 진짜 부위별 모델 추가 예정.
+    </p>
+  </div>
+</div>
+
+<!-- 부위 정보 모달 -->
+<div class="modal" id="partInfoModal" onclick="if(event.target===this)closeModal('partInfoModal')">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal('partInfoModal')">✕</button>
+    <h3 id="partInfoTitle" style="margin-bottom: 6px;">부위 정보</h3>
+    <div id="partInfoBody"></div>
   </div>
 </div>
 
@@ -723,7 +817,7 @@ document.getElementById('filePicker').addEventListener('change', async (e) => {
   // 중복 제거 (청크 단위)
   const existingKeys = new Set(collectedFiles.map(f => `${f.name}_${f.size}`));
   let added = 0;
-  const CHUNK = 500;
+  const CHUNK = 100;
 
   for (let i = 0; i < files.length; i += CHUNK) {
     const end = Math.min(i + CHUNK, files.length);
@@ -771,7 +865,7 @@ document.getElementById('folderPicker').addEventListener('change', async (e) => 
   const imageFiles = [];
 
   // 청크 단위로 필터링 + 진행률 업데이트 (UI 멈춤 방지)
-  const CHUNK = 500;
+  const CHUNK = 100;
   for (let i = 0; i < allFiles.length; i += CHUNK) {
     const end = Math.min(i + CHUNK, allFiles.length);
     for (let j = i; j < end; j++) {
@@ -801,8 +895,9 @@ document.getElementById('folderPicker').addEventListener('change', async (e) => 
   countEl.textContent = `🔍 중복 검사 중... 0/${imageFiles.length.toLocaleString()}`;
   await new Promise(r => setTimeout(r, 0));
 
-  for (let i = 0; i < imageFiles.length; i += CHUNK) {
-    const end = Math.min(i + CHUNK, imageFiles.length);
+  const CHUNK_DUP = 100;
+  for (let i = 0; i < imageFiles.length; i += CHUNK_DUP) {
+    const end = Math.min(i + CHUNK_DUP, imageFiles.length);
     for (let j = i; j < end; j++) {
       const f = imageFiles[j];
       const key = `${f.name}_${f.size}`;
@@ -1851,13 +1946,18 @@ function showResults() {
     ? '🎭 데모 결과 — 가짜 데이터 기반입니다.'
     : '분석 완료. 시간순으로 정리된 결과입니다.';
 
-  document.getElementById('rPass').textContent = passed.length;
+  document.getElementById('rPass').textContent = passed.length + '장';
   const firstDate = passed[0].timestamp;
   const lastDate = passed[passed.length - 1].timestamp;
   const months = ((lastDate - firstDate) / (30 * 24 * 3600 * 1000)).toFixed(0);
   document.getElementById('rPeriod').textContent = months + '개월';
-  document.getElementById('rMin').textContent = minAge.toFixed(1);
-  document.getElementById('rMax').textContent = maxAge.toFixed(1);
+  document.getElementById('rMin').textContent = minAge.toFixed(1) + '세';
+  document.getElementById('rMax').textContent = maxAge.toFixed(1) + '세';
+
+  // 최저/최고 사진 인덱스 저장 (클릭 시 모달용)
+  const minPhoto = passed.find(r => r.estimatedAge === minAge);
+  const maxPhoto = passed.find(r => r.estimatedAge === maxAge);
+  window._minMaxPhotos = { min: minPhoto, max: maxPhoto };
 
   // 차트 (try-catch로 보호)
   try {
@@ -2498,6 +2598,244 @@ function showThumbDetailFromObj(r) {
   const tmpIdx = analysisResults.length;
   analysisResults.push(r);
   showThumbDetail(tmpIdx);
+}
+
+// 최저/최고 클릭 시 해당 사진 상세
+function showMinMaxPhoto(type) {
+  if (!window._minMaxPhotos) return;
+  const photo = window._minMaxPhotos[type];
+  if (!photo) return;
+  const idx = analysisResults.indexOf(photo);
+  if (idx >= 0) showThumbDetail(idx);
+  else showThumbDetailFromObj(photo);
+}
+
+// expandable 토글
+function toggleExpand(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('open');
+}
+
+// 부위별 정보 (노화 일반 설명)
+const PART_INFO = {
+  eyes: {
+    name: '👁️ 눈가',
+    title: '눈가 (Eye Area)',
+    description: `눈가는 얼굴에서 가장 먼저 노화 징후가 나타나는 부위 중 하나입니다. 피부 두께가 매우 얇고(0.5mm 정도, 다른 부위의 1/4), 하루 1만 번 이상 깜빡임으로 피로가 누적됩니다.
+
+주요 노화 징후:
+• 잔주름 (까마귀발 주름) - 20대 후반부터 시작
+• 다크서클 - 색소침착 및 혈관 비침
+• 눈밑 처짐 - 콜라겐 감소로 30대부터
+• 눈꺼풀 처짐 - 40대 이후 본격화
+
+영향 요인: UV 노출, 컴퓨터/폰 사용, 수면 부족, 흡연, 화장 잔여물.
+
+관리 팁: 자외선 차단, 보습, 수면 충분히, 눈가 전용 아이크림 사용.`
+  },
+  forehead: {
+    name: '🤔 이마',
+    title: '이마 (Forehead)',
+    description: `이마는 표정근(이마근, 눈썹근)이 자주 움직이는 부위라 가로 주름이 잘 생깁니다. 30대부터 동적 주름이 정적 주름으로 고정되기 시작합니다.
+
+주요 노화 징후:
+• 가로 이마 주름 - 표정 습관으로 30-40대
+• 미간 주름 - 찌푸리는 습관으로 인한 세로 주름
+• 피부 처짐 - 헤어라인 후퇴와 함께 동반
+
+영향 요인: 표정 습관, UV, 콜라겐 감소, 호르몬 변화, 스트레스.
+
+관리 팁: 표정 습관 인지, 자외선 차단, 레티놀 사용, 적절한 수분 공급.`
+  },
+  smile: {
+    name: '😊 법령선',
+    title: '법령선 (Nasolabial Fold)',
+    description: `법령선은 코 옆에서 입꼬리까지 이어지는 주름으로, 광대 부위 볼륨 감소와 함께 30대 후반부터 본격적으로 나타납니다. 표정 변화와 직접 연관됩니다.
+
+주요 노화 징후:
+• 법령선 깊어짐 - 광대뼈 주변 지방·콜라겐 감소
+• 볼 처짐 - 중력 + 결합조직 약화로 40대부터
+• 입가 주름 - 표정 + 흡연·빨대 습관
+
+영향 요인: 노화에 따른 볼륨 감소, 체중 변화, 자세, 한쪽으로만 씹는 습관.
+
+관리 팁: 광대 부위 마사지, 안면 운동, 자외선 차단, 충분한 단백질 섭취.`
+  },
+  jaw: {
+    name: '👄 턱선',
+    title: '턱선 (Jawline)',
+    description: `턱선은 얼굴의 윤곽을 결정하는 중요한 부위입니다. 40대 이후 처짐(jowl)이 가장 눈에 띄는 노화 부위로, 얼굴 형태 자체가 바뀌어 보입니다.
+
+주요 노화 징후:
+• 턱 처짐 (자울) - 결합조직 약화로 40대부터
+• 이중턱 - 피하지방 + 근육 약화
+• 턱선 흐려짐 - 깔끔했던 V라인이 사라짐
+• 목 주름 - 턱과 함께 진행
+
+영향 요인: 체중 변화, 자세 (거북목), 결합조직·근육 약화, 골밀도 감소.
+
+관리 팁: 자세 교정, 턱·목 운동, 체중 관리, 콜라겐 섭취, 안면 마사지.`
+  }
+};
+
+// 부위 정보 모달 (ⓘ 아이콘 클릭)
+function showPartInfo(partKey) {
+  const info = PART_INFO[partKey];
+  if (!info) return;
+  document.getElementById('partInfoTitle').textContent = info.title;
+  const body = document.getElementById('partInfoBody');
+  // 줄바꿈을 <br>로
+  body.innerHTML = `<p style="line-height: 1.7; white-space: pre-line; color: rgba(255,255,255,0.85); font-size: 13px;">${info.description}</p>`;
+  openModal('partInfoModal');
+}
+
+// 부위별 좌표 (face-api.js 68 landmarks 기준 인덱스)
+// 참고: https://github.com/justadudewhohacks/face-api.js
+const PART_LANDMARK_INDICES = {
+  eyes: { left: [36, 37, 38, 39, 40, 41], right: [42, 43, 44, 45, 46, 47] }, // 양쪽 눈
+  forehead: { center: [19, 20, 21, 22, 23, 24] }, // 눈썹 (이마 위치 근사)
+  smile: { left: [31, 32, 49, 48], right: [35, 34, 53, 54] }, // 코 옆 + 입꼬리
+  jaw: { line: [4, 5, 6, 7, 8, 9, 10, 11, 12] }, // 턱선
+};
+
+// 부위별 시계열 모달 (카드 클릭)
+function showPartTimeline(partKey) {
+  const info = PART_INFO[partKey];
+  if (!info) return;
+
+  // 분석 통과 사진들을 시간순으로 정렬 후 4개 균등 선택
+  const passed = analysisResults.filter(r => r.passed && r.thumbUrl);
+  if (passed.length < 4) {
+    showToast('시계열 표시를 위해 분석 통과 사진이 4장 이상 필요합니다');
+    return;
+  }
+  passed.sort((a, b) => a.timestamp - b.timestamp);
+
+  // 균등하게 4장 선택 (첫, 1/3, 2/3, 마지막)
+  const indices = [0, Math.floor(passed.length / 3), Math.floor(passed.length * 2 / 3), passed.length - 1];
+  const samples = indices.map(i => passed[i]);
+
+  // 모달 텍스트
+  document.getElementById('partTimelineTitle').textContent = `${info.name} 시계열`;
+  document.getElementById('partTimelineDesc').textContent =
+    `시간순 4장의 사진에서 ${info.name.replace(/[^가-힣 ]/g, '').trim()} 부위만 강조 표시합니다.`;
+
+  // 본문: 4장 그리드
+  const body = document.getElementById('partTimelineBody');
+  body.innerHTML = '<div class="timeline-grid" id="timelineGrid"></div>';
+  const grid = document.getElementById('timelineGrid');
+
+  samples.forEach((r, idx) => {
+    const dateStr = r.timestamp.getFullYear() + '.' +
+      String(r.timestamp.getMonth() + 1).padStart(2, '0');
+    const cell = document.createElement('div');
+    cell.className = 'timeline-cell';
+    cell.innerHTML = `
+      <div style="position: relative;">
+        <img src="${r.fullImageUrl || r.thumbUrl}" alt="" id="tlImg_${idx}">
+        <canvas class="tl-overlay" id="tlOverlay_${idx}" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></canvas>
+      </div>
+      <div class="tl-date">${dateStr}</div>
+      <div class="tl-age">${r.estimatedAge.toFixed(1)}세</div>
+    `;
+    grid.appendChild(cell);
+
+    // 이미지 로드 후 부위 강조 그리기
+    const img = cell.querySelector('img');
+    img.onload = () => drawPartOverlay(img, cell.querySelector('canvas'), r, partKey);
+    if (img.complete) drawPartOverlay(img, cell.querySelector('canvas'), r, partKey);
+  });
+
+  openModal('partTimelineModal');
+}
+
+// 캔버스에 해당 부위만 강조 표시 (반투명 마스크 + 동그라미)
+function drawPartOverlay(img, canvas, result, partKey) {
+  if (!canvas || !img || !img.naturalWidth) return;
+
+  // 캔버스 크기를 이미지 표시 크기에 맞춤
+  const rect = img.getBoundingClientRect();
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+  const ctx = canvas.getContext('2d');
+
+  // 어두운 마스크 (전체)
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // 부위 영역만 뚫기 (destination-out)
+  ctx.globalCompositeOperation = 'destination-out';
+
+  const landmarks = result.landmarks;
+  if (!landmarks || !landmarks.positions) {
+    // 랜드마크 없으면 마스크만
+    return;
+  }
+  const pts = landmarks.positions;
+
+  // 부위에 따라 다른 영역 강조
+  const regions = [];
+  if (partKey === 'eyes') {
+    // 양쪽 눈 영역
+    regions.push(PART_LANDMARK_INDICES.eyes.left.map(i => pts[i]));
+    regions.push(PART_LANDMARK_INDICES.eyes.right.map(i => pts[i]));
+  } else if (partKey === 'forehead') {
+    // 이마 = 눈썹 위쪽
+    const brow = PART_LANDMARK_INDICES.forehead.center.map(i => pts[i]);
+    // 이마는 눈썹 위쪽으로 확장
+    const minX = Math.min(...brow.map(p => p.x));
+    const maxX = Math.max(...brow.map(p => p.x));
+    const minY = Math.min(...brow.map(p => p.y));
+    // 위로 확장 (얼굴 높이의 약 15%)
+    const faceHeight = pts[8].y - pts[19].y;
+    const expandY = faceHeight * 0.5;
+    regions.push([
+      { x: minX, y: minY - expandY },
+      { x: maxX, y: minY - expandY },
+      { x: maxX, y: minY + 10 },
+      { x: minX, y: minY + 10 },
+    ]);
+  } else if (partKey === 'smile') {
+    // 법령선: 코 옆 ~ 입꼬리
+    regions.push(PART_LANDMARK_INDICES.smile.left.map(i => pts[i]));
+    regions.push(PART_LANDMARK_INDICES.smile.right.map(i => pts[i]));
+  } else if (partKey === 'jaw') {
+    // 턱선: 턱 라인 + 약간 위쪽까지
+    const jawPts = PART_LANDMARK_INDICES.jaw.line.map(i => pts[i]);
+    // 턱선을 두껍게 만들기 위해 위쪽으로 살짝 띄움
+    const top = jawPts.map(p => ({ x: p.x, y: p.y - 25 }));
+    regions.push([...jawPts, ...top.reverse()]);
+  }
+
+  // 각 영역을 폴리곤으로 뚫기
+  for (const region of regions) {
+    if (region.length < 3) continue;
+    ctx.beginPath();
+    ctx.moveTo(region[0].x, region[0].y);
+    for (let i = 1; i < region.length; i++) {
+      ctx.lineTo(region[i].x, region[i].y);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // 강조 테두리 다시 그리기
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.strokeStyle = '#C7B2FF';
+  ctx.lineWidth = 3;
+  for (const region of regions) {
+    if (region.length < 3) continue;
+    ctx.beginPath();
+    ctx.moveTo(region[0].x, region[0].y);
+    for (let i = 1; i < region.length; i++) {
+      ctx.lineTo(region[i].x, region[i].y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+  }
 }
 
 function hideChartPreviewOnOutside(e) {
