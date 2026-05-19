@@ -565,7 +565,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo" onclick="resetApp()" style="cursor:pointer;">Face<span class="accent">AGE</span></div>
-    <div class="badge" id="topBadge">POC v3.3</div>
+    <div class="badge" id="topBadge">POC v3.4</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -1825,13 +1825,13 @@ async function startAnalysis() {
   }
   console.log(`📊 Fallback 통계: ${fallbackStats.attempted}회 시도 / ${fallbackStats.recovered}회 성공`);
 
-  // MediaPipe Face Mesh로 교차검증 (통과한 사진만)
+  // MediaPipe Face Mesh로 부위별 정밀 랜드마크 추출 (통과한 사진만)
   const passedResults = analysisResults.filter(r => r.passed);
   if (passedResults.length > 0) {
-    document.getElementById('analyzeStatus').textContent = `MediaPipe 정밀 분석 중... 0/${passedResults.length}`;
+    document.getElementById('analyzeStatus').textContent = `정밀 랜드마크 추출 중... 0/${passedResults.length}`;
     await applyMediaPipeCrossValidation(passedResults, (done, total) => {
       document.getElementById('analyzeStatus').textContent =
-        `MediaPipe 정밀 분석 중... ${done}/${total}`;
+        `정밀 랜드마크 추출 중... ${done}/${total}`;
     });
   }
 
@@ -1961,14 +1961,17 @@ const MP_LANDMARKS = {
   jawline: [172, 136, 150, 149, 176, 148, 152, 377, 400, 378, 379, 365, 397],
 };
 
+// MediaPipe Face Mesh로 통과된 사진의 정밀 랜드마크 추출
+// 부위별 분석에서 더 정확한 영역 강조용 (검증 UI는 사용자에게 가치 없어서 제거)
 async function applyMediaPipeCrossValidation(passed, onProgress) {
-  if (!passed || passed.length === 0) return { validated: 0, mismatches: 0 };
+  if (!passed || passed.length === 0) return { extracted: 0 };
   await initMediaPipeFaceMesh();
-  if (!mediapipeFaceMesh) return { validated: 0, mismatches: 0 };
+  if (!mediapipeFaceMesh) {
+    console.warn('MediaPipe 사용 불가, 부위별은 face-api.js 68점만 사용');
+    return { extracted: 0 };
+  }
 
-  let validated = 0;
-  let mismatches = 0;
-
+  let extracted = 0;
   for (let i = 0; i < passed.length; i++) {
     const r = passed[i];
     if (!r.fullImageUrl) continue;
@@ -1981,24 +1984,19 @@ async function applyMediaPipeCrossValidation(passed, onProgress) {
         img.src = r.fullImageUrl;
       });
       const mpLandmarks = await getMediaPipeLandmarks(img);
-      if (mpLandmarks && r.box) {
+      if (mpLandmarks) {
+        // 정규화된 좌표(0-1) 그대로 저장 → 부위별 분석에서 표시 크기에 곱하면 됨
         r.mpLandmarks = mpLandmarks;
-        const validation = crossValidate(r.box, mpLandmarks, img.naturalWidth, img.naturalHeight);
-        r.crossValidation = validation;
-        if (validation.matched) validated++;
-        else mismatches++;
-      } else {
-        r.crossValidation = { matched: false, confidence: 'low', reason: 'MediaPipe 검출 실패' };
-        mismatches++;
+        extracted++;
       }
     } catch (e) {
-      console.warn('MediaPipe 검증 실패:', r.fileName, e);
+      console.warn('MediaPipe 랜드마크 추출 실패:', r.fileName, e);
     }
     if (onProgress) onProgress(i + 1, passed.length);
   }
 
-  console.log(`📊 MediaPipe 교차검증: ${validated}장 일치 / ${mismatches}장 불일치 (총 ${passed.length}장)`);
-  return { validated, mismatches };
+  console.log(`📊 MediaPipe 정밀 랜드마크: ${extracted}/${passed.length}장 추출 완료`);
+  return { extracted };
 }
 
 // 거부된 사진의 시간상 인접한 사진으로 재시도
@@ -3148,22 +3146,6 @@ function showThumbDetail(idx) {
     if (r.rawAge !== undefined) {
       infoHtml += `<div class="info-row" style="opacity:0.5; font-size:11px; margin-top:6px;"><span class="k">원본 모델 출력 (보정 전)</span><span class="v">${r.rawAge.toFixed(1)}세</span></div>`;
     }
-    if (r.crossValidation) {
-      const cv = r.crossValidation;
-      const cvIcon = cv.confidence === 'high' ? '✓' : (cv.confidence === 'medium' ? '△' : '✕');
-      const cvColor = cv.confidence === 'high' ? '#4ADE80' : (cv.confidence === 'medium' ? '#FBBF24' : '#F87171');
-      const iouText = cv.iou !== undefined ? ` (IoU ${(cv.iou*100).toFixed(0)}%)` : '';
-      infoHtml += `
-        <div class="info-row" style="margin-top: 8px; padding-top: 8px; border-top: 0.5px dashed rgba(255,255,255,0.08);">
-          <span class="k">2차 모델 검증</span>
-          <span class="v" style="color: ${cvColor}; font-size: 12px;">${cvIcon} ${cv.reason}${iouText}</span>
-        </div>
-        <div class="info-row" style="opacity: 0.55; font-size: 10px; margin-top: 2px;">
-          <span class="k" style="font-size: 10px;">└ 478점 정밀 랜드마크로 교차확인</span>
-          <span class="v"></span>
-        </div>
-      `;
-    }
   } else {
     infoHtml += `
       <div class="info-row">
@@ -4267,7 +4249,6 @@ function renderMonthlyReport(passed, realAge) {
           </div>
           <div class="report-card-right">
             <img src="${e.bestPhoto.thumbUrl}" alt="대표 사진" ${photoClickAttr(e.bestPhoto)} style="cursor:pointer;">
-            <p class="report-photo-label">${e.bestPhoto.estimatedAge.toFixed(0)}세 · 탭</p>
           </div>
         </div>
       `;
