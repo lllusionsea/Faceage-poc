@@ -226,11 +226,11 @@
 <div id="app">
 
   <div class="topbar">
-    <button class="back-btn" id="backBtn" onclick="history.back()" aria-label="뒤로가기">
+    <button class="back-btn hidden" id="backBtn" onclick="history.back()" aria-label="뒤로가기">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo">Face<span class="accent">Age</span></div>
-    <div class="badge" id="topBadge">POC v1.3</div>
+    <div class="badge" id="topBadge">POC v1.4</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -986,6 +986,8 @@ function isValidPhotoDate(date) {
   // 1990 ~ 현재 +1일
   return year >= 1990 && date.getTime() <= now + 24 * 3600 * 1000;
 }
+
+async function sampleEvenly(filesWithTime, maxSamples, onProgress) {
   if (filesWithTime.length <= maxSamples) {
     if (onProgress) await onProgress(100);
     return filesWithTime;
