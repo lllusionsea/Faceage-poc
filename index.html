@@ -136,14 +136,20 @@
     .chart-preview {
       position: absolute; display: none;
       background: rgba(20,20,26,0.95); border: 0.5px solid rgba(199,178,255,0.4);
-      border-radius: 10px; padding: 6px; pointer-events: none;
-      z-index: 10; transition: opacity 0.15s;
+      border-radius: 10px; padding: 6px; pointer-events: auto;
+      z-index: 10; transition: opacity 0.15s, left 0.2s ease;
       box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      display: flex; gap: 8px; align-items: center;
+      cursor: pointer;
     }
-    .chart-preview.show { display: block; }
-    .chart-preview img { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; display: block; }
-    .chart-preview .cp-info { font-size: 10px; color: #fff; margin-top: 4px; text-align: center; }
-    .chart-preview .cp-age { color: #C7B2FF; font-weight: 600; }
+    .chart-preview:not(.show) { display: none; }
+    .chart-preview img { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; display: block; flex-shrink: 0; }
+    .chart-preview .cp-info { font-size: 10px; color: #fff; min-width: 90px; }
+    .chart-preview .cp-row { display: flex; justify-content: space-between; gap: 8px; line-height: 1.4; }
+    .chart-preview .cp-label { color: rgba(255,255,255,0.5); font-size: 10px; }
+    .chart-preview .cp-age { color: #C7B2FF; font-weight: 700; font-size: 11px; }
+    .chart-preview .cp-real { color: #fff; font-weight: 500; font-size: 11px; }
+    .chart-preview .cp-date { font-size: 9px; color: rgba(255,255,255,0.5); margin-top: 3px; padding-top: 3px; border-top: 0.5px solid rgba(255,255,255,0.1); }
 
     .part-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 12px 0; }
     .part-card { background: rgba(255,255,255,0.04); border-radius: 12px; padding: 12px; }
@@ -210,6 +216,9 @@
     .insight.clickable { cursor: pointer; transition: background 0.15s; }
     .insight.clickable:active { background: rgba(255,255,255,0.06); }
     .insight-hint { font-size: 10px; color: #C7B2FF; margin-top: 4px; opacity: 0.8; }
+    .insight.coming-soon { opacity: 0.6; border-style: dashed; }
+    .insight.coming-soon .insight-body { color: rgba(255,255,255,0.5); }
+    .coming-tag { font-size: 10px; padding: 3px 8px; border-radius: 6px; background: rgba(199,178,255,0.15); color: #C7B2FF; font-weight: 500; }
 
     .pill-row { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
     .pill-mini { font-size: 11px; padding: 3px 9px; border-radius: 999px; background: rgba(199,178,255,0.12); color: #C7B2FF; }
@@ -230,7 +239,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo">Face<span class="accent">Age</span></div>
-    <div class="badge" id="topBadge">POC v1.6</div>
+    <div class="badge" id="topBadge">POC v1.8</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -1220,9 +1229,15 @@ async function startAnalysis() {
 
     analysisResults.push(result);
 
-    if (result.hasFace) faceCount++;
+    // 카운트:
+    // - faceCount: 얼굴이 검출된 사진 (검출 거부 사유 제외)
+    // - passCount: 모든 검증 통과한 사진
+    // - failCount: 검출됐지만 어떤 이유로든 통과 못한 사진 (거부 포함)
+    const wasDetectedAsFace = result.hasFace || (result.rejectionReason &&
+      ['age_out_of_range', 'different_person', 'sunglasses', 'mask'].includes(result.rejectionReason));
+    if (wasDetectedAsFace) faceCount++;
     if (result.passed) passCount++;
-    if (result.hasFace && !result.passed) failCount++;
+    else if (result.rejectionReason || (result.hasFace && !result.passed)) failCount++;
 
     document.getElementById('aFace').textContent = faceCount;
     document.getElementById('aPass').textContent = passCount;
@@ -1924,7 +1939,6 @@ function drawChart(passed, birthDate) {
     options: {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'nearest', intersect: false, axis: 'x' },
-      // 드래그/호버 시 호출 → 썸네일 추적
       onHover: (event, elements) => {
         if (elements && elements.length > 0) {
           const point = elements.find(e => e.datasetIndex === 0);
@@ -1933,18 +1947,12 @@ function drawChart(passed, birthDate) {
           }
         }
       },
-      // 클릭 시 → 원본 모달 열기
+      // 차트 점 클릭은 미리보기 표시만, 모달은 카드 직접 클릭 시
       onClick: (event, elements) => {
         if (elements && elements.length > 0) {
           const point = elements.find(e => e.datasetIndex === 0);
           if (point) {
-            const r = sorted[point.index];
-            if (r) {
-              // 원본 모달 (분석 화면의 썸네일 클릭과 동일)
-              const idx = analysisResults.indexOf(r);
-              if (idx >= 0) showThumbDetail(idx);
-              else showThumbDetailFromObj(r);
-            }
+            showChartPreview(point.index, sorted);
           }
         }
       },
@@ -2002,118 +2010,147 @@ function renderInsights(passed, birthDate) {
   const insights = [];
   const realAgeOf = (r) => (r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000);
   const gapOf = (r) => r.estimatedAge - realAgeOf(r);
-
-  // 이미 다른 패턴에서 사용된 사진들 추적 (중복 방지)
   const usedIndices = new Set();
   const getIdx = (r) => passed.indexOf(r);
 
-  // 헬퍼: 그룹의 대표 사진 (gap이 평균에 가장 가까운 사진, 가급적 미사용 사진)
   const pickRep = (group) => {
     if (group.length === 0) return null;
     const avgGap = avg(group.map(r => gapOf(r)));
-    // 거리로 정렬
     const sorted = [...group].sort((a, b) =>
       Math.abs(gapOf(a) - avgGap) - Math.abs(gapOf(b) - avgGap)
     );
-    // 미사용 사진 우선 선택
     for (const r of sorted) {
       if (!usedIndices.has(getIdx(r))) {
         usedIndices.add(getIdx(r));
         return r;
       }
     }
-    // 모두 사용됐으면 첫 번째 (평균에 가장 가까운) 반환
     return sorted[0];
   };
 
-  // 1. 계절 효과
-  const seasonGroups = { winter: [], other: [] };
+  // === 1. 4계절 비교 — 가장 어려/들어 보이는 계절 찾기 ===
+  const seasonNames = { 0: '겨울', 1: '봄', 2: '여름', 3: '가을' };
+  const seasonIcons = { 0: '❄️', 1: '🌸', 2: '☀️', 3: '🍂' };
+  const seasonOf = (m) => {
+    if (m === 12 || m <= 2) return 0; // 겨울
+    if (m >= 3 && m <= 5) return 1;   // 봄
+    if (m >= 6 && m <= 8) return 2;   // 여름
+    return 3;                          // 가을
+  };
+  const seasonGroups = { 0: [], 1: [], 2: [], 3: [] };
   passed.forEach(r => {
     const m = r.timestamp.getMonth() + 1;
-    if (m <= 2 || m === 12) seasonGroups.winter.push(r);
-    else seasonGroups.other.push(r);
+    seasonGroups[seasonOf(m)].push(r);
   });
-  if (seasonGroups.winter.length >= 2 && seasonGroups.other.length >= 2) {
-    const winterAvg = avg(seasonGroups.winter.map(gapOf));
-    const otherAvg = avg(seasonGroups.other.map(gapOf));
-    const diff = winterAvg - otherAvg;
-    if (Math.abs(diff) >= 0.4) {
-      const leftRep = pickRep(seasonGroups.winter);
-      const rightRep = pickRep(seasonGroups.other);
+  // 각 계절의 평균 gap 계산 (최소 2장 이상인 계절만)
+  const seasonStats = [];
+  for (let s = 0; s < 4; s++) {
+    if (seasonGroups[s].length >= 2) {
+      seasonStats.push({ season: s, avg: avg(seasonGroups[s].map(gapOf)), count: seasonGroups[s].length });
+    }
+  }
+  if (seasonStats.length >= 2) {
+    seasonStats.sort((a, b) => a.avg - b.avg);
+    const youngest = seasonStats[0];
+    const oldest = seasonStats[seasonStats.length - 1];
+    const diff = oldest.avg - youngest.avg;
+    if (diff >= 0.4) {
+      const young = seasonGroups[youngest.season];
+      const old = seasonGroups[oldest.season];
       insights.push({
-        icon: '❄️', title: '겨울 효과',
-        delta: (diff > 0 ? '+' : '') + diff.toFixed(1) + '세',
-        deltaClass: diff > 0 ? 'delta-older' : 'delta-younger',
-        body: `겨울철 사진이 다른 계절 대비 ${Math.abs(diff).toFixed(1)}세 ${diff > 0 ? '더 들어' : '더 어려'} 보였어요.`,
-        meta: `n=${seasonGroups.winter.length}장 · ${diff > 0 ? '건조함·조명' : '의외 효과'} 가능성`,
+        icon: seasonIcons[youngest.season] + ' vs ' + seasonIcons[oldest.season],
+        title: `${seasonNames[youngest.season]}이 가장 어려보임`,
+        delta: `차이 ${diff.toFixed(1)}세`,
+        deltaClass: 'delta-neutral',
+        body: `${seasonNames[youngest.season]} 사진이 ${seasonNames[oldest.season]} 사진보다 평균 ${diff.toFixed(1)}세 더 어려 보였어요.`,
+        meta: `${seasonNames[youngest.season]} ${youngest.count}장 vs ${seasonNames[oldest.season]} ${oldest.count}장`,
         comparison: {
-          left: { label: '겨울', rep: leftRep, groupAvg: winterAvg },
-          right: { label: '다른 계절', rep: rightRep, groupAvg: otherAvg },
-          diff,
+          left: { label: `${seasonNames[youngest.season]} (어려보임)`, rep: pickRep(young), groupAvg: youngest.avg },
+          right: { label: `${seasonNames[oldest.season]} (들어보임)`, rep: pickRep(old), groupAvg: oldest.avg },
+          diff: -diff,
         },
       });
     }
   }
 
-  // 2. 시간대
-  const nightShots = [], dayShots = [];
+  // === 2. 시간대 4구간 비교 ===
+  const hourBands = {
+    0: { name: '아침 (6-11시)', icon: '🌅', range: [6, 11] },
+    1: { name: '낮 (12-17시)', icon: '🌞', range: [12, 17] },
+    2: { name: '저녁 (18-21시)', icon: '🌆', range: [18, 21] },
+    3: { name: '밤 (22-5시)', icon: '🌙', range: [22, 5] },
+  };
+  const hourGroups = { 0: [], 1: [], 2: [], 3: [] };
   passed.forEach(r => {
     const h = r.timestamp.getHours();
-    if (h >= 22 || h <= 4) nightShots.push(r);
-    else if (h >= 10 && h <= 16) dayShots.push(r);
+    if (h >= 6 && h <= 11) hourGroups[0].push(r);
+    else if (h >= 12 && h <= 17) hourGroups[1].push(r);
+    else if (h >= 18 && h <= 21) hourGroups[2].push(r);
+    else hourGroups[3].push(r);
   });
-  if (nightShots.length >= 2 && dayShots.length >= 2) {
-    const nAvg = avg(nightShots.map(gapOf));
-    const dAvg = avg(dayShots.map(gapOf));
-    const diff = nAvg - dAvg;
-    if (Math.abs(diff) >= 0.4) {
-      const leftRep = pickRep(nightShots);
-      const rightRep = pickRep(dayShots);
+  const hourStats = [];
+  for (let h = 0; h < 4; h++) {
+    if (hourGroups[h].length >= 2) {
+      hourStats.push({ band: h, avg: avg(hourGroups[h].map(gapOf)), count: hourGroups[h].length });
+    }
+  }
+  if (hourStats.length >= 2) {
+    hourStats.sort((a, b) => a.avg - b.avg);
+    const youngest = hourStats[0];
+    const oldest = hourStats[hourStats.length - 1];
+    const diff = oldest.avg - youngest.avg;
+    if (diff >= 0.4) {
+      const young = hourGroups[youngest.band];
+      const old = hourGroups[oldest.band];
       insights.push({
-        icon: '🌙', title: '늦은 밤 (22시 이후)',
-        delta: (diff > 0 ? '+' : '') + diff.toFixed(1) + '세',
-        deltaClass: diff > 0 ? 'delta-older' : 'delta-younger',
-        body: `밤 시간대 셀피가 낮 사진 대비 ${Math.abs(diff).toFixed(1)}세 ${diff > 0 ? '들어' : '어려'} 보였어요.`,
-        meta: `n=${nightShots.length}장 · 피로·조명 영향 가능성`,
+        icon: hourBands[youngest.band].icon + ' vs ' + hourBands[oldest.band].icon,
+        title: `${hourBands[youngest.band].name} 사진이 가장 좋음`,
+        delta: `차이 ${diff.toFixed(1)}세`,
+        deltaClass: 'delta-neutral',
+        body: `${hourBands[youngest.band].name}에 찍은 사진이 ${hourBands[oldest.band].name} 사진보다 평균 ${diff.toFixed(1)}세 어려 보였어요.`,
+        meta: `${hourBands[youngest.band].name} ${youngest.count}장 vs ${hourBands[oldest.band].name} ${oldest.count}장`,
         comparison: {
-          left: { label: '밤 (22시+)', rep: leftRep, groupAvg: nAvg },
-          right: { label: '낮 (10-16시)', rep: rightRep, groupAvg: dAvg },
-          diff,
+          left: { label: hourBands[youngest.band].name + ' (어려보임)', rep: pickRep(young), groupAvg: youngest.avg },
+          right: { label: hourBands[oldest.band].name + ' (들어보임)', rep: pickRep(old), groupAvg: oldest.avg },
+          diff: -diff,
         },
       });
     }
   }
 
-  // 3. 주말/평일
+  // === 3. 요일 패턴 ===
   const weekend = [], weekday = [];
   passed.forEach(r => {
     const d = r.timestamp.getDay();
     if (d === 0 || d === 6) weekend.push(r);
     else weekday.push(r);
   });
-  if (weekend.length >= 2 && weekday.length >= 3) {
+  if (weekend.length >= 3 && weekday.length >= 3) {
     const wAvg = avg(weekend.map(gapOf));
     const dAvg = avg(weekday.map(gapOf));
     const diff = wAvg - dAvg;
-    if (Math.abs(diff) >= 0.3) {
-      const leftRep = pickRep(weekend);
-      const rightRep = pickRep(weekday);
+    if (Math.abs(diff) >= 0.4) {
+      const youngerLabel = diff > 0 ? '평일' : '주말';
+      const olderLabel = diff > 0 ? '주말' : '평일';
+      const youngerGroup = diff > 0 ? weekday : weekend;
+      const olderGroup = diff > 0 ? weekend : weekday;
       insights.push({
-        icon: '🌞', title: '주말 vs 평일',
-        delta: (diff > 0 ? '+' : '') + diff.toFixed(1) + '세',
-        deltaClass: diff > 0 ? 'delta-older' : 'delta-younger',
-        body: `주말 셀피가 평일 대비 ${Math.abs(diff).toFixed(1)}세 ${diff > 0 ? '들어' : '어려'} 보였어요.`,
-        meta: `n=${weekend.length}장 vs ${weekday.length}장`,
+        icon: '📅',
+        title: `${youngerLabel}이 더 어려보임`,
+        delta: `차이 ${Math.abs(diff).toFixed(1)}세`,
+        deltaClass: 'delta-neutral',
+        body: `${youngerLabel} 사진이 ${olderLabel} 사진보다 평균 ${Math.abs(diff).toFixed(1)}세 어려 보였어요.`,
+        meta: `${youngerLabel} ${youngerGroup.length}장 vs ${olderLabel} ${olderGroup.length}장`,
         comparison: {
-          left: { label: '주말', rep: leftRep, groupAvg: wAvg },
-          right: { label: '평일', rep: rightRep, groupAvg: dAvg },
-          diff,
+          left: { label: youngerLabel + ' (어려보임)', rep: pickRep(youngerGroup), groupAvg: avg(youngerGroup.map(gapOf)) },
+          right: { label: olderLabel + ' (들어보임)', rep: pickRep(olderGroup), groupAvg: avg(olderGroup.map(gapOf)) },
+          diff: -Math.abs(diff),
         },
       });
     }
   }
 
-  // 4. 장기 추세 (초기 vs 최근)
+  // === 4. 장기 추세 (초기 vs 최근) ===
   if (passed.length >= 8) {
     const early = passed.slice(0, Math.floor(passed.length / 3));
     const recent = passed.slice(-Math.floor(passed.length / 3));
@@ -2121,35 +2158,32 @@ function renderInsights(passed, birthDate) {
     const recentGap = avg(recent.map(gapOf));
     const trend = recentGap - earlyGap;
     if (Math.abs(trend) >= 0.5) {
-      const leftRep = pickRep(early);
-      const rightRep = pickRep(recent);
       insights.push({
         icon: '📈', title: '장기 추세',
         delta: (trend > 0 ? '+' : '') + trend.toFixed(1) + '세',
         deltaClass: trend > 0 ? 'delta-older' : 'delta-younger',
-        body: `초기 사진 대비 최근 사진의 얼굴 나이 갭이 ${Math.abs(trend).toFixed(1)}세 ${trend > 0 ? '커졌' : '줄었'}어요.`,
+        body: trend > 0
+          ? `시간이 지나면서 얼굴 나이 갭이 ${trend.toFixed(1)}세 커졌어요. 자연스러운 노화일 수 있어요.`
+          : `시간이 지나면서 얼굴 나이 갭이 ${Math.abs(trend).toFixed(1)}세 줄었어요. 점점 어려 보이고 있어요!`,
         meta: `초기 ${early.length}장 vs 최근 ${recent.length}장`,
         comparison: {
-          left: { label: '초기', rep: leftRep, groupAvg: earlyGap },
-          right: { label: '최근', rep: rightRep, groupAvg: recentGap },
+          left: { label: '초기', rep: pickRep(early), groupAvg: earlyGap },
+          right: { label: '최근', rep: pickRep(recent), groupAvg: recentGap },
           diff: trend,
         },
       });
     }
   }
 
-  // 5. 가장 어려 보였던 vs 가장 들어 보였던 사진 (항상 표시)
-  // 단, 위에서 사용 안 된 사진들 중에서 우선 선택
+  // === 5. 베스트 vs 워스트 (항상 표시) ===
   const sortedByGap = [...passed].sort((a, b) => gapOf(a) - gapOf(b));
   if (sortedByGap.length >= 4) {
-    // 가장 어려 보이는 쪽 (작은 gap)
     let youngest = null;
     for (const r of sortedByGap) {
       if (!usedIndices.has(getIdx(r))) { youngest = r; usedIndices.add(getIdx(r)); break; }
     }
     if (!youngest) youngest = sortedByGap[0];
 
-    // 가장 들어 보이는 쪽 (큰 gap)
     let oldest = null;
     for (let i = sortedByGap.length - 1; i >= 0; i--) {
       const r = sortedByGap[i];
@@ -2168,7 +2202,7 @@ function renderInsights(passed, birthDate) {
         comparison: {
           left: { label: '가장 어려 보임', rep: youngest, groupAvg: gapOf(youngest) },
           right: { label: '가장 들어 보임', rep: oldest, groupAvg: gapOf(oldest) },
-          diff,
+          diff: diff,
         },
       });
     }
@@ -2176,25 +2210,58 @@ function renderInsights(passed, birthDate) {
 
   lastInsights = insights;
 
+  // === 미래 기능 더미 카드 (Coming Soon) ===
+  const comingSoonCards = [
+    { icon: '💆', title: '피부 시술 전후', body: '클리닉 방문 시점을 기록하면 시술 효과를 자동 분석해드려요.', tag: '향후 기능' },
+    { icon: '🏃', title: '운동 시기 영향', body: '운동량과 얼굴 나이의 상관관계를 헬스앱 연동으로 추적합니다.', tag: '향후 기능' },
+    { icon: '🍔', title: '식습관 패턴', body: '야식·과식·다이어트 시기와 얼굴 변화의 관계를 봐드려요.', tag: '향후 기능' },
+    { icon: '😴', title: '수면 패턴 영향', body: '수면 시간·질과 얼굴 나이의 관계를 헬스킷/구글핏 연동으로.', tag: '향후 기능' },
+    { icon: '☀️', title: '자외선 노출', body: '여행·야외 활동 후 피부 변화 추적.', tag: '향후 기능' },
+    { icon: '💼', title: '스트레스 시기', body: '캘린더 연동으로 업무 강도와 얼굴 변화 분석.', tag: '향후 기능' },
+  ];
+
+  let html = '';
+
   if (insights.length === 0) {
-    container.innerHTML = `<div class="insight"><p class="insight-body">아직 뚜렷한 패턴을 찾지 못했어요. 사진을 더 추가하거나 다양한 시기 사진을 넣어주세요.</p></div>`;
-    return;
+    html += `<div class="insight"><p class="insight-body">아직 뚜렷한 패턴을 찾지 못했어요. 사진을 더 추가하거나 다양한 시기 사진을 넣어주세요.</p></div>`;
+  } else {
+    html += insights.map((ins, idx) => `
+      <div class="insight clickable" onclick="showInsightDetail(${idx})">
+        <div class="insight-head">
+          <div class="insight-head-left">
+            <span class="insight-icon">${ins.icon}</span>
+            <span class="insight-title">${ins.title}</span>
+          </div>
+          <span class="insight-delta ${ins.deltaClass}">${ins.delta}</span>
+        </div>
+        <p class="insight-body">${ins.body}</p>
+        <p class="insight-meta">${ins.meta}</p>
+        ${ins.comparison ? '<p class="insight-hint">👆 탭하면 근거 사진 비교</p>' : ''}
+      </div>
+    `).join('');
   }
 
-  container.innerHTML = insights.map((ins, idx) => `
-    <div class="insight clickable" onclick="showInsightDetail(${idx})">
+  // 미래 기능 섹션
+  html += `
+    <div style="margin-top: 24px; padding-top: 16px; border-top: 0.5px solid rgba(255,255,255,0.1);">
+      <h3 style="margin-bottom: 6px;">🔮 향후 추가될 분석</h3>
+      <p class="small" style="margin-bottom: 12px;">실제 앱에서는 일상 데이터와 연동해 더 깊은 인사이트를 제공할 예정이에요</p>
+  `;
+  html += comingSoonCards.map(card => `
+    <div class="insight coming-soon">
       <div class="insight-head">
         <div class="insight-head-left">
-          <span class="insight-icon">${ins.icon}</span>
-          <span class="insight-title">${ins.title}</span>
+          <span class="insight-icon">${card.icon}</span>
+          <span class="insight-title">${card.title}</span>
         </div>
-        <span class="insight-delta ${ins.deltaClass}">${ins.delta}</span>
+        <span class="coming-tag">${card.tag}</span>
       </div>
-      <p class="insight-body">${ins.body}</p>
-      <p class="insight-meta">${ins.meta}</p>
-      ${ins.comparison ? '<p class="insight-hint">👆 탭하면 근거 사진 비교</p>' : ''}
+      <p class="insight-body">${card.body}</p>
     </div>
   `).join('');
+  html += `</div>`;
+
+  container.innerHTML = html;
 }
 
 function showInsightDetail(idx) {
@@ -2366,18 +2433,28 @@ function showChartPreview(pointIndex, sortedData) {
   preview.innerHTML = `
     <img src="${r.thumbUrl}" alt="">
     <div class="cp-info">
-      <div class="cp-age">${r.estimatedAge.toFixed(1)}세 <span style="color:rgba(255,255,255,0.5); font-weight:400;">(${realAge.toFixed(0)})</span></div>
-      <div style="color: rgba(255,255,255,0.6); margin-top: 2px; font-size:9px;">${dateStr}</div>
+      <div class="cp-row"><span class="cp-label">얼굴</span><span class="cp-age">${r.estimatedAge.toFixed(1)}세</span></div>
+      <div class="cp-row"><span class="cp-label">실제</span><span class="cp-real">${realAge.toFixed(0)}세</span></div>
+      <div class="cp-date">${dateStr}</div>
     </div>
   `;
+  preview.classList.add('show');
+
+  // 카드 클릭 시 원본 모달 열기
+  preview.onclick = (e) => {
+    e.stopPropagation();
+    const idx = analysisResults.indexOf(r);
+    if (idx >= 0) showThumbDetail(idx);
+    else showThumbDetailFromObj(r);
+  };
   preview.classList.add('show');
 
   const wrap = preview.parentElement;
   const wrapRect = wrap.getBoundingClientRect();
   const wrapW = wrap.clientWidth;
   const wrapH = wrap.clientHeight;
-  const previewWidth = 80;
-  const previewHeight = 110;
+  const previewWidth = 160;
+  const previewHeight = 70;
 
   let canvasOffsetX = 0, canvasOffsetY = 0;
   const canvas = document.getElementById('ageChart');
@@ -2406,10 +2483,11 @@ function showChartPreview(pointIndex, sortedData) {
   }
 
   let x = pointX - previewWidth / 2;
-  let y = pointY - previewHeight - 10;
-  if (y < 0) y = pointY + 12;
+  // Y축은 차트 상단에 고정 (위아래 흔들림 방지)
+  let y = 4;
+
+  // 좌우 경계 보정
   x = Math.max(2, Math.min(x, wrapW - previewWidth - 2));
-  y = Math.max(2, Math.min(y, wrapH - previewHeight - 2));
 
   preview.style.left = x + 'px';
   preview.style.top = y + 'px';
