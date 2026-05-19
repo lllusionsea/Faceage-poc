@@ -565,7 +565,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo" onclick="resetApp()" style="cursor:pointer;">Face<span class="accent">AGE</span></div>
-    <div class="badge" id="topBadge">POC v3.7</div>
+    <div class="badge" id="topBadge">POC v3.9</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -1444,11 +1444,29 @@ async function prepareSampling(files) {
   document.getElementById('sWithDate').textContent = uniqueDates.size + '일';
   document.getElementById('sSampled').textContent = sampled.length + '장';
 
+  // 빈 배열 안전 가드
+  if (filesWithTime.length === 0) {
+    document.getElementById('sPeriod').textContent = '--';
+    document.getElementById('sampStart').textContent = '--';
+    document.getElementById('sampEnd').textContent = '--';
+    const warnEl = document.getElementById('sampleWarn');
+    const warnText = document.getElementById('sampleWarnText');
+    warnEl.style.display = 'block';
+    warnText.textContent = '⚠️ 시간 정보를 추출할 수 있는 사진이 없습니다. EXIF가 보존된 원본 사진을 사용해주세요.';
+    if (startBtn) {
+      startBtn.disabled = true;
+      startBtn.textContent = '분석 시작 불가';
+    }
+    return;
+  }
+
   const firstDate = filesWithTime[0].timestamp;
   const lastDate = filesWithTime[filesWithTime.length - 1].timestamp;
   const months = ((lastDate - firstDate) / (30 * 24 * 3600 * 1000));
   document.getElementById('sPeriod').textContent =
-    months >= 12 ? (months / 12).toFixed(1) + '년' : Math.max(1, Math.round(months)) + '개월';
+    months >= 12 ? (months / 12).toFixed(1) + '년' :
+    months >= 1 ? Math.max(1, Math.round(months)) + '개월' :
+    Math.max(1, Math.round((lastDate - firstDate) / (24 * 3600 * 1000))) + '일';
 
   document.getElementById('sampStart').textContent = formatDate(firstDate);
   document.getElementById('sampEnd').textContent = formatDate(lastDate);
@@ -1460,7 +1478,11 @@ async function prepareSampling(files) {
   const warnText = document.getElementById('sampleWarnText');
   const dateRatio = withDate / files.length;
 
-  if (dateRatio < 0.3) {
+  if (sampled.length < 5) {
+    // 적은 장수 안내 (시계열 분석은 어렵지만 진행 가능)
+    warnEl.style.display = 'block';
+    warnText.innerHTML = `📊 분석 가능 사진이 ${sampled.length}장으로 적습니다. 시계열 패턴은 어렵지만 평균 얼굴 나이는 확인할 수 있어요. 더 많은 사진(20장 이상)을 추가하면 풍부한 인사이트가 나옵니다.`;
+  } else if (dateRatio < 0.3) {
     warnEl.style.display = 'block';
     if (lastModifiedClustered) {
       warnText.innerHTML = `⚠️ <b>시간 정보 부족</b><br/>` +
@@ -1472,7 +1494,7 @@ async function prepareSampling(files) {
     }
   } else if (months < 3) {
     warnEl.style.display = 'block';
-    warnText.textContent = `⚠️ 사진의 시간 범위가 ${Math.round(months)}개월로 짧습니다. 시계열 변화 분석은 어렵습니다.`;
+    warnText.textContent = `ℹ️ 사진의 시간 범위가 ${months < 1 ? Math.round(months * 30) + '일' : Math.round(months) + '개월'}로 짧습니다. 평균 얼굴 나이는 확인할 수 있어요.`;
   } else {
     warnEl.style.display = 'none';
   }
@@ -1548,33 +1570,55 @@ async function sampleEvenly(filesWithTime, maxSamples, onProgress) {
     return [];
   }
 
-  // ===== 0단계: 같은 날짜에 찍은 사진은 1장만 남기기 =====
-  // 한 사용자가 하루에 셀카를 여러 장 찍어도 시계열 분석엔 1장만 필요
-  const dateGroups = new Map(); // YYYY-MM-DD -> [files]
-  for (const f of filesWithTime) {
-    const d = f.timestamp;
-    const dayKey = d.getFullYear() + '-' +
-      String(d.getMonth() + 1).padStart(2, '0') + '-' +
-      String(d.getDate()).padStart(2, '0');
-    if (!dateGroups.has(dayKey)) dateGroups.set(dayKey, []);
-    dateGroups.get(dayKey).push(f);
-  }
+  // ===== 0단계: 시간상 너무 가까운 사진 제거 (적응형) =====
+  // 전체 50장 이상이면: 같은 날짜에 찍은 사진은 1장만 (시계열 분석 정확)
+  // 전체 50장 미만이면: 같은 날짜 허용, 단 3시간 이내 사진은 제외 (적은 장수 보호)
+  const TOTAL_THRESHOLD = 50;
+  const MIN_GAP_HOURS = 3;
+  const MIN_GAP_MS = MIN_GAP_HOURS * 3600 * 1000;
 
-  // 각 날짜에서 대표 1장 선정 (그날 중간 시각 사진)
-  const uniqueDayFiles = [];
-  for (const group of dateGroups.values()) {
-    if (group.length === 1) {
-      uniqueDayFiles.push(group[0]);
-    } else {
-      // 시간순 정렬 후 중간 사진
-      group.sort((a, b) => a.timestamp - b.timestamp);
-      uniqueDayFiles.push(group[Math.floor(group.length / 2)]);
+  // 사전 정렬 (시간순)
+  const sortedFiles = [...filesWithTime].sort((a, b) => a.timestamp - b.timestamp);
+  let uniqueDayFiles = [];
+
+  if (sortedFiles.length >= TOTAL_THRESHOLD) {
+    // 충분히 많음 → 같은 날짜 1장만
+    const dateGroups = new Map();
+    for (const f of sortedFiles) {
+      const d = f.timestamp;
+      const dayKey = d.getFullYear() + '-' +
+        String(d.getMonth() + 1).padStart(2, '0') + '-' +
+        String(d.getDate()).padStart(2, '0');
+      if (!dateGroups.has(dayKey)) dateGroups.set(dayKey, []);
+      dateGroups.get(dayKey).push(f);
     }
+    for (const group of dateGroups.values()) {
+      if (group.length === 1) {
+        uniqueDayFiles.push(group[0]);
+      } else {
+        // 시간순 정렬 후 중간 사진
+        group.sort((a, b) => a.timestamp - b.timestamp);
+        uniqueDayFiles.push(group[Math.floor(group.length / 2)]);
+      }
+    }
+    uniqueDayFiles.sort((a, b) => a.timestamp - b.timestamp);
+    console.log(`📅 [50장 이상] 날짜별 중복 제거: ${sortedFiles.length}장 → 고유 날짜 ${uniqueDayFiles.length}일`);
+  } else {
+    // 적은 장수 → 3시간 간격 보호
+    // greedy 알고리즘: 시간순으로 순회하며 직전 선택과 3시간 이내면 스킵
+    let lastSelectedTime = -Infinity;
+    let removedCount = 0;
+    for (const f of sortedFiles) {
+      const t = f.timestamp.getTime();
+      if (t - lastSelectedTime >= MIN_GAP_MS) {
+        uniqueDayFiles.push(f);
+        lastSelectedTime = t;
+      } else {
+        removedCount++;
+      }
+    }
+    console.log(`⏱️ [50장 미만] 3시간 간격 제거: ${sortedFiles.length}장 → ${uniqueDayFiles.length}장 (제외 ${removedCount}장)`);
   }
-  // 시간순 재정렬
-  uniqueDayFiles.sort((a, b) => a.timestamp - b.timestamp);
-
-  console.log(`📅 날짜별 중복 제거: ${filesWithTime.length}장 → 고유 날짜 ${uniqueDayFiles.length}일`);
 
   // ===== 1단계: 고유 날짜 사진들 중에서 균등 샘플링 =====
   if (uniqueDayFiles.length <= maxSamples) {
@@ -2026,15 +2070,28 @@ async function applyMediaPipeCrossValidation(passed, onProgress) {
 async function tryAdjacentFallback(rejectedFile, rejectedTimestamp, sampleIdx) {
   if (!allFilesWithTime || allFilesWithTime.length === 0) return null;
 
-  // 이미 샘플링된 파일들의 이름 + 날짜 set (중복 방지)
+  // 적응형 설정 (sampleEvenly와 동일 기준)
+  const isSmallSet = allFilesWithTime.length < 50;
+  const MIN_GAP_MS = 3 * 3600 * 1000;
+
   const sampledNames = new Set(sampledFiles.map(s => s.file.name));
   const dayKey = (d) => d.getFullYear() + '-' +
     String(d.getMonth() + 1).padStart(2, '0') + '-' +
     String(d.getDate()).padStart(2, '0');
-  const sampledDates = new Set(sampledFiles.map(s => dayKey(s.timestamp)));
-  // 이미 분석 결과에 포함된(passed) 사진의 날짜도 회피
+
+  // 50장 이상: 날짜 단위로 회피 / 50장 미만: 시간 단위로 회피 (3시간)
+  const sampledDates = new Set();
+  const sampledTimes = [];
+  for (const s of sampledFiles) {
+    if (isSmallSet) sampledTimes.push(s.timestamp.getTime());
+    else sampledDates.add(dayKey(s.timestamp));
+  }
+  // 이미 분석 결과에 포함된(passed) 사진도 회피
   for (const r of analysisResults) {
-    if (r.passed && r.timestamp) sampledDates.add(dayKey(r.timestamp));
+    if (r.passed && r.timestamp) {
+      if (isSmallSet) sampledTimes.push(r.timestamp.getTime());
+      else sampledDates.add(dayKey(r.timestamp));
+    }
   }
   const triedNames = new Set([rejectedFile.name]);
 
@@ -2055,13 +2112,23 @@ async function tryAdjacentFallback(rejectedFile, rejectedTimestamp, sampleIdx) {
     if (centerIdx + offset < allFilesWithTime.length) candidates.push(allFilesWithTime[centerIdx + offset]);
   }
 
-  // 샘플링 안 포함, 안 시도, 같은 날짜 아닌 사진 최대 2장 시도
+  // 후보 시도 (최대 2장)
   let tried = 0;
   for (const cand of candidates) {
     if (tried >= 2) break;
     if (sampledNames.has(cand.file.name) || triedNames.has(cand.file.name)) continue;
-    // 같은 날짜 회피
-    if (sampledDates.has(dayKey(cand.timestamp))) continue;
+
+    // 적응형 회피
+    const candTime = cand.timestamp.getTime();
+    if (isSmallSet) {
+      // 3시간 이내 사진 회피
+      const tooClose = sampledTimes.some(t => Math.abs(t - candTime) < MIN_GAP_MS);
+      if (tooClose) continue;
+    } else {
+      // 같은 날짜 회피
+      if (sampledDates.has(dayKey(cand.timestamp))) continue;
+    }
+
     triedNames.add(cand.file.name);
     tried++;
 
@@ -2540,8 +2607,7 @@ function generateDemoThumb(c1, c2, idx) {
 function showResults() {
   const passed = analysisResults.filter(r => r.passed);
   if (passed.length === 0) {
-    showToast('품질 합격 사진이 없습니다. 더 많은 사진이나 더 좋은 품질의 사진이 필요해요.', 3500);
-    setTimeout(() => showScreen('screen-pick'), 2500);
+    showToast('품질 합격 사진이 없습니다. 분석 화면에서 거부된 사진의 "얼굴 영역 직접 지정"으로 추가하거나, 더 많은 사진을 골라주세요.', 4500);
     return;
   }
 
@@ -2742,10 +2808,16 @@ function renderQualityBreakdown() {
 
 function renderInsights(passed, birthDate) {
   const container = document.getElementById('patternInsights');
-  if (passed.length < 6) {
-    container.innerHTML = `<div class="insight"><p class="insight-body">사진이 너무 적어 패턴 분석이 어렵습니다. 10장 이상 권장합니다.</p></div>`;
+  if (passed.length < 3) {
+    container.innerHTML = `<div class="insight"><p class="insight-body">분석된 사진이 ${passed.length}장으로 너무 적어 패턴 분석이 어렵습니다. 5장 이상이면 기본 인사이트를, 20장 이상이면 풍부한 패턴을 볼 수 있어요.</p></div>`;
     lastInsights = [];
     return;
+  }
+
+  // 적은 장수 안내 (3-5장)
+  let lowDataNotice = '';
+  if (passed.length < 6) {
+    lowDataNotice = `<div class="insight" style="border-color: rgba(251,191,36,0.3); background: rgba(251,191,36,0.05);"><p class="insight-body">📊 분석 사진이 ${passed.length}장입니다. 더 많은 사진을 분석하면 계절·시간대 패턴이 더 정확해집니다.</p></div>`;
   }
 
   const insights = [];
@@ -2962,6 +3034,9 @@ function renderInsights(passed, birthDate) {
   ];
 
   let html = '';
+
+  // 적은 장수 안내 (있으면)
+  if (lowDataNotice) html += lowDataNotice;
 
   if (insights.length === 0) {
     html += `<div class="insight"><p class="insight-body">아직 뚜렷한 패턴을 찾지 못했어요. 사진을 더 추가하거나 다양한 시기 사진을 넣어주세요.</p></div>`;
@@ -3994,26 +4069,25 @@ function showPartTimeline(partKey) {
 
   // 분석 통과 사진들을 시간순으로 정렬
   const passed = analysisResults.filter(r => r.passed && r.thumbUrl);
-  if (passed.length < 4) {
-    showToast('시계열 표시를 위해 분석 통과 사진이 4장 이상 필요합니다');
+  if (passed.length === 0) {
+    showToast('분석된 사진이 없습니다');
     return;
   }
   passed.sort((a, b) => a.timestamp - b.timestamp);
 
-  // 부위별로 다른 사진 4장 선택
-  // 4구간(시간순)으로 나누고, 부위 키에 따라 각 구간에서 다른 인덱스의 사진을 선택
+  // 부위별로 다른 사진 선택 (가능한 만큼, 최대 4장)
+  // 적은 장수면 같은 사진이 반복 사용될 수 있음 (1장만 있으면 1장만 표시)
+  const targetCount = Math.min(4, passed.length);
   const partOffset = { eyes: 0, forehead: 1, smile: 2, jaw: 3 }[partKey] || 0;
   const samples = [];
   const seen = new Set();
 
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < targetCount; i++) {
     // i번째 구간의 범위
-    const segStart = Math.floor((i * passed.length) / 4);
-    const segEnd = Math.floor(((i + 1) * passed.length) / 4);
+    const segStart = Math.floor((i * passed.length) / targetCount);
+    const segEnd = Math.floor(((i + 1) * passed.length) / targetCount);
     const segSize = Math.max(1, segEnd - segStart);
-    // 부위별 offset만큼 구간 안에서 다른 인덱스 선택
     let pick = segStart + (partOffset % segSize);
-    // 이미 선택된 인덱스면 인접 인덱스로 이동
     let tries = 0;
     while (seen.has(pick) && tries < segSize) {
       pick = segStart + ((pick - segStart + 1) % segSize);
@@ -4167,6 +4241,7 @@ function hideChartPreviewOnOutside(e) {
 }
 
 function renderBodyParts(passed) {
+  if (!passed || passed.length === 0) return;
   const recent = passed.slice(-Math.min(5, passed.length));
   const baseAge = avg(recent.map(r => r.estimatedAge));
   const parts = [
