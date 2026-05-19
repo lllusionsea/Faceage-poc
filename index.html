@@ -80,6 +80,71 @@
 
     .input { width: 100%; padding: 12px 14px; background: rgba(255,255,255,0.06); border: 0.5px solid rgba(255,255,255,0.12); border-radius: 10px; color: #fff; font-size: 14px; font-family: inherit; }
     .input:focus { outline: none; border-color: #C7B2FF; }
+
+    /* 슬라이더 전용 스타일 */
+    .range-wrap { position: relative; width: 100%; height: 32px; margin: 8px 0 4px; }
+    .range-ticks {
+      position: absolute;
+      top: 50%; left: 0; right: 0;
+      height: 10px; margin-top: -5px;
+      pointer-events: none;
+    }
+    .range-tick {
+      position: absolute; top: 0;
+      width: 2px; height: 10px;
+      background: rgba(255,255,255,0.35);
+      border-radius: 1px;
+      transform: translateX(-50%);
+    }
+    .range-tick[data-pos="0"] { left: 0%; transform: translateX(0); }
+    .range-tick[data-pos="33.33"] { left: 33.33%; }
+    .range-tick[data-pos="66.66"] { left: 66.66%; }
+    .range-tick[data-pos="100"] { left: 100%; transform: translateX(-100%); }
+
+    .range-input {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%; height: 32px;
+      background: transparent;
+      cursor: pointer;
+      padding: 0; margin: 0;
+      position: relative; z-index: 1;
+    }
+    .range-input:focus { outline: none; }
+    /* WebKit track */
+    .range-input::-webkit-slider-runnable-track {
+      width: 100%; height: 4px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 2px;
+    }
+    .range-input::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 24px; height: 24px; border-radius: 50%;
+      background: #C7B2FF; border: 3px solid #0F0F12;
+      margin-top: -10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      cursor: pointer;
+    }
+    /* Firefox */
+    .range-input::-moz-range-track {
+      width: 100%; height: 4px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 2px;
+    }
+    .range-input::-moz-range-thumb {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #C7B2FF; border: 3px solid #0F0F12;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      cursor: pointer;
+    }
+    .range-labels {
+      display: flex; justify-content: space-between;
+      margin-top: 2px; font-size: 10px;
+      color: rgba(255,255,255,0.5);
+      padding: 0 0;
+    }
+    .range-labels span:first-child { text-align: left; }
+    .range-labels span:last-child { text-align: right; }
     .form-row { margin-bottom: 12px; }
     .label { font-size: 12px; color: rgba(255,255,255,0.6); margin-bottom: 6px; display: block; }
 
@@ -362,7 +427,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo" onclick="resetApp()" style="cursor:pointer;">Face<span class="accent">AGE</span></div>
-    <div class="badge" id="topBadge">POC v2.7</div>
+    <div class="badge" id="topBadge">POC v2.8</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -452,8 +517,25 @@
       <p class="muted" style="margin-bottom: 12px;">앱이 분석할 최대 장수입니다. 시간 범위 전체에서 균등 샘플링됩니다.</p>
       <div class="form-row">
         <label class="label">최대 분석 장수: <span id="maxSamplesVal">100</span>장</label>
-        <input type="range" min="50" max="200" step="50" value="100" id="maxSamples" class="input" oninput="document.getElementById('maxSamplesVal').textContent = this.value">
-        <div style="display:flex; justify-content:space-between; margin-top:4px; font-size:10px; color:rgba(255,255,255,0.4);">
+        <div class="range-wrap">
+          <div class="range-ticks">
+            <span class="range-tick" data-pos="0"></span>
+            <span class="range-tick" data-pos="33.33"></span>
+            <span class="range-tick" data-pos="66.66"></span>
+            <span class="range-tick" data-pos="100"></span>
+          </div>
+          <input type="range" min="50" max="200" step="50" value="100"
+                 id="maxSamples" class="range-input"
+                 list="sampleTicks"
+                 oninput="document.getElementById('maxSamplesVal').textContent = this.value">
+          <datalist id="sampleTicks">
+            <option value="50"></option>
+            <option value="100"></option>
+            <option value="150"></option>
+            <option value="200"></option>
+          </datalist>
+        </div>
+        <div class="range-labels">
           <span>50</span>
           <span>100</span>
           <span>150</span>
@@ -726,6 +808,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.js"></script>
+<!-- MediaPipe Face Mesh - 478점 정밀 랜드마크 (교차검증 + 부위별 분석) -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/face_mesh.js" crossorigin="anonymous"></script>
 
 <script>
 // =============================================
@@ -746,6 +830,7 @@ function calibrateAge(rawAge) {
 }
 
 let modelsLoaded = false;
+let mediapipeFaceMesh = null; // MediaPipe Face Mesh 인스턴스
 let chartInstance = null;
 let analysisResults = [];
 let sampledFiles = [];
@@ -1564,6 +1649,17 @@ async function startAnalysis() {
     }
   }
   console.log(`📊 Fallback 통계: ${fallbackStats.attempted}회 시도 / ${fallbackStats.recovered}회 성공`);
+
+  // MediaPipe Face Mesh로 교차검증 (통과한 사진만)
+  const passedResults = analysisResults.filter(r => r.passed);
+  if (passedResults.length > 0) {
+    document.getElementById('analyzeStatus').textContent = `MediaPipe 정밀 분석 중... 0/${passedResults.length}`;
+    await applyMediaPipeCrossValidation(passedResults, (done, total) => {
+      document.getElementById('analyzeStatus').textContent =
+        `MediaPipe 정밀 분석 중... ${done}/${total}`;
+    });
+  }
+
   document.getElementById('analyzeStatus').textContent = '분석 완료! 결과를 정리하는 중...';
   document.getElementById('goResultsBtn').style.display = 'block';
   setTimeout(() => {
@@ -1590,6 +1686,142 @@ function faceDistance(d1, d2) {
     sum += diff * diff;
   }
   return Math.sqrt(sum);
+}
+
+// ============================================
+// MediaPipe Face Mesh - 478점 정밀 랜드마크
+// 샘플링된 사진의 부위별 분석 + 교차검증
+// ============================================
+async function initMediaPipeFaceMesh() {
+  if (mediapipeFaceMesh) return mediapipeFaceMesh;
+  if (typeof FaceMesh === 'undefined') {
+    console.warn('MediaPipe FaceMesh not available');
+    return null;
+  }
+  try {
+    mediapipeFaceMesh = new FaceMesh({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/${file}`,
+    });
+    mediapipeFaceMesh.setOptions({
+      maxNumFaces: 1,
+      refineLandmarks: true,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5,
+    });
+    await mediapipeFaceMesh.initialize?.();
+    console.log('✓ MediaPipe Face Mesh 초기화 완료');
+    return mediapipeFaceMesh;
+  } catch (e) {
+    console.error('MediaPipe init failed', e);
+    return null;
+  }
+}
+
+async function getMediaPipeLandmarks(imgElement) {
+  const fm = await initMediaPipeFaceMesh();
+  if (!fm) return null;
+  return new Promise((resolve) => {
+    fm.onResults((results) => {
+      if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+        resolve(results.multiFaceLandmarks[0]);
+      } else {
+        resolve(null);
+      }
+    });
+    try {
+      fm.send({ image: imgElement });
+    } catch (e) {
+      resolve(null);
+    }
+  });
+}
+
+function crossValidate(faceApiBox, mpLandmarks, imgWidth, imgHeight) {
+  if (!mpLandmarks || mpLandmarks.length === 0) {
+    return { matched: false, confidence: 'low', reason: 'MediaPipe 검출 실패' };
+  }
+  let minX = 1, minY = 1, maxX = 0, maxY = 0;
+  for (const p of mpLandmarks) {
+    if (p.x < minX) minX = p.x;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.y > maxY) maxY = p.y;
+  }
+  const mpBox = {
+    x: minX * imgWidth,
+    y: minY * imgHeight,
+    width: (maxX - minX) * imgWidth,
+    height: (maxY - minY) * imgHeight,
+  };
+  const x1 = Math.max(faceApiBox.x, mpBox.x);
+  const y1 = Math.max(faceApiBox.y, mpBox.y);
+  const x2 = Math.min(faceApiBox.x + faceApiBox.width, mpBox.x + mpBox.width);
+  const y2 = Math.min(faceApiBox.y + faceApiBox.height, mpBox.y + mpBox.height);
+  if (x2 < x1 || y2 < y1) {
+    return { matched: false, confidence: 'low', reason: '얼굴 위치 불일치', iou: 0 };
+  }
+  const intersection = (x2 - x1) * (y2 - y1);
+  const union = (faceApiBox.width * faceApiBox.height) + (mpBox.width * mpBox.height) - intersection;
+  const iou = intersection / union;
+  let confidence = 'low';
+  if (iou >= 0.7) confidence = 'high';
+  else if (iou >= 0.4) confidence = 'medium';
+  return {
+    matched: iou >= 0.4,
+    confidence,
+    iou,
+    mpBox,
+    reason: iou >= 0.7 ? '두 모델 일치' : (iou >= 0.4 ? '부분 일치' : '불일치'),
+  };
+}
+
+// MediaPipe 478점에서 부위별 인덱스
+const MP_LANDMARKS = {
+  leftEye: [33, 7, 163, 144, 145, 153, 154, 155, 133, 246, 161, 160, 159, 158, 157, 173],
+  rightEye: [362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386, 385, 384, 398],
+  forehead: [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 21, 162, 127, 234, 93, 132, 58, 67, 109],
+  nasolabial: [129, 142, 36, 205, 187, 207, 216, 212, 202, 138, 358, 371, 266, 425, 411, 427, 436, 432, 422, 367],
+  jawline: [172, 136, 150, 149, 176, 148, 152, 377, 400, 378, 379, 365, 397],
+};
+
+async function applyMediaPipeCrossValidation(passed, onProgress) {
+  if (!passed || passed.length === 0) return { validated: 0, mismatches: 0 };
+  await initMediaPipeFaceMesh();
+  if (!mediapipeFaceMesh) return { validated: 0, mismatches: 0 };
+
+  let validated = 0;
+  let mismatches = 0;
+
+  for (let i = 0; i < passed.length; i++) {
+    const r = passed[i];
+    if (!r.fullImageUrl) continue;
+    try {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = r.fullImageUrl;
+      });
+      const mpLandmarks = await getMediaPipeLandmarks(img);
+      if (mpLandmarks && r.box) {
+        r.mpLandmarks = mpLandmarks;
+        const validation = crossValidate(r.box, mpLandmarks, img.naturalWidth, img.naturalHeight);
+        r.crossValidation = validation;
+        if (validation.matched) validated++;
+        else mismatches++;
+      } else {
+        r.crossValidation = { matched: false, confidence: 'low', reason: 'MediaPipe 검출 실패' };
+        mismatches++;
+      }
+    } catch (e) {
+      console.warn('MediaPipe 검증 실패:', r.fileName, e);
+    }
+    if (onProgress) onProgress(i + 1, passed.length);
+  }
+
+  console.log(`📊 MediaPipe 교차검증: ${validated}장 일치 / ${mismatches}장 불일치 (총 ${passed.length}장)`);
+  return { validated, mismatches };
 }
 
 // 거부된 사진의 시간상 인접한 사진으로 재시도
@@ -2675,6 +2907,15 @@ function showThumbDetail(idx) {
           👥 사진 속 ${r.totalFacesInPhoto}명 중 본인 1명만 분석됨
         </div>`;
     }
+    if (r.crossValidation) {
+      const cv = r.crossValidation;
+      const cvIcon = cv.confidence === 'high' ? '✅' : (cv.confidence === 'medium' ? '⚠️' : '❌');
+      const cvColor = cv.confidence === 'high' ? 'rgba(74,222,128,0.85)' : (cv.confidence === 'medium' ? 'rgba(251,191,36,0.85)' : 'rgba(248,113,113,0.85)');
+      infoHtml += `
+        <div class="info-reason" style="color: ${cvColor};">
+          ${cvIcon} MediaPipe 교차검증: ${cv.reason}${cv.iou !== undefined ? ` (IoU ${(cv.iou*100).toFixed(0)}%)` : ''}
+        </div>`;
+    }
   } else {
     infoHtml += `
       <div class="info-row">
@@ -3387,60 +3628,68 @@ function showPartTimeline(partKey) {
 function drawPartOverlay(img, canvas, result, partKey) {
   if (!canvas || !img || !img.naturalWidth) return;
 
-  // 캔버스 크기를 이미지 표시 크기에 맞춤
-  const rect = img.getBoundingClientRect();
   canvas.width = img.naturalWidth;
   canvas.height = img.naturalHeight;
   canvas.style.width = '100%';
   canvas.style.height = '100%';
   const ctx = canvas.getContext('2d');
 
-  // 어두운 마스크 (전체)
+  // 어두운 마스크
   ctx.fillStyle = 'rgba(0,0,0,0.55)';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // 부위 영역만 뚫기 (destination-out)
   ctx.globalCompositeOperation = 'destination-out';
 
-  const landmarks = result.landmarks;
-  if (!landmarks || !landmarks.positions) {
-    // 랜드마크 없으면 마스크만
-    return;
-  }
-  const pts = landmarks.positions;
-
-  // 부위에 따라 다른 영역 강조
+  // === MediaPipe 478점 우선 사용 (있으면) ===
   const regions = [];
-  if (partKey === 'eyes') {
-    // 양쪽 눈 영역
-    regions.push(PART_LANDMARK_INDICES.eyes.left.map(i => pts[i]));
-    regions.push(PART_LANDMARK_INDICES.eyes.right.map(i => pts[i]));
-  } else if (partKey === 'forehead') {
-    // 이마 = 눈썹 위쪽
-    const brow = PART_LANDMARK_INDICES.forehead.center.map(i => pts[i]);
-    // 이마는 눈썹 위쪽으로 확장
-    const minX = Math.min(...brow.map(p => p.x));
-    const maxX = Math.max(...brow.map(p => p.x));
-    const minY = Math.min(...brow.map(p => p.y));
-    // 위로 확장 (얼굴 높이의 약 15%)
-    const faceHeight = pts[8].y - pts[19].y;
-    const expandY = faceHeight * 0.5;
-    regions.push([
-      { x: minX, y: minY - expandY },
-      { x: maxX, y: minY - expandY },
-      { x: maxX, y: minY + 10 },
-      { x: minX, y: minY + 10 },
-    ]);
-  } else if (partKey === 'smile') {
-    // 법령선: 코 옆 ~ 입꼬리
-    regions.push(PART_LANDMARK_INDICES.smile.left.map(i => pts[i]));
-    regions.push(PART_LANDMARK_INDICES.smile.right.map(i => pts[i]));
-  } else if (partKey === 'jaw') {
-    // 턱선: 턱 라인 + 약간 위쪽까지
-    const jawPts = PART_LANDMARK_INDICES.jaw.line.map(i => pts[i]);
-    // 턱선을 두껍게 만들기 위해 위쪽으로 살짝 띄움
-    const top = jawPts.map(p => ({ x: p.x, y: p.y - 25 }));
-    regions.push([...jawPts, ...top.reverse()]);
+  if (result.mpLandmarks && result.mpLandmarks.length > 0) {
+    const W = img.naturalWidth, H = img.naturalHeight;
+    const mpPt = (i) => ({ x: result.mpLandmarks[i].x * W, y: result.mpLandmarks[i].y * H });
+
+    if (partKey === 'eyes') {
+      regions.push(MP_LANDMARKS.leftEye.map(mpPt));
+      regions.push(MP_LANDMARKS.rightEye.map(mpPt));
+    } else if (partKey === 'forehead') {
+      // MediaPipe의 이마 + 눈썹 위쪽
+      const browTop = MP_LANDMARKS.forehead.map(mpPt);
+      regions.push(browTop);
+    } else if (partKey === 'smile') {
+      regions.push(MP_LANDMARKS.nasolabial.slice(0, 10).map(mpPt));
+      regions.push(MP_LANDMARKS.nasolabial.slice(10).map(mpPt));
+    } else if (partKey === 'jaw') {
+      const jawPts = MP_LANDMARKS.jawline.map(mpPt);
+      const top = jawPts.map(p => ({ x: p.x, y: p.y - 25 }));
+      regions.push([...jawPts, ...top.reverse()]);
+    }
+  } else {
+    // === fallback: face-api.js 68점 ===
+    const landmarks = result.landmarks;
+    if (!landmarks || !landmarks.positions) return;
+    const pts = landmarks.positions;
+
+    if (partKey === 'eyes') {
+      regions.push(PART_LANDMARK_INDICES.eyes.left.map(i => pts[i]));
+      regions.push(PART_LANDMARK_INDICES.eyes.right.map(i => pts[i]));
+    } else if (partKey === 'forehead') {
+      const brow = PART_LANDMARK_INDICES.forehead.center.map(i => pts[i]);
+      const minX = Math.min(...brow.map(p => p.x));
+      const maxX = Math.max(...brow.map(p => p.x));
+      const minY = Math.min(...brow.map(p => p.y));
+      const faceHeight = pts[8].y - pts[19].y;
+      const expandY = faceHeight * 0.5;
+      regions.push([
+        { x: minX, y: minY - expandY },
+        { x: maxX, y: minY - expandY },
+        { x: maxX, y: minY + 10 },
+        { x: minX, y: minY + 10 },
+      ]);
+    } else if (partKey === 'smile') {
+      regions.push(PART_LANDMARK_INDICES.smile.left.map(i => pts[i]));
+      regions.push(PART_LANDMARK_INDICES.smile.right.map(i => pts[i]));
+    } else if (partKey === 'jaw') {
+      const jawPts = PART_LANDMARK_INDICES.jaw.line.map(i => pts[i]);
+      const top = jawPts.map(p => ({ x: p.x, y: p.y - 25 }));
+      regions.push([...jawPts, ...top.reverse()]);
+    }
   }
 
   // 각 영역을 폴리곤으로 뚫기
