@@ -354,6 +354,28 @@
     .month-card.clickable:active { background: rgba(199,178,255,0.1); transform: scale(0.98); }
 
     /* 점점점 애니메이션 */
+    .floating-manual-btn {
+      position: absolute;
+      left: 50%; bottom: 12px;
+      transform: translateX(-50%);
+      background: rgba(199,178,255,0.95);
+      color: #0F0F12;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 24px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.15);
+      backdrop-filter: blur(4px);
+      transition: transform 0.15s, background 0.15s;
+      white-space: nowrap;
+      max-width: 92%;
+    }
+    .floating-manual-btn:active {
+      transform: translateX(-50%) scale(0.96);
+      background: #C7B2FF;
+    }
     .dots-animate::after {
       content: '';
       display: inline-block;
@@ -423,6 +445,8 @@
       overflow-y: auto;
     }
     .modal.show { display: flex; }
+    /* 최근 열린 모달이 위로 (top-modal 클래스 동적 부여) */
+    .modal.top-modal { z-index: 2100; }
     .modal-content {
       background: #1A1A20; border-radius: 16px; padding: 20px;
       max-width: 440px; width: 100%; margin: auto;
@@ -435,6 +459,50 @@
       cursor: pointer; padding: 0;
     }
     .modal-close:active { background: rgba(255,255,255,0.15); }
+
+    /* 수동 얼굴 지정 모달 - viewport에 맞게, 버튼은 항상 보이게 */
+    .manual-face-modal {
+      max-height: 92vh;
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 16px;
+    }
+    .manual-face-canvas-wrap {
+      position: relative;
+      width: 100%;
+      background: #000;
+      border-radius: 10px;
+      overflow: hidden;
+      touch-action: none;
+      /* 이미지 영역은 모달 안에서 최대 높이 제한 - 헤더 + 버튼 영역 빼고 */
+      max-height: calc(92vh - 220px);
+      min-height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 1;
+    }
+    .manual-face-canvas-wrap img {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      display: block;
+      object-fit: contain;
+    }
+    .manual-face-canvas-wrap canvas {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      cursor: crosshair;
+      /* 캔버스는 이미지 크기와 동일하게 JS에서 설정 */
+    }
+    .manual-face-actions {
+      display: flex; gap: 8px;
+      margin-top: 12px;
+      padding-top: 4px;
+      flex-shrink: 0;
+    }
 
     .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .compare-side {
@@ -497,7 +565,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo" onclick="resetApp()" style="cursor:pointer;">Face<span class="accent">AGE</span></div>
-    <div class="badge" id="topBadge">POC v3.0</div>
+    <div class="badge" id="topBadge">POC v3.3</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -676,16 +744,16 @@
       <div class="stat-mini"><div class="label">품질 미달</div><div class="value" id="aFail">0</div></div>
     </div>
 
+    <!-- 분석 화면 액션 버튼 (카운터 바로 아래로 이동 → 스크롤 없이 접근) -->
+    <p class="status-text" id="analyzeStatus" style="margin: 8px 0 4px;"></p>
+    <button class="btn btn-primary dots-animate" id="analyzingBtn" disabled style="display: none; margin-top: 4px;">분석중</button>
+    <button class="btn btn-primary" id="goResultsBtn" style="display: none; margin-top: 4px;" onclick="showResults()">결과 보기</button>
+    <button class="btn btn-secondary" id="reanalyzeBtn" style="display: none; margin-top: 8px;" onclick="reanalyzeFromCurrent()">재분석</button>
+    <button class="btn btn-ghost" id="forceResultsBtn" style="display: none; margin-top: 4px;" onclick="showResults()">결과 강제 표시</button>
+
     <h3 style="margin-top: 16px; margin-bottom: 4px;">처리된 사진</h3>
     <p class="small" style="margin-bottom: 8px;">Q = 품질점수 · 🕶️/😷 = 가려짐 · 빨간 라벨 = 사람 얼굴 아님 · ✕ = 품질 미달</p>
     <div class="thumb-grid" id="thumbGrid"></div>
-
-    <p class="status-text" id="analyzeStatus"></p>
-    <!-- 분석 화면 액션 버튼 (상태에 따라 표시) -->
-    <button class="btn btn-primary dots-animate" id="analyzingBtn" disabled style="display: none;">분석중</button>
-    <button class="btn btn-primary" id="goResultsBtn" style="display: none;" onclick="showResults()">결과 보기</button>
-    <button class="btn btn-secondary" id="reanalyzeBtn" style="display: none;" onclick="reanalyzeFromCurrent()">재분석</button>
-    <button class="btn btn-ghost" id="forceResultsBtn" style="display: none;" onclick="showResults()">결과 강제 표시</button>
   </div>
 
   <!-- SCREEN 5: 결과 - 타임라인 -->
@@ -822,7 +890,13 @@
   <div class="modal-content">
     <button class="modal-close" onclick="closeModal('thumbModal')">✕</button>
     <h3 id="thumbModalTitle" style="margin-bottom: 12px;">사진 상세</h3>
-    <img id="thumbModalImg" style="width: 100%; border-radius: 12px; margin-bottom: 12px;">
+    <div id="thumbModalImgWrap" style="position: relative; margin-bottom: 12px;">
+      <img id="thumbModalImg" style="width: 100%; border-radius: 12px; display: block;">
+      <!-- 거부된 사진에 floating 버튼 (수동 분석 빠른 접근) -->
+      <button id="floatingManualBtn" class="floating-manual-btn" style="display: none;">
+        ✋ 얼굴 영역 직접 지정해서 분석
+      </button>
+    </div>
     <div id="thumbModalInfo"></div>
   </div>
 </div>
@@ -865,18 +939,20 @@
 
 <!-- 수동 얼굴 영역 지정 모달 -->
 <div class="modal" id="manualFaceModal" onclick="if(event.target===this)closeModal('manualFaceModal')">
-  <div class="modal-content" style="max-width: 500px;">
+  <div class="modal-content manual-face-modal" style="max-width: 500px;">
     <button class="modal-close" onclick="closeModal('manualFaceModal')">✕</button>
     <h3 style="margin-bottom: 6px;">얼굴 영역 직접 지정</h3>
-    <p class="muted" style="margin-bottom: 12px; font-size: 12px;">
+    <p class="muted" style="margin-bottom: 10px; font-size: 12px;">
       사진을 손가락으로 드래그해서 본인 얼굴 영역을 사각형으로 그려주세요.
     </p>
-    <div id="manualFaceCanvasWrap" style="position: relative; width: 100%; background: #000; border-radius: 10px; overflow: hidden; touch-action: none;">
-      <img id="manualFaceImg" style="width: 100%; display: block;" alt="">
-      <canvas id="manualFaceCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: crosshair;"></canvas>
+    <!-- 이미지 영역: 모달 높이 안에 들어가도록 max-height 설정 -->
+    <div id="manualFaceCanvasWrap" class="manual-face-canvas-wrap">
+      <img id="manualFaceImg" alt="">
+      <canvas id="manualFaceCanvas"></canvas>
     </div>
-    <p class="small" id="manualFaceStatus" style="margin-top: 8px; color: rgba(199,178,255,0.8);">손가락이나 마우스로 얼굴 영역을 드래그하세요</p>
-    <div style="display: flex; gap: 8px; margin-top: 12px;">
+    <p class="small" id="manualFaceStatus" style="margin: 8px 0 0; color: rgba(199,178,255,0.8); text-align: center;">손가락이나 마우스로 얼굴 영역을 드래그하세요</p>
+    <!-- 하단 sticky 버튼 영역 -->
+    <div class="manual-face-actions">
       <button class="btn btn-ghost" style="flex:1; margin:0;" onclick="resetManualBox()">다시 그리기</button>
       <button class="btn btn-primary" id="manualFaceConfirm" style="flex:2; margin:0;" disabled onclick="confirmManualFace()">이 영역으로 분석</button>
     </div>
@@ -2961,8 +3037,18 @@ function showThumbDetail(idx) {
   const r = analysisResults[idx];
   if (!r) return;
   document.getElementById('thumbModalTitle').textContent = '사진 #' + (idx + 1) + ' 상세';
-  // 원본이 있으면 원본, 없으면 썸네일
   document.getElementById('thumbModalImg').src = r.fullImageUrl || r.thumbUrl;
+
+  // Floating 버튼: 거부됐거나 통과 못한 사진에만 표시
+  const floatBtn = document.getElementById('floatingManualBtn');
+  if (floatBtn) {
+    const showFloat = !r.passed; // 통과 못한 모든 사진(거부, 검출 실패 등)
+    floatBtn.style.display = showFloat ? 'block' : 'none';
+    floatBtn.onclick = showFloat ? (e) => {
+      e.stopPropagation();
+      openManualFaceModal(idx);
+    } : null;
+  }
 
   const dateStr = r.timestamp.getFullYear() + '.' +
     String(r.timestamp.getMonth() + 1).padStart(2, '0') + '.' +
@@ -3117,12 +3203,12 @@ function showThumbDetail(idx) {
   }
 
   // 수동 영역 지정은 모든 사진에 가능 (검출 실패 사진 포함)
-  // 단, 이미 포함된 사진은 "재분석" 형태로
+  // 거부된 사진은 위에 floating 버튼이 있으므로 하단은 보조 버튼으로
   const manualBtnLabel = isIncluded
     ? '✋ 얼굴 영역 다시 지정해서 재분석'
     : '✋ 얼굴 영역 직접 지정해서 분석';
   infoHtml += `
-    <button class="btn btn-primary" style="margin: 0;" onclick="openManualFaceModal(${idx})">
+    <button class="btn btn-secondary" style="margin: 0;" onclick="openManualFaceModal(${idx})">
       ${manualBtnLabel}
     </button>
   `;
@@ -3144,12 +3230,28 @@ function handleBackButton() {
 }
 
 function openModal(id) {
-  document.getElementById(id).classList.add('show');
-  // history는 건드리지 않음 (스택 꼬임 방지)
+  // 이전 모달들의 top-modal 클래스 제거
+  document.querySelectorAll('.modal.top-modal').forEach(m => {
+    if (m.id !== id) m.classList.remove('top-modal');
+  });
+  const modal = document.getElementById(id);
+  modal.classList.add('show');
+  modal.classList.add('top-modal');
+  // 모달 내부 스크롤 최상단으로 (사용자가 항상 제목/사진부터 보게)
+  modal.scrollTop = 0;
+  const content = modal.querySelector('.modal-content');
+  if (content) content.scrollTop = 0;
 }
 function closeModal(id) {
-  document.getElementById(id).classList.remove('show');
-  // history는 건드리지 않음
+  const modal = document.getElementById(id);
+  if (!modal) return;
+  modal.classList.remove('show');
+  modal.classList.remove('top-modal');
+  // 닫힌 후 다른 열린 모달 중 가장 마지막 것을 top으로
+  const remaining = document.querySelectorAll('.modal.show');
+  if (remaining.length > 0) {
+    remaining[remaining.length - 1].classList.add('top-modal');
+  }
 }
 
 // ============================================
@@ -3225,16 +3327,16 @@ function refreshAfterPhotoChange(specificIdx) {
   if (!currentScreen) return;
 
   if (currentScreen.id === 'screen-analyze') {
-    if (analysisInProgress) {
-      // 분석 진행 중: 그리드를 통째로 재구축하지 않고 특정 사진만 업데이트
-      if (typeof specificIdx === 'number') {
-        updateSingleThumbnail(specificIdx);
-      }
-      // 카운터만 다시 계산
+    // idx가 명시되면 그것만 업데이트 (분석 중/완료 무관, 안전함)
+    if (typeof specificIdx === 'number') {
+      updateSingleThumbnail(specificIdx);
       recalcAnalysisCounters();
-    } else {
-      // 분석 완료 상태: 통째로 재구축 OK
+    } else if (!analysisInProgress) {
+      // idx 없고 분석 완료면 통째 재구축
       rebuildAnalysisThumbnails();
+    } else {
+      // idx 없는데 분석 중이면 카운터만
+      recalcAnalysisCounters();
     }
   } else if (currentScreen.id === 'screen-result' || currentScreen.id === 'screen-insights') {
     setTimeout(() => { try { showResults(); } catch (e) { console.error(e); } }, 200);
@@ -3259,6 +3361,55 @@ function recalcAnalysisCounters() {
   if (aFail) aFail.textContent = failCount;
 }
 
+// 거부 사유 라벨 매핑
+const REJECT_REASON_MAP = {
+  'too_small': '🔍 얼굴 너무 작음',
+  'bad_aspect': '📐 비율 이상',
+  'bad_proportion': '🚫 사람 얼굴 아님',
+  'bad_mouth_pos': '🚫 사람 얼굴 아님',
+  'low_confidence': '❓ 신뢰도 낮음',
+  'different_person': '👥 다른 사람',
+  'age_out_of_range': '⚠️ 신뢰도 낮음',
+  'sunglasses': '🕶️ 선글라스',
+  'mask': '😷 마스크',
+  'user_excluded': '✕ 사용자 제외',
+};
+
+// 결과 객체로부터 썸네일 HTML 요소의 상태(클래스/내용) 계산
+function computeThumbState(result) {
+  const occlusionReason = result.qualityBreakdown && result.qualityBreakdown.occlusionReason;
+  const rejectionReason = result.rejectionReason;
+
+  let classExtra = '';
+  let extraTag = '';
+
+  // 우선순위: passed > rejected > occluded > 일반 검출 여부
+  if (result.passed) {
+    classExtra = result.manualFace ? ' manual-passed' : '';
+  } else if (rejectionReason) {
+    classExtra = ' rejected';
+    extraTag = `<span class="reject-tag">${REJECT_REASON_MAP[rejectionReason] || '제외'}</span>`;
+  } else if (occlusionReason) {
+    classExtra = ' occluded';
+  } else if (result.hasFace) {
+    classExtra = ' excluded';
+  } else {
+    classExtra = ' no-face';
+  }
+
+  const ageText = result.passed && result.estimatedAge !== null
+    ? `<span class="age-tag">${result.estimatedAge.toFixed(0)}세</span>` : '';
+  const qualityText = result.hasFace && !result.passed && !rejectionReason
+    ? `<span class="quality-tag">Q${result.qualityScore}</span>`
+    : (result.passed && result.qualityScore > 0 ? `<span class="quality-tag">Q${result.qualityScore}</span>` : '');
+  const occlusionTag = occlusionReason && !result.passed
+    ? `<span class="occlusion-tag">${occlusionReason === 'sunglasses' ? '🕶️' : '😷'}</span>` : '';
+  const manualBadge = result.manualFace
+    ? `<span class="manual-badge">✋ 수동</span>` : '';
+
+  return { classExtra, extraTag, ageText, qualityText, occlusionTag, manualBadge };
+}
+
 // 특정 인덱스의 썸네일 업데이트 (그리드 위치 유지)
 function updateSingleThumbnail(idx) {
   const thumbGrid = document.getElementById('thumbGrid');
@@ -3266,47 +3417,22 @@ function updateSingleThumbnail(idx) {
   const result = analysisResults[idx];
   if (!result || !result.thumbUrl) return;
 
-  // 기존 썸네일 찾기 (인덱스 = DOM 순서)
   const existingThumb = thumbGrid.children[idx];
   if (!existingThumb) return;
 
-  const occlusionReason = result.qualityBreakdown && result.qualityBreakdown.occlusionReason;
-  const rejectionReason = result.rejectionReason;
-  let classExtra = '';
-  let extraTag = '';
+  const state = computeThumbState(result);
 
-  if (result.passed) {
-    classExtra = result.manualFace ? ' manual-passed' : '';
-  } else if (rejectionReason) {
-    classExtra = ' rejected';
-    const reasonMap = {
-      'too_small': '🔍 얼굴 너무 작음', 'bad_aspect': '📐 비율 이상',
-      'bad_proportion': '🚫 사람 얼굴 아님', 'bad_mouth_pos': '🚫 사람 얼굴 아님',
-      'low_confidence': '❓ 신뢰도 낮음', 'different_person': '👥 다른 사람',
-      'age_out_of_range': '⚠️ 신뢰도 낮음', 'sunglasses': '🕶️ 선글라스',
-      'mask': '😷 마스크', 'user_excluded': '✕ 사용자 제외',
-    };
-    extraTag = `<span class="reject-tag">${reasonMap[rejectionReason] || '제외'}</span>`;
-  } else {
-    classExtra = result.hasFace ? ' excluded' : ' no-face';
-  }
-
-  const ageText = result.hasFace && result.estimatedAge !== null && !occlusionReason
-    ? `<span class="age-tag">${result.estimatedAge.toFixed(0)}세</span>` : '';
-  const qualityText = result.hasFace
-    ? `<span class="quality-tag">Q${result.qualityScore}</span>` : '';
-  const manualBadge = result.manualFace
-    ? `<span class="manual-badge">✋ 수동</span>` : '';
-
-  existingThumb.className = 'thumb' + classExtra;
+  // 클래스 완전 재설정 (이전 상태의 클래스가 남지 않도록)
+  existingThumb.className = 'thumb' + state.classExtra;
   existingThumb.innerHTML = `
     <img src="${result.thumbUrl}" alt="">
-    ${ageText}
-    ${qualityText}
-    ${extraTag}
-    ${manualBadge}
+    ${state.ageText}
+    ${state.qualityText}
+    ${state.occlusionTag}
+    ${state.extraTag}
+    ${state.manualBadge}
   `;
-  // 클릭 핸들러 재설정
+  // 클릭 핸들러 재바인딩 (innerHTML 교체로 사라질 수 있음)
   existingThumb.onclick = () => showThumbDetail(idx);
 }
 
@@ -3405,13 +3531,25 @@ async function openManualFaceModal(resultIdx) {
   setTimeout(() => {
     const img = document.getElementById('manualFaceImg');
     img.onload = () => {
-      const canvas = document.getElementById('manualFaceCanvas');
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      setupManualCanvas();
-      document.getElementById('manualFaceStatus').textContent = '손가락이나 마우스로 얼굴 영역을 드래그하세요';
-      document.getElementById('manualFaceConfirm').disabled = true;
-      document.getElementById('manualFaceConfirm').textContent = '이 영역으로 분석';
+      // 이미지가 실제로 표시되는 크기에 맞춰 캔버스 크기 설정
+      // 모달이 viewport 맞춤이라 이미지가 max-height에 의해 축소될 수 있음
+      requestAnimationFrame(() => {
+        const canvas = document.getElementById('manualFaceCanvas');
+        const displayW = img.clientWidth;
+        const displayH = img.clientHeight;
+        // 캔버스 픽셀 크기 = 표시 크기 (1:1 매칭)
+        canvas.width = displayW;
+        canvas.height = displayH;
+        canvas.style.width = displayW + 'px';
+        canvas.style.height = displayH + 'px';
+        // 원본 이미지 비율 보존 위해 naturalWidth/Height도 저장
+        manualFaceContext.scaleX = img.naturalWidth / displayW;
+        manualFaceContext.scaleY = img.naturalHeight / displayH;
+        setupManualCanvas();
+        document.getElementById('manualFaceStatus').textContent = '손가락이나 마우스로 얼굴 영역을 드래그하세요';
+        document.getElementById('manualFaceConfirm').disabled = true;
+        document.getElementById('manualFaceConfirm').textContent = '이 영역으로 분석';
+      });
     };
     img.src = imageUrl;
     openModal('manualFaceModal');
@@ -3490,7 +3628,7 @@ function resetManualBox() {
 
 async function confirmManualFace() {
   if (!manualFaceContext || !manualFaceContext.box) return;
-  const { resultIdx, fullImageUrl, box } = manualFaceContext;
+  const { resultIdx, fullImageUrl, box, scaleX, scaleY } = manualFaceContext;
   const r = analysisResults[resultIdx];
   if (!r) return;
 
@@ -3505,12 +3643,22 @@ async function confirmManualFace() {
       img.src = fullImageUrl;
     });
 
-    // 박스 주변 패딩
-    const padding = Math.max(box.w, box.h) * 0.3;
-    const cropX = Math.max(0, box.x - padding);
-    const cropY = Math.max(0, box.y - padding);
-    const cropW = Math.min(img.naturalWidth - cropX, box.w + padding * 2);
-    const cropH = Math.min(img.naturalHeight - cropY, box.h + padding * 2);
+    // 박스 좌표를 표시 크기 → 원본 크기로 변환
+    const sX = scaleX || 1;
+    const sY = scaleY || 1;
+    const realBox = {
+      x: box.x * sX,
+      y: box.y * sY,
+      w: box.w * sX,
+      h: box.h * sY,
+    };
+
+    // 박스 주변 패딩 (원본 좌표 기준)
+    const padding = Math.max(realBox.w, realBox.h) * 0.3;
+    const cropX = Math.max(0, realBox.x - padding);
+    const cropY = Math.max(0, realBox.y - padding);
+    const cropW = Math.min(img.naturalWidth - cropX, realBox.w + padding * 2);
+    const cropH = Math.min(img.naturalHeight - cropY, realBox.h + padding * 2);
 
     const canvas = document.createElement('canvas');
     canvas.width = cropW;
@@ -3576,13 +3724,22 @@ async function confirmManualFace() {
     r.estimatedAge = finalAge;
     r.qualityScore = Math.max(r.qualityScore || 0, 70);
     r.rejectionReason = null;
+    r.userExcluded = false;
     r.manualFace = true;
     r.descriptor = detection.descriptor;
+    // qualityBreakdown 정리: 마스크/선글라스 거짓양성 제거 (사용자가 명시한 얼굴이므로)
+    if (r.qualityBreakdown) {
+      r.qualityBreakdown.occlusionReason = null;
+      r.qualityBreakdown.occluded = 100;
+    } else {
+      r.qualityBreakdown = { occlusionReason: null, occluded: 100 };
+    }
 
     closeModal('manualFaceModal');
     showToast(`✓ 수동 분석 완료: ${finalAge.toFixed(1)}세`);
-    // 결과 화면으로 점프하지 않고, 현재 화면(분석 화면)에서 썸네일만 갱신
+    // 즉시 + 다음 프레임에서도 한 번 더 → 어떤 비동기 race 도 커버
     refreshAfterPhotoChange(resultIdx);
+    requestAnimationFrame(() => refreshAfterPhotoChange(resultIdx));
 
   } catch (e) {
     console.error('Manual face analysis failed', e);
@@ -3831,7 +3988,7 @@ function showPartTimeline(partKey) {
   const info = PART_INFO[partKey];
   if (!info) return;
 
-  // 분석 통과 사진들을 시간순으로 정렬 후 4개 균등 선택
+  // 분석 통과 사진들을 시간순으로 정렬
   const passed = analysisResults.filter(r => r.passed && r.thumbUrl);
   if (passed.length < 4) {
     showToast('시계열 표시를 위해 분석 통과 사진이 4장 이상 필요합니다');
@@ -3839,14 +3996,36 @@ function showPartTimeline(partKey) {
   }
   passed.sort((a, b) => a.timestamp - b.timestamp);
 
-  // 균등하게 4장 선택 (첫, 1/3, 2/3, 마지막)
-  const indices = [0, Math.floor(passed.length / 3), Math.floor(passed.length * 2 / 3), passed.length - 1];
-  const samples = indices.map(i => passed[i]);
+  // 부위별로 다른 사진 4장 선택
+  // 4구간(시간순)으로 나누고, 부위 키에 따라 각 구간에서 다른 인덱스의 사진을 선택
+  const partOffset = { eyes: 0, forehead: 1, smile: 2, jaw: 3 }[partKey] || 0;
+  const samples = [];
+  const seen = new Set();
+
+  for (let i = 0; i < 4; i++) {
+    // i번째 구간의 범위
+    const segStart = Math.floor((i * passed.length) / 4);
+    const segEnd = Math.floor(((i + 1) * passed.length) / 4);
+    const segSize = Math.max(1, segEnd - segStart);
+    // 부위별 offset만큼 구간 안에서 다른 인덱스 선택
+    let pick = segStart + (partOffset % segSize);
+    // 이미 선택된 인덱스면 인접 인덱스로 이동
+    let tries = 0;
+    while (seen.has(pick) && tries < segSize) {
+      pick = segStart + ((pick - segStart + 1) % segSize);
+      tries++;
+    }
+    seen.add(pick);
+    samples.push(passed[Math.min(pick, passed.length - 1)]);
+  }
+
+  // 시간순 정렬 (그리드에 시계열로 표시)
+  samples.sort((a, b) => a.timestamp - b.timestamp);
 
   // 모달 텍스트
   document.getElementById('partTimelineTitle').textContent = `${info.name} 시계열`;
   document.getElementById('partTimelineDesc').textContent =
-    `시간순 4장의 사진에서 ${info.name.replace(/[^가-힣 ]/g, '').trim()} 부위만 강조 표시합니다.`;
+    `시간순으로 4장의 사진에서 ${info.name.replace(/[^가-힣 ]/g, '').trim()} 부위만 강조 표시합니다.`;
 
   // 본문: 4장 그리드
   const body = document.getElementById('partTimelineBody');
@@ -4038,7 +4217,7 @@ function renderMonthlyReport(passed, realAge) {
     return;
   }
 
-  // 선택 인덱스 범위 보정
+  // 선택 인덱스 보정 (기본: 가장 최신 = 0)
   if (monthlyReportSelectedIdx >= months.length) monthlyReportSelectedIdx = 0;
 
   const birthDate = new Date(document.getElementById('birthDate').value);
@@ -4066,40 +4245,37 @@ function renderMonthlyReport(passed, realAge) {
     return { monthKey, photos, avgAge, realAgeAtMonth, delta, bestPhoto, deltaText };
   });
 
-  // 선택된 월을 큰 카드 위치로 이동: 큰 카드 영역 (선택된) + 그 외 작은 카드 리스트 (내림차순)
-  const selectedEntry = monthEntries[monthlyReportSelectedIdx];
-  const otherEntries = monthEntries.filter((_, i) => i !== monthlyReportSelectedIdx);
-
-  // === 큰 카드 (선택된 월) ===
+  // 사진 클릭은 stopPropagation으로 카드 확장 동작과 분리
   const photoClickAttr = (photo) => {
     const photoIdx = analysisResults.indexOf(photo);
     return `onclick="event.stopPropagation();(function(){if(${photoIdx}>=0)showThumbDetail(${photoIdx});})()"`;
   };
 
-  let html = `
-    <div class="report-card" style="margin: 12px 0;">
-      <div class="report-card-left">
-        <h3>MONTHLY REPORT · ${selectedEntry.monthKey}</h3>
-        <div class="big">${selectedEntry.avgAge.toFixed(1)}세</div>
-        <p class="sub">실제 ${selectedEntry.realAgeAtMonth.toFixed(0)}세 (${selectedEntry.photos.length}장 분석)</p>
-        <p class="sub" style="margin-top: 10px; font-weight: 600;">${selectedEntry.deltaText}</p>
-      </div>
-      <div class="report-card-right">
-        <img src="${selectedEntry.bestPhoto.thumbUrl}" alt="대표 사진" ${photoClickAttr(selectedEntry.bestPhoto)} style="cursor:pointer;">
-        <p class="report-photo-label">${selectedEntry.bestPhoto.estimatedAge.toFixed(0)}세 · 탭</p>
-      </div>
-    </div>
-  `;
+  // === 순서대로 렌더 - 선택된 카드만 큰 카드로 ===
+  const html = monthEntries.map((e, idx) => {
+    const isSelected = idx === monthlyReportSelectedIdx;
 
-  // === 작은 카드들 (나머지 월들, 내림차순) ===
-  if (otherEntries.length > 0) {
-    html += `<p class="small" style="margin: 16px 0 8px; color: rgba(255,255,255,0.5);">다른 월 (탭하면 위에 표시됩니다)</p>`;
-    html += otherEntries.map((e) => {
-      const deltaColor = e.delta < -0.5 ? '#4ADE80' : (e.delta > 0.5 ? '#F87171' : 'rgba(255,255,255,0.7)');
-      // 원본 인덱스 (선택용)
-      const origIdx = monthEntries.indexOf(e);
+    if (isSelected) {
+      // 큰 카드 (보라 그라데이션)
       return `
-        <div class="month-card clickable" onclick="selectMonthlyReport(${origIdx})">
+        <div class="report-card" style="margin: 8px 0;">
+          <div class="report-card-left">
+            <h3>MONTHLY REPORT · ${e.monthKey}</h3>
+            <div class="big">${e.avgAge.toFixed(1)}세</div>
+            <p class="sub">실제 ${e.realAgeAtMonth.toFixed(0)}세 (${e.photos.length}장 분석)</p>
+            <p class="sub" style="margin-top: 10px; font-weight: 600;">${e.deltaText}</p>
+          </div>
+          <div class="report-card-right">
+            <img src="${e.bestPhoto.thumbUrl}" alt="대표 사진" ${photoClickAttr(e.bestPhoto)} style="cursor:pointer;">
+            <p class="report-photo-label">${e.bestPhoto.estimatedAge.toFixed(0)}세 · 탭</p>
+          </div>
+        </div>
+      `;
+    } else {
+      // 일반 작은 카드
+      const deltaColor = e.delta < -0.5 ? '#4ADE80' : (e.delta > 0.5 ? '#F87171' : 'rgba(255,255,255,0.7)');
+      return `
+        <div class="month-card clickable" onclick="selectMonthlyReport(${idx})">
           <div class="month-card-left">
             <div class="month-card-date">${e.monthKey}</div>
             <div class="month-card-age">${e.avgAge.toFixed(1)}세 <span style="color:rgba(255,255,255,0.5); font-size:12px;">(실제 ${e.realAgeAtMonth.toFixed(0)})</span></div>
@@ -4109,16 +4285,15 @@ function renderMonthlyReport(passed, realAge) {
           <img class="month-card-photo" src="${e.bestPhoto.thumbUrl}" alt="" ${photoClickAttr(e.bestPhoto)}>
         </div>
       `;
-    }).join('');
-  }
+    }
+  }).join('');
 
   container.innerHTML = html;
 }
 
-// 작은 월 카드 클릭 → 위쪽 큰 카드로 올라옴
+// 작은 월 카드 클릭 → 제자리에서 확장 (순서 유지)
 function selectMonthlyReport(monthIdx) {
   monthlyReportSelectedIdx = monthIdx;
-  // 분석 결과 그대로 사용
   const passed = analysisResults.filter(r => r.passed);
   const birthDate = new Date(document.getElementById('birthDate').value);
   const realAge = passed.length > 0
@@ -4126,11 +4301,13 @@ function selectMonthlyReport(monthIdx) {
     : 0;
   renderMonthlyReport(passed, realAge);
 
-  // 스크롤을 위로 (큰 카드 위치)
-  const container = document.getElementById('monthlyReportList');
-  if (container) {
-    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
+  // 선택된 카드 위치로 부드럽게 스크롤 (사용자 시선 유지)
+  setTimeout(() => {
+    const cards = document.querySelectorAll('#monthlyReportList > div');
+    if (cards[monthIdx]) {
+      cards[monthIdx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, 50);
 }
 
 function switchInsightTab(el, key) {
