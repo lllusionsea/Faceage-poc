@@ -68,6 +68,7 @@
     }
     .btn-primary { background: #C7B2FF; color: #0F0F12; }
     .btn-primary:active { transform: scale(0.98); }
+    .btn-progress { background: linear-gradient(90deg, #C7B2FF, #7A6FE0); color: #0F0F12; opacity: 0.85; cursor: wait; }
     .btn-ghost { background: transparent; color: rgba(255,255,255,0.7); border: 0.5px solid rgba(255,255,255,0.15); }
     .btn-secondary { background: rgba(255,255,255,0.08); color: #fff; }
     .btn:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -229,7 +230,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo">Face<span class="accent">Age</span></div>
-    <div class="badge" id="topBadge">POC v0.9</div>
+    <div class="badge" id="topBadge">POC v1.0</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -327,12 +328,6 @@
       </div>
       <p class="small">⏱️ 100장 기준 약 2-4분 소요 · 200-500장 정도 골라도 충분히 풍부함</p>
     </div>
-
-    <div class="card" style="margin-top: 12px;">
-      <h3>또는 데모 데이터로 체험</h3>
-      <p class="muted" style="margin-bottom: 12px;">⚠️ 실제 사진 없이 가짜 데이터 20장으로 플로우 시연. 결과는 가짜입니다.</p>
-      <button class="btn btn-secondary" onclick="runDemo()">🎭 데모 분석 실행</button>
-    </div>
   </div>
 
   <!-- SCREEN 3.5: 샘플링 미리보기 -->
@@ -361,7 +356,7 @@
       <p style="font-size: 12px;" id="sampleWarnText"></p>
     </div>
 
-    <button class="btn btn-primary" onclick="startAnalysis()">분석 시작</button>
+    <button class="btn btn-primary" id="startAnalysisBtn" onclick="startAnalysis()">분석 시작</button>
     <button class="btn btn-ghost" onclick="showScreen('screen-pick')">다시 선택</button>
   </div>
 
@@ -668,8 +663,7 @@ async function startLoading() {
     console.error('Model loading failed', e);
     document.getElementById('loadStatus').textContent = '모델 로딩 실패';
     document.getElementById('loadStatus').classList.add('err');
-    document.getElementById('loadDetail').textContent = '네트워크를 확인하거나 데모 모드로 진행할 수 있어요. 데모로 전환합니다.';
-    setTimeout(() => showScreen('screen-pick'), 2000);
+    document.getElementById('loadDetail').textContent = '네트워크를 확인 후 다시 시도해주세요. 페이지를 새로고침하면 재시도됩니다.';
   }
 }
 
@@ -783,10 +777,34 @@ async function prepareSampling(files) {
   // 2단계: 시간순 정렬
   filesWithTime.sort((a, b) => a.timestamp - b.timestamp);
 
-  // 3단계: 균등 샘플링 (시간 축 기준)
+  // 3단계: 균등 샘플링 - 진행률 콜백 포함
   const maxSamples = parseInt(document.getElementById('maxSamples').value);
-  const sampled = sampleEvenly(filesWithTime, maxSamples);
+  const startBtn = document.getElementById('startAnalysisBtn');
+
+  // 분석 시작 버튼 비활성화 + 진행률 표시 모드
+  if (startBtn) {
+    startBtn.disabled = true;
+    startBtn.classList.add('btn-progress');
+    startBtn.textContent = '균등 샘플링 중... 0%';
+  }
+
+  const sampled = await sampleEvenly(filesWithTime, maxSamples, async (pct) => {
+    if (startBtn) {
+      startBtn.textContent = `균등 샘플링 중... ${pct}%`;
+    }
+    document.getElementById('samplingSub').textContent =
+      `시간순 균등 샘플링 중... ${pct}%`;
+  });
+
   sampledFiles = sampled;
+
+  // 샘플링 완료 — 분석 시작 버튼 활성화
+  if (startBtn) {
+    startBtn.disabled = false;
+    startBtn.classList.remove('btn-progress');
+    startBtn.textContent = '분석 시작';
+  }
+  document.getElementById('samplingSub').textContent = '샘플링 완료. 분석을 시작하세요.';
 
   // UI 업데이트
   document.getElementById('sTotal').textContent = files.length;
@@ -829,10 +847,12 @@ async function prepareSampling(files) {
   }
 }
 
-function sampleEvenly(filesWithTime, maxSamples) {
-  if (filesWithTime.length <= maxSamples) return filesWithTime;
+async function sampleEvenly(filesWithTime, maxSamples, onProgress) {
+  if (filesWithTime.length <= maxSamples) {
+    if (onProgress) await onProgress(100);
+    return filesWithTime;
+  }
 
-  // 시간 균등 분포 샘플링: 첫 사진과 마지막 사진은 반드시 포함
   const startTime = filesWithTime[0].timestamp.getTime();
   const endTime = filesWithTime[filesWithTime.length - 1].timestamp.getTime();
   const totalSpan = endTime - startTime;
@@ -840,28 +860,59 @@ function sampleEvenly(filesWithTime, maxSamples) {
   if (totalSpan === 0) {
     // 같은 시간이면 간단 균등
     const step = filesWithTime.length / maxSamples;
-    return Array.from({ length: maxSamples }, (_, i) =>
+    const result = Array.from({ length: maxSamples }, (_, i) =>
       filesWithTime[Math.floor(i * step)]);
+    if (onProgress) await onProgress(100);
+    return result;
   }
 
+  // 최적화: 정렬된 배열에서 이진 탐색으로 각 타겟 시간에 가장 가까운 사진 찾기
+  // O(maxSamples * log N) — 100 × log(4400) ≈ 1200 연산
   const picked = [];
   const usedIndices = new Set();
 
-  for (let i = 0; i < maxSamples; i++) {
-    const targetTime = startTime + (totalSpan * i / (maxSamples - 1));
-    // 가장 가까운 사진 찾기 (이미 선택 안 된 것 중에서)
+  // 이진 탐색 헬퍼
+  function findNearest(targetTime) {
+    let lo = 0, hi = filesWithTime.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (filesWithTime[mid].timestamp.getTime() < targetTime) lo = mid + 1;
+      else hi = mid;
+    }
+    // lo가 가장 가까운 후보 (또는 그 주변)
+    // 사용 안 된 인덱스 중 가장 가까운 것을 찾아 ±10 범위 내에서 탐색
     let bestIdx = -1, bestDist = Infinity;
-    for (let j = 0; j < filesWithTime.length; j++) {
+    const startSearch = Math.max(0, lo - 20);
+    const endSearch = Math.min(filesWithTime.length - 1, lo + 20);
+    for (let j = startSearch; j <= endSearch; j++) {
       if (usedIndices.has(j)) continue;
       const dist = Math.abs(filesWithTime[j].timestamp.getTime() - targetTime);
-      if (dist < bestDist) {
-        bestDist = dist;
-        bestIdx = j;
+      if (dist < bestDist) { bestDist = dist; bestIdx = j; }
+    }
+    // 만약 ±20 범위에 사용 안 된 게 없으면 전체 스캔 (드문 경우)
+    if (bestIdx === -1) {
+      for (let j = 0; j < filesWithTime.length; j++) {
+        if (usedIndices.has(j)) continue;
+        const dist = Math.abs(filesWithTime[j].timestamp.getTime() - targetTime);
+        if (dist < bestDist) { bestDist = dist; bestIdx = j; }
       }
     }
+    return bestIdx;
+  }
+
+  for (let i = 0; i < maxSamples; i++) {
+    const targetTime = startTime + (totalSpan * i / (maxSamples - 1));
+    const bestIdx = findNearest(targetTime);
     if (bestIdx !== -1) {
       picked.push(filesWithTime[bestIdx]);
       usedIndices.add(bestIdx);
+    }
+
+    // 매 10장마다 UI 양보 + 진행률 보고
+    if ((i + 1) % 10 === 0 || i === maxSamples - 1) {
+      const pct = Math.round(((i + 1) / maxSamples) * 100);
+      if (onProgress) await onProgress(pct);
+      await new Promise(r => setTimeout(r, 0)); // 브라우저 양보
     }
   }
   return picked.sort((a, b) => a.timestamp - b.timestamp);
@@ -897,9 +948,14 @@ function formatDate(d) {
 
 // ===== 분석 시작 =====
 async function startAnalysis() {
+  const startBtn = document.getElementById('startAnalysisBtn');
+  if (startBtn && startBtn.disabled) {
+    showToast('분석 중입니다. 잠시만 기다려주세요.');
+    return;
+  }
+
   if (!modelsLoaded) {
-    showToast('모델이 아직 로딩 중입니다. 데모 모드로 진행합니다.');
-    runDemo();
+    showToast('AI 모델이 아직 로딩 중입니다. 잠시 후 다시 시도해주세요.');
     return;
   }
   if (sampledFiles.length === 0) {
