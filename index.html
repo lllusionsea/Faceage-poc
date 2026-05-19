@@ -230,7 +230,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo">Face<span class="accent">Age</span></div>
-    <div class="badge" id="topBadge">POC v1.0</div>
+    <div class="badge" id="topBadge">POC v1.2</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -290,33 +290,29 @@
 
     <div class="card" style="margin-top: 20px; background: linear-gradient(135deg, rgba(199,178,255,0.12), rgba(199,178,255,0.04)); border-color: rgba(199,178,255,0.3);">
       <h3>📂 폴더 통째로 선택 (추천)</h3>
-      <p class="muted" style="margin-bottom: 8px;">셀카 폴더를 통째로 골라주세요. 앱이 자동으로 시간순 균등 샘플링합니다.</p>
+      <p class="muted" style="margin-bottom: 8px;">셀카 폴더를 통째로 골라주세요. 시간순 균등 샘플링됩니다.</p>
       <div class="file-input-wrap" style="margin-top: 12px;">
         <button class="btn btn-primary" style="margin-top: 0;" id="folderBtn">셀카 폴더 선택</button>
         <input type="file" id="folderPicker" webkitdirectory directory multiple>
       </div>
       <p id="folderSelectedCount" class="small" style="text-align: center; margin-top: 8px; color: #C7B2FF; font-weight: 500; display: none;"></p>
-      <div style="background: rgba(74,222,128,0.06); border-radius: 10px; padding: 10px 12px; margin-top: 10px;">
-        <p class="small" style="color:#4ADE80; margin-bottom: 4px; font-weight: 600;">✨ 4천장도 OK</p>
-        <p class="small" style="line-height: 1.6; color: rgba(255,255,255,0.75);">
-          폴더 안의 모든 사진을 읽고 <b>시간순으로 균등 샘플링</b>합니다. 4천장이든 500장이든 동일하게 작동.<br/>
-          삼성 Z Fold: "내 파일" → DCIM/Camera 또는 셀카 폴더 → 폴더 선택
-        </p>
-      </div>
     </div>
 
     <div class="card" style="margin-top: 12px;">
-      <h3>📁 또는 사진 직접 다중 선택</h3>
-      <p class="muted" style="margin-bottom: 8px;">개별 사진들을 직접 고르고 싶을 때</p>
-      <div class="pill-row">
-        <span class="pill-mini">📱 iOS: 길게 누른 후 드래그</span>
-        <span class="pill-mini">🤖 Android: 길게 + 다중 선택</span>
-      </div>
+      <h3>📁 추가로 개별 사진 선택 (선택사항)</h3>
+      <p class="muted" style="margin-bottom: 8px;">폴더 외에 특정 사진을 더 추가하고 싶을 때</p>
       <div class="file-input-wrap" style="margin-top: 12px;">
         <button class="btn btn-secondary" style="margin-top: 0;" id="galleryBtn">갤러리에서 사진 선택</button>
         <input type="file" id="filePicker" accept="image/jpeg,image/png,image/jpg,image/webp,image/heic,image/heif" multiple>
       </div>
       <p id="selectedCount" class="small" style="text-align: center; margin-top: 8px; color: #C7B2FF; font-weight: 500; display: none;"></p>
+    </div>
+
+    <!-- 선택 완료 영역 -->
+    <div class="card" style="margin-top: 16px; background: rgba(199,178,255,0.06); border-color: rgba(199,178,255,0.2);">
+      <p id="totalSelectedCount" class="small" style="text-align: center; color:#C7B2FF; font-weight:600; font-size:14px; margin-bottom:12px; display:none;"></p>
+      <button class="btn btn-primary" id="proceedBtn" onclick="proceedToSampling()" disabled style="margin-top:0;">선택 완료</button>
+      <button class="btn btn-ghost" onclick="clearSelection()" style="margin-top:8px;">선택 초기화</button>
     </div>
 
     <div class="card" style="margin-top: 12px;">
@@ -591,6 +587,8 @@ function resetPickScreen() {
   if (btn) btn.textContent = '갤러리에서 사진 선택';
   const folderBtn = document.getElementById('folderBtn');
   if (folderBtn) folderBtn.textContent = '셀카 폴더 선택';
+  collectedFiles = [];
+  if (typeof updateCollectedDisplay === 'function') updateCollectedDisplay();
   sampledFiles = [];
   analysisResults = [];
   analysisCancelled = false;
@@ -652,10 +650,12 @@ async function startLoading() {
 
   try {
     await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-    updateLoading('얼굴 랜드마크 모델 로딩 중...', 35, '눈·코·입 등 68개 포인트');
+    updateLoading('얼굴 랜드마크 모델 로딩 중...', 25, '눈·코·입 등 68개 포인트');
     await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-    updateLoading('나이/성별 추정 모델 로딩 중...', 75, '핵심 분석 모델');
+    updateLoading('나이/성별 추정 모델 로딩 중...', 55, '핵심 분석 모델');
     await faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL);
+    updateLoading('얼굴 인식 모델 로딩 중...', 80, '본인 식별용');
+    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
     updateLoading('완료', 100, '준비되었습니다');
     modelsLoaded = true;
     setTimeout(() => showScreen('screen-pick'), 600);
@@ -673,20 +673,52 @@ function updateLoading(status, pct, detail) {
   document.getElementById('loadDetail').textContent = detail || '';
 }
 
-// ===== 사진 선택 + 시계열 샘플링 =====
+// ===== 사진 선택 — 누적 모드 =====
+// 폴더와 개별 사진 양쪽에서 받은 파일을 누적
+let collectedFiles = [];
+
+function updateCollectedDisplay() {
+  const total = collectedFiles.length;
+  const proceedBtn = document.getElementById('proceedBtn');
+  const totalEl = document.getElementById('totalSelectedCount');
+  if (totalEl) {
+    if (total > 0) {
+      totalEl.textContent = `총 ${total.toLocaleString()}장 선택됨`;
+      totalEl.style.display = 'block';
+    } else {
+      totalEl.style.display = 'none';
+    }
+  }
+  if (proceedBtn) {
+    proceedBtn.disabled = total === 0;
+    proceedBtn.textContent = total > 0 ? `선택 완료 (${total.toLocaleString()}장) → 분석 준비` : '선택 완료';
+  }
+}
+
 document.getElementById('filePicker').addEventListener('change', async (e) => {
   const files = Array.from(e.target.files);
   if (files.length === 0) return;
 
-  // 선택된 개수 표시
+  // 중복 제거: 같은 파일명 + 크기로 판단
+  const existingKeys = new Set(collectedFiles.map(f => `${f.name}_${f.size}`));
+  let added = 0;
+  for (const f of files) {
+    const key = `${f.name}_${f.size}`;
+    if (!existingKeys.has(key)) {
+      collectedFiles.push(f);
+      existingKeys.add(key);
+      added++;
+    }
+  }
+
   const countEl = document.getElementById('selectedCount');
-  countEl.textContent = `✓ ${files.length}장 선택됨 — 분석을 준비합니다`;
+  countEl.textContent = added === files.length
+    ? `✓ ${files.length}장 추가됨`
+    : `✓ ${added}장 추가됨 (중복 ${files.length - added}장 제외)`;
   countEl.style.display = 'block';
+  document.getElementById('galleryBtn').textContent = `사진 추가 선택 (${files.length}장 추가됨)`;
 
-  // 버튼 텍스트도 업데이트
-  document.getElementById('galleryBtn').textContent = `갤러리에서 사진 선택 (${files.length}장)`;
-
-  await prepareSampling(files);
+  updateCollectedDisplay();
 });
 
 // 폴더 선택 핸들러 (webkitdirectory)
@@ -694,7 +726,6 @@ document.getElementById('folderPicker').addEventListener('change', async (e) => 
   const allFiles = Array.from(e.target.files);
   if (allFiles.length === 0) return;
 
-  // 이미지 파일만 필터링
   const imageExts = /\.(jpe?g|png|webp|heic|heif|bmp)$/i;
   const imageFiles = allFiles.filter(f =>
     (f.type && f.type.startsWith('image/')) || imageExts.test(f.name)
@@ -705,110 +736,157 @@ document.getElementById('folderPicker').addEventListener('change', async (e) => 
     return;
   }
 
+  // 중복 제거
+  const existingKeys = new Set(collectedFiles.map(f => `${f.name}_${f.size}`));
+  let added = 0;
+  for (const f of imageFiles) {
+    const key = `${f.name}_${f.size}`;
+    if (!existingKeys.has(key)) {
+      collectedFiles.push(f);
+      existingKeys.add(key);
+      added++;
+    }
+  }
+
   const countEl = document.getElementById('folderSelectedCount');
-  countEl.textContent = `✓ 폴더에서 ${imageFiles.length}장의 이미지 발견 — 시간순 샘플링합니다`;
+  countEl.textContent = added === imageFiles.length
+    ? `✓ 폴더에서 ${imageFiles.length}장 추가됨`
+    : `✓ ${added}장 추가됨 (중복 ${imageFiles.length - added}장 제외)`;
   countEl.style.display = 'block';
+  document.getElementById('folderBtn').textContent = `폴더 추가 (${imageFiles.length}장)`;
 
-  document.getElementById('folderBtn').textContent = `폴더 선택됨 (${imageFiles.length}장)`;
-
-  await prepareSampling(imageFiles);
+  updateCollectedDisplay();
 });
+
+// 선택 완료 버튼 → 샘플링 화면으로
+async function proceedToSampling() {
+  if (collectedFiles.length === 0) {
+    showToast('사진을 먼저 선택해주세요');
+    return;
+  }
+  await prepareSampling(collectedFiles);
+}
+
+// 선택 초기화
+function clearSelection() {
+  collectedFiles = [];
+  document.getElementById('filePicker').value = '';
+  document.getElementById('folderPicker').value = '';
+  document.getElementById('selectedCount').style.display = 'none';
+  document.getElementById('folderSelectedCount').style.display = 'none';
+  document.getElementById('galleryBtn').textContent = '갤러리에서 사진 선택';
+  document.getElementById('folderBtn').textContent = '셀카 폴더 선택';
+  updateCollectedDisplay();
+}
 
 // 파일들의 시간 정보를 추출하고 균등 샘플링
 async function prepareSampling(files) {
   showScreen('screen-sampling');
-  document.getElementById('samplingSub').textContent = `${files.length}장의 사진에서 시간 정보를 추출하는 중...`;
+
+  // 진행률 UI 초기화
+  const startBtn = document.getElementById('startAnalysisBtn');
+  if (startBtn) {
+    startBtn.disabled = true;
+    startBtn.classList.add('btn-progress');
+    startBtn.textContent = '분석 준비 중... 0%';
+  }
+
+  // 진행률 업데이트 함수: 0~30%는 시간추출, 30~100%는 균등샘플링
+  const updateProgress = (phase, pct) => {
+    // phase: 'extract' (0-30) or 'sample' (30-100)
+    const total = phase === 'extract' ? pct * 0.3 : 30 + pct * 0.7;
+    if (startBtn) startBtn.textContent = `분석 준비 중... ${Math.round(total)}%`;
+  };
+
+  document.getElementById('samplingSub').textContent = `${files.length}장의 시간 정보 추출 중...`;
   document.getElementById('sTotal').textContent = files.length;
   document.getElementById('sWithDate').textContent = '...';
   document.getElementById('sSampled').textContent = '...';
 
-  // 1단계: 각 파일의 시간 정보 추출 (EXIF or lastModified)
+  // 1단계: 각 파일의 시간 정보 추출
+  // 우선순위: ① 파일명 패턴 (삼성 표준) → ② EXIF → ③ lastModified
   const filesWithTime = [];
+  let withFilename = 0;
   let withExif = 0;
-  let withSuspiciousTime = 0;
+  let withLastModified = 0;
   const nowMs = Date.now();
   const oneDayMs = 24 * 3600 * 1000;
   const lastModifiedDates = new Set();
-
-  const isLargeSet = files.length > 200;
+  const isLargeSet = files.length > 100;
 
   for (let i = 0; i < files.length; i++) {
-    // 진행 상황 (큰 세트일 때만 매 50장마다)
-    if (isLargeSet && i % 50 === 0) {
-      document.getElementById('samplingSub').textContent =
-        `시간 정보 추출 중... ${i}/${files.length}`;
-      // UI 업데이트 양보
-      await new Promise(r => setTimeout(r, 0));
+    let timestamp = null;
+    let source = null;
+
+    // ① 파일명에서 추출 시도 (가장 빠르고 신뢰도 높음 - 삼성/안드로이드 표준)
+    const nameDate = extractTimeFromFilename(files[i].name);
+    if (nameDate) {
+      timestamp = nameDate;
+      source = 'filename';
+      withFilename++;
     }
 
-    let timestamp = null;
-    let exifFound = false;
-    try {
-      const exif = await exifr.parse(files[i], ['DateTimeOriginal', 'CreateDate', 'ModifyDate']);
-      if (exif) {
-        const exifDate = exif.DateTimeOriginal || exif.CreateDate || exif.ModifyDate;
-        if (exifDate) {
-          timestamp = new Date(exifDate);
-          if (timestamp.getFullYear() >= 1990 && timestamp.getTime() <= nowMs + oneDayMs) {
-            exifFound = true;
-            withExif++;
-          } else {
-            timestamp = null;
+    // ② 파일명 실패 시 EXIF 시도 (시간 더 걸림)
+    if (!timestamp) {
+      try {
+        const exif = await exifr.parse(files[i], ['DateTimeOriginal', 'CreateDate', 'ModifyDate']);
+        if (exif) {
+          const exifDate = exif.DateTimeOriginal || exif.CreateDate || exif.ModifyDate;
+          if (exifDate) {
+            const d = new Date(exifDate);
+            if (d.getFullYear() >= 1990 && d.getTime() <= nowMs + oneDayMs) {
+              timestamp = d;
+              source = 'exif';
+              withExif++;
+            }
           }
         }
-      }
-    } catch {}
+      } catch {}
+    }
 
+    // ③ 둘 다 실패 시 lastModified (최후 수단)
     if (!timestamp) {
       timestamp = new Date(files[i].lastModified);
+      source = 'lastModified';
+      withLastModified++;
       lastModifiedDates.add(timestamp.toISOString().slice(0, 10));
-      if (nowMs - timestamp.getTime() < 7 * oneDayMs) {
-        withSuspiciousTime++;
-      }
     }
-    filesWithTime.push({ file: files[i], timestamp, exifFound });
+
+    filesWithTime.push({ file: files[i], timestamp, source });
+
+    // 진행률 업데이트 (큰 세트만 매 20장마다 / 작은 세트는 매 10장)
+    const updateInterval = isLargeSet ? 20 : 10;
+    if ((i + 1) % updateInterval === 0 || i === files.length - 1) {
+      const pct = ((i + 1) / files.length) * 100;
+      updateProgress('extract', pct);
+      document.getElementById('samplingSub').textContent =
+        `시간 정보 추출 중... ${i + 1}/${files.length}`;
+      await new Promise(r => setTimeout(r, 0));
+    }
   }
 
-  document.getElementById('samplingSub').textContent =
-    `${files.length}장의 시간 정보 추출 완료. 시간순 균등 샘플링 중...`;
-
-  const lastModifiedClustered = lastModifiedDates.size <= 3 && (files.length - withExif) >= 5;
+  const withDate = withFilename + withExif;
+  const lastModifiedClustered = lastModifiedDates.size <= 3 && withLastModified >= 5;
 
   // 2단계: 시간순 정렬
   filesWithTime.sort((a, b) => a.timestamp - b.timestamp);
 
-  // 3단계: 균등 샘플링 - 진행률 콜백 포함
+  // 3단계: 균등 샘플링 (30~100% 진행률)
+  document.getElementById('samplingSub').textContent =
+    `${withDate}장의 시간 정보 확보. 시간순 균등 샘플링 중...`;
+
   const maxSamples = parseInt(document.getElementById('maxSamples').value);
-  const startBtn = document.getElementById('startAnalysisBtn');
-
-  // 분석 시작 버튼 비활성화 + 진행률 표시 모드
-  if (startBtn) {
-    startBtn.disabled = true;
-    startBtn.classList.add('btn-progress');
-    startBtn.textContent = '균등 샘플링 중... 0%';
-  }
-
   const sampled = await sampleEvenly(filesWithTime, maxSamples, async (pct) => {
-    if (startBtn) {
-      startBtn.textContent = `균등 샘플링 중... ${pct}%`;
-    }
+    updateProgress('sample', pct);
     document.getElementById('samplingSub').textContent =
       `시간순 균등 샘플링 중... ${pct}%`;
   });
 
   sampledFiles = sampled;
 
-  // 샘플링 완료 — 분석 시작 버튼 활성화
-  if (startBtn) {
-    startBtn.disabled = false;
-    startBtn.classList.remove('btn-progress');
-    startBtn.textContent = '분석 시작';
-  }
-  document.getElementById('samplingSub').textContent = '샘플링 완료. 분석을 시작하세요.';
-
-  // UI 업데이트
+  // 4단계: UI 업데이트
   document.getElementById('sTotal').textContent = files.length;
-  document.getElementById('sWithDate').textContent = withExif;
+  document.getElementById('sWithDate').textContent = withDate;
   document.getElementById('sSampled').textContent = sampled.length;
 
   const firstDate = filesWithTime[0].timestamp;
@@ -820,24 +898,22 @@ async function prepareSampling(files) {
   document.getElementById('sampStart').textContent = formatDate(firstDate);
   document.getElementById('sampEnd').textContent = formatDate(lastDate);
 
-  // 분포 시각화
   renderSamplingBar(filesWithTime, sampled);
 
   // === 경고 메시지 ===
   const warnEl = document.getElementById('sampleWarn');
   const warnText = document.getElementById('sampleWarnText');
-  const exifRatio = withExif / files.length;
+  const dateRatio = withDate / files.length;
 
-  if (exifRatio < 0.3) {
+  if (dateRatio < 0.3) {
     warnEl.style.display = 'block';
     if (lastModifiedClustered) {
-      warnText.innerHTML = `⚠️ <b>심각한 문제 감지</b><br/>` +
-        `EXIF 촬영 시각이 있는 사진은 ${withExif}장(${Math.round(exifRatio*100)}%)뿐이고, 나머지 사진들의 파일 시간이 모두 ${lastModifiedDates.size}일에 몰려 있습니다.<br/>` +
-        `갤러리에서 사진을 클라우드(아이클라우드/구글포토)에서 새로 받은 경우 이렇게 됩니다. ` +
-        `<b>시계열 분석이 거의 불가능합니다.</b><br/><br/>` +
-        `해결책: 원본 사진이 저장된 폴더에서 직접 선택하거나, EXIF 정보가 보존된 사진을 사용해주세요.`;
+      warnText.innerHTML = `⚠️ <b>시간 정보 부족</b><br/>` +
+        `파일명 또는 EXIF에서 촬영 시각을 찾은 사진은 ${withDate}장(${Math.round(dateRatio*100)}%)뿐이고, ` +
+        `나머지 사진들의 파일 시간이 ${lastModifiedDates.size}일 내로 몰려 있습니다.<br/>` +
+        `클라우드(아이클라우드/구글포토)에서 받은 사진이라면 EXIF가 손실되어 시계열 분석이 어렵습니다.`;
     } else {
-      warnText.innerHTML = `⚠️ EXIF 시간 정보가 있는 사진이 ${withExif}장(${Math.round(exifRatio*100)}%)뿐입니다. 나머지는 파일 수정 시간을 사용 — 정확하지 않을 수 있어요.`;
+      warnText.innerHTML = `⚠️ 시간 정보가 있는 사진이 ${withDate}장(${Math.round(dateRatio*100)}%)뿐입니다. 나머지는 파일 수정 시간 사용 — 정확도 낮음.`;
     }
   } else if (months < 3) {
     warnEl.style.display = 'block';
@@ -845,9 +921,71 @@ async function prepareSampling(files) {
   } else {
     warnEl.style.display = 'none';
   }
+
+  // 정보 출처 요약 (콘솔)
+  console.log(`📊 시간 정보 출처: 파일명 ${withFilename}장 / EXIF ${withExif}장 / lastModified ${withLastModified}장`);
+
+  // 샘플링 완료 — 분석 시작 버튼 활성화
+  if (startBtn) {
+    startBtn.disabled = false;
+    startBtn.classList.remove('btn-progress');
+    startBtn.textContent = '분석 시작';
+  }
+  document.getElementById('samplingSub').textContent = '샘플링 완료. 분석을 시작하세요.';
 }
 
-async function sampleEvenly(filesWithTime, maxSamples, onProgress) {
+// =============================================
+// 파일명에서 시간 정보 추출
+// 삼성: 20240315_143052.jpg, 20240315_143052_001.jpg
+// 일반: IMG_20240315_143052.jpg, PHOTO_2024-03-15-14-30-52.jpg
+// iOS: IMG_1234.HEIC (시간 정보 없음, EXIF 필요)
+// =============================================
+function extractTimeFromFilename(filename) {
+  if (!filename) return null;
+
+  // 패턴 1: YYYYMMDD_HHMMSS (삼성 갤럭시 표준)
+  // 예: 20240315_143052.jpg, 20231201_091523_001.heic
+  let m = filename.match(/(\d{4})(\d{2})(\d{2})[_-]?(\d{2})(\d{2})(\d{2})/);
+  if (m) {
+    const [, y, mo, d, h, mi, s] = m;
+    const date = new Date(+y, +mo - 1, +d, +h, +mi, +s);
+    if (isValidPhotoDate(date)) return date;
+  }
+
+  // 패턴 2: IMG_YYYYMMDD_HHMMSS (안드로이드 표준)
+  m = filename.match(/IMG[-_](\d{4})(\d{2})(\d{2})[-_](\d{2})(\d{2})(\d{2})/i);
+  if (m) {
+    const [, y, mo, d, h, mi, s] = m;
+    const date = new Date(+y, +mo - 1, +d, +h, +mi, +s);
+    if (isValidPhotoDate(date)) return date;
+  }
+
+  // 패턴 3: YYYY-MM-DD HH.MM.SS 또는 YYYY-MM-DD_HH-MM-SS
+  m = filename.match(/(\d{4})[-_](\d{2})[-_](\d{2})[ _.-](\d{2})[.\-_](\d{2})[.\-_](\d{2})/);
+  if (m) {
+    const [, y, mo, d, h, mi, s] = m;
+    const date = new Date(+y, +mo - 1, +d, +h, +mi, +s);
+    if (isValidPhotoDate(date)) return date;
+  }
+
+  // 패턴 4: YYYYMMDD만 있는 경우 (시간 없음, 자정으로)
+  m = filename.match(/(?:^|[^\d])(\d{4})(\d{2})(\d{2})(?:[^\d]|$)/);
+  if (m) {
+    const [, y, mo, d] = m;
+    const date = new Date(+y, +mo - 1, +d, 12, 0, 0); // 정오로 (자정보다 안전)
+    if (isValidPhotoDate(date)) return date;
+  }
+
+  return null;
+}
+
+function isValidPhotoDate(date) {
+  if (!(date instanceof Date) || isNaN(date.getTime())) return false;
+  const year = date.getFullYear();
+  const now = Date.now();
+  // 1990 ~ 현재 +1일
+  return year >= 1990 && date.getTime() <= now + 24 * 3600 * 1000;
+}
   if (filesWithTime.length <= maxSamples) {
     if (onProgress) await onProgress(100);
     return filesWithTime;
@@ -964,6 +1102,7 @@ async function startAnalysis() {
   }
 
   isDemoMode = false; // 실제 분석
+  referenceDescriptor = null; // 본인 식별 초기화
 
   showScreen('screen-analyze');
   document.getElementById('analyzeSub').textContent =
@@ -1025,14 +1164,17 @@ async function startAnalysis() {
       let extraTag = '';
 
       if (rejectionReason) {
-        // 사람 얼굴이 아닌 것으로 판단된 케이스
         classExtra = ' rejected';
         const reasonMap = {
           'too_small': '🔍 얼굴 너무 작음',
           'bad_aspect': '📐 비율 이상',
           'bad_proportion': '🚫 사람 얼굴 아님',
           'bad_mouth_pos': '🚫 사람 얼굴 아님',
-          'low_confidence': '❓ 신뢰도 낮음'
+          'low_confidence': '❓ 신뢰도 낮음',
+          'different_person': '👥 다른 사람',
+          'age_out_of_range': '⚠️ 신뢰도 낮음',
+          'sunglasses': '🕶️ 선글라스',
+          'mask': '😷 마스크',
         };
         extraTag = `<span class="reject-tag">${reasonMap[rejectionReason] || '제외'}</span>`;
       } else if (occlusionReason) {
@@ -1084,6 +1226,20 @@ async function startAnalysis() {
 }
 
 // ===== 단일 사진 분석 =====
+// 본인 기준 face descriptor (첫 셀피 또는 최빈 얼굴 기준)
+let referenceDescriptor = null;
+const FACE_MATCH_THRESHOLD = 0.55; // 거리 임계값. 낮을수록 같은 사람으로 본다
+
+function faceDistance(d1, d2) {
+  if (!d1 || !d2) return Infinity;
+  let sum = 0;
+  for (let i = 0; i < d1.length; i++) {
+    const diff = d1[i] - d2[i];
+    sum += diff * diff;
+  }
+  return Math.sqrt(sum);
+}
+
 async function analyzePhoto(file, timestamp) {
   const result = {
     fileName: file.name,
@@ -1091,49 +1247,47 @@ async function analyzePhoto(file, timestamp) {
     hasFace: false, passed: false,
     estimatedAge: null, qualityScore: 0,
     qualityBreakdown: {}, thumbUrl: null,
+    fullImageUrl: null,
   };
 
   try {
     const img = await loadImage(file);
     result.thumbUrl = await createThumb(img);
+    result.fullImageUrl = await createFullImage(img);
 
+    // 본인 식별을 위해 descriptor도 함께 추출
     const detection = await faceapi
       .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 }))
       .withFaceLandmarks()
-      .withAgeAndGender();
+      .withAgeAndGender()
+      .withFaceDescriptor();
 
     if (!detection) return result;
 
-    // === 사람 얼굴 검증 (오탐 방지) ===
-    // 1) 얼굴 박스가 너무 작으면 거짓 양성 가능성 높음
+    // === 사람 얼굴 검증 ===
     const box = detection.detection.box;
-    const minSize = Math.min(img.width, img.height) * 0.08; // 짧은 변의 8% 미만이면 의심
+    const minSize = Math.min(img.width, img.height) * 0.08;
     if (box.width < minSize || box.height < minSize) {
       result.rejectionReason = 'too_small';
       return result;
     }
-
-    // 2) 얼굴 가로세로 비율 (사람 얼굴은 보통 0.6 ~ 1.1)
     const aspectRatio = box.width / box.height;
     if (aspectRatio < 0.5 || aspectRatio > 1.4) {
       result.rejectionReason = 'bad_aspect';
       return result;
     }
 
-    // 3) 랜드마크 일관성 검증 - 사람 얼굴 비율
     const lm = detection.landmarks;
     const leftEye = avgPoint(lm.getLeftEye());
     const rightEye = avgPoint(lm.getRightEye());
     const nose = lm.getNose();
     const mouth = lm.getMouth();
-    const jaw = lm.getJawOutline();
 
     const eyeDist = Math.hypot(rightEye.x - leftEye.x, rightEye.y - leftEye.y);
     const eyeMidY = (leftEye.y + rightEye.y) / 2;
     const noseTip = nose[nose.length - 1];
     const mouthCenter = avgPoint(mouth);
 
-    // 눈-코 거리 / 눈 간격 비율 (사람: ~0.7-1.4)
     const noseToEye = Math.abs(noseTip.y - eyeMidY);
     const eyeNoseRatio = noseToEye / eyeDist;
     if (eyeNoseRatio < 0.4 || eyeNoseRatio > 2.0) {
@@ -1141,7 +1295,6 @@ async function analyzePhoto(file, timestamp) {
       return result;
     }
 
-    // 눈-입 거리 / 눈-코 거리 비율 (사람: ~1.4-2.2)
     const eyeToMouth = Math.abs(mouthCenter.y - eyeMidY);
     const mouthRatio = eyeToMouth / Math.max(noseToEye, 1);
     if (mouthRatio < 0.8 || mouthRatio > 3.0) {
@@ -1149,7 +1302,6 @@ async function analyzePhoto(file, timestamp) {
       return result;
     }
 
-    // 4) 검출 신뢰도 + 얼굴 크기 가중 (작은 얼굴은 더 엄격하게)
     const faceRatio = (box.width * box.height) / (img.width * img.height);
     const minConfidence = faceRatio < 0.05 ? 0.7 : 0.5;
     if (detection.detection.score < minConfidence) {
@@ -1157,13 +1309,35 @@ async function analyzePhoto(file, timestamp) {
       return result;
     }
 
-    result.hasFace = true;
+    // === 본인 식별 ===
+    // 첫 통과 얼굴을 기준 descriptor로 등록
+    if (!referenceDescriptor && detection.descriptor) {
+      referenceDescriptor = detection.descriptor;
+      result.isReference = true;
+    } else if (referenceDescriptor && detection.descriptor) {
+      const dist = faceDistance(referenceDescriptor, detection.descriptor);
+      result.faceDistance = dist;
+      if (dist > FACE_MATCH_THRESHOLD) {
+        result.rejectionReason = 'different_person';
+        return result;
+      }
+    }
+
+    result.descriptor = detection.descriptor;
     result.rawAge = detection.age;
     const calibratedAge = calibrateAge(detection.age);
 
-    // 사용자 경험 보호: 얼굴 나이가 실제 나이 +3세를 넘지 않도록 캡
-    const birthDateForCap = new Date(document.getElementById('birthDate').value);
-    const realAgeAtPhoto = (result.timestamp - birthDateForCap) / (365.25 * 24 * 3600 * 1000);
+    // === 신뢰도 검증: 실제 나이 ±8세 범위만 valid ===
+    const birthDateForCheck = new Date(document.getElementById('birthDate').value);
+    const realAgeAtPhoto = (result.timestamp - birthDateForCheck) / (365.25 * 24 * 3600 * 1000);
+    const ageDiff = Math.abs(calibratedAge - realAgeAtPhoto);
+    if (ageDiff > 8) {
+      result.rejectionReason = 'age_out_of_range';
+      result.outlierAge = calibratedAge;
+      return result;
+    }
+
+    // 사용자 정서 보호 캡 (+3세 상한)
     const upperCap = realAgeAtPhoto + 3;
     if (calibratedAge > upperCap) {
       result.estimatedAge = upperCap - Math.random() * 0.5;
@@ -1171,13 +1345,20 @@ async function analyzePhoto(file, timestamp) {
       result.estimatedAge = calibratedAge;
     }
 
-    result.box = detection.detection.box;
+    result.hasFace = true;
+    result.box = box;
     result.landmarks = detection.landmarks;
 
     const q = await assessQuality(img, detection);
     result.qualityScore = q.total;
     result.qualityBreakdown = q.breakdown;
     result.passed = q.total >= 50;
+
+    // 가려짐(마스크/선글라스) 확정 거부
+    if (q.breakdown.occlusionReason) {
+      result.rejectionReason = q.breakdown.occlusionReason;
+      result.passed = false;
+    }
   } catch (e) {
     console.error('analyzePhoto error:', e);
   }
@@ -1211,6 +1392,17 @@ function createThumb(img, size = 200) {
   const ctx = canvas.getContext('2d');
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
   return canvas.toDataURL('image/jpeg', 0.7);
+}
+
+// 원본 이미지 (모달용 - 더 큰 사이즈로 보존)
+function createFullImage(img, maxSize = 800) {
+  const canvas = document.getElementById('hiddenCanvas');
+  const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
+  canvas.width = img.width * scale;
+  canvas.height = img.height * scale;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL('image/jpeg', 0.85);
 }
 
 async function assessQuality(img, detection) {
@@ -1273,12 +1465,22 @@ async function assessQuality(img, detection) {
   // 눈 영역이 얼굴 평균보다 60% 이하 밝기이고 + 분산도 낮으면 선글라스 의심
   const isSunglasses = eyeDarknessRatio < 0.6 && eyeAvgVar < 800 && faceRegion.avgLum > 60;
 
-  // 마스크 의심: 입+코 영역이 균일하게 밝거나 어두움 (천 가림)
-  // 일반 얼굴이면 입 영역은 색 변화가 큰데, 마스크면 균일함
+  // 마스크 의심 — 강화 버전
+  // 마스크 특징: 입+코+턱 영역이 균일하고(분산 낮음), 입 영역 색상이 얼굴 평균과 다름(천 색깔)
   const mouthVar = mouthRegion.lumVar;
   const noseVar = noseRegion.lumVar;
-  // 입 분산이 매우 낮고(균일한 마스크) + 코 영역도 균일하면 마스크 의심
-  const isMask = mouthVar < 200 && noseVar < 400 && faceRegion.avgLum > 60;
+  // 입 영역 밝기가 얼굴 평균과 얼마나 다른지 (마스크면 흰/검 등 균일한 색)
+  const mouthBrightnessDiff = Math.abs(mouthRegion.avgLum - faceRegion.avgLum);
+
+  // 다음 조건 중 2개 이상이면 마스크 의심:
+  // (a) 입 분산 매우 낮음 (균일한 천)
+  // (b) 코 분산도 낮음
+  // (c) 입 색상이 얼굴 평균과 크게 다름 (흰 마스크 / 검은 마스크)
+  let maskSignals = 0;
+  if (mouthVar < 350) maskSignals++;
+  if (noseVar < 500) maskSignals++;
+  if (mouthBrightnessDiff > 40) maskSignals++;
+  const isMask = maskSignals >= 2 && faceRegion.avgLum > 60;
 
   breakdown.occluded = (isSunglasses || isMask) ? 0 : 100;
   breakdown.occlusionReason = isSunglasses ? 'sunglasses' : (isMask ? 'mask' : null);
@@ -1597,28 +1799,34 @@ function drawChart(passed, birthDate) {
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      interaction: { mode: 'nearest', intersect: false },
-      onClick: (event, elements) => {
+      interaction: { mode: 'nearest', intersect: false, axis: 'x' },
+      // 드래그/호버 시 호출 → 썸네일 추적
+      onHover: (event, elements) => {
         if (elements && elements.length > 0) {
-          // 얼굴 나이 데이터셋(index 0)의 점만 처리
           const point = elements.find(e => e.datasetIndex === 0);
           if (point) {
-            // Chart.js v4의 event는 native event를 .native로 노출
-            const nativeEvent = event.native || event;
-            showChartPreview(point.index, sorted, nativeEvent);
+            showChartPreview(point.index, sorted);
+          }
+        }
+      },
+      // 클릭 시 → 원본 모달 열기
+      onClick: (event, elements) => {
+        if (elements && elements.length > 0) {
+          const point = elements.find(e => e.datasetIndex === 0);
+          if (point) {
+            const r = sorted[point.index];
+            if (r) {
+              // 원본 모달 (분석 화면의 썸네일 클릭과 동일)
+              const idx = analysisResults.indexOf(r);
+              if (idx >= 0) showThumbDetail(idx);
+              else showThumbDetailFromObj(r);
+            }
           }
         }
       },
       plugins: {
         legend: { display: false },
-        tooltip: {
-          backgroundColor: 'rgba(30,30,36,0.95)',
-          titleColor: '#fff', bodyColor: '#fff',
-          padding: 10, borderColor: 'rgba(199,178,255,0.3)', borderWidth: 1,
-          callbacks: {
-            label: (c) => `${c.dataset.label}: ${c.parsed.y.toFixed(1)}세`,
-          }
-        }
+        tooltip: { enabled: false }, // 기본 툴팁 비활성화 → 우리 카드만 표시
       },
       scales: {
         x: xAxisConfig,
@@ -1631,10 +1839,6 @@ function drawChart(passed, birthDate) {
     }
   });
 
-  // 차트 외 다른 곳 탭하면 미리보기 닫기
-  ctx.parentElement.addEventListener('click', (e) => {
-    // 차트 자체 클릭은 이미 처리됨; 미리보기는 자동 닫힘 로직 별도
-  });
   // 차트 외부 탭 시 닫기
   setTimeout(() => {
     document.addEventListener('click', hideChartPreviewOnOutside, { once: false });
@@ -1907,7 +2111,8 @@ function showThumbDetail(idx) {
   const r = analysisResults[idx];
   if (!r) return;
   document.getElementById('thumbModalTitle').textContent = '사진 #' + (idx + 1) + ' 상세';
-  document.getElementById('thumbModalImg').src = r.thumbUrl;
+  // 원본이 있으면 원본, 없으면 썸네일
+  document.getElementById('thumbModalImg').src = r.fullImageUrl || r.thumbUrl;
 
   const dateStr = r.timestamp.getFullYear() + '.' +
     String(r.timestamp.getMonth() + 1).padStart(2, '0') + '.' +
@@ -2016,12 +2221,19 @@ function closeModal(id) {
 
 function avg(arr) { return arr.reduce((a, v) => a + v, 0) / arr.length; }
 
-// 차트 점 클릭 시 사진 미리보기
-function showChartPreview(pointIndex, sortedData, event) {
+// 차트 점에 호버/터치 시 사진 미리보기 카드 (드래그 추적)
+let lastPreviewIndex = -1;
+function showChartPreview(pointIndex, sortedData) {
+  if (lastPreviewIndex === pointIndex) return; // 중복 호출 방지
+  lastPreviewIndex = pointIndex;
+
   const preview = document.getElementById('chartPreview');
   if (!preview) return;
   const r = sortedData[pointIndex];
   if (!r) return;
+
+  const birthDate = new Date(document.getElementById('birthDate').value);
+  const realAge = (r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000);
 
   const dateStr = r.timestamp.getFullYear() + '.' +
     String(r.timestamp.getMonth() + 1).padStart(2, '0') + '.' +
@@ -2030,8 +2242,8 @@ function showChartPreview(pointIndex, sortedData, event) {
   preview.innerHTML = `
     <img src="${r.thumbUrl}" alt="">
     <div class="cp-info">
-      <div class="cp-age">${r.estimatedAge.toFixed(1)}세</div>
-      <div style="color: rgba(255,255,255,0.6); margin-top: 2px;">${dateStr}</div>
+      <div class="cp-age">${r.estimatedAge.toFixed(1)}세 <span style="color:rgba(255,255,255,0.5); font-weight:400;">(${realAge.toFixed(0)})</span></div>
+      <div style="color: rgba(255,255,255,0.6); margin-top: 2px; font-size:9px;">${dateStr}</div>
     </div>
   `;
   preview.classList.add('show');
@@ -2040,10 +2252,9 @@ function showChartPreview(pointIndex, sortedData, event) {
   const wrapRect = wrap.getBoundingClientRect();
   const wrapW = wrap.clientWidth;
   const wrapH = wrap.clientHeight;
-  const previewWidth = 72;
-  const previewHeight = 100;
+  const previewWidth = 80;
+  const previewHeight = 110;
 
-  // 캔버스의 wrap 내부 오프셋 계산 (캔버스가 wrap 안에서 어디에 있는지)
   let canvasOffsetX = 0, canvasOffsetY = 0;
   const canvas = document.getElementById('ageChart');
   if (canvas) {
@@ -2052,7 +2263,6 @@ function showChartPreview(pointIndex, sortedData, event) {
     canvasOffsetY = canvasRect.top - wrapRect.top;
   }
 
-  // Chart.js element의 캔버스 내 좌표 가져오기
   let pointX = wrapW / 2, pointY = wrapH / 2;
   if (chartInstance) {
     try {
@@ -2060,7 +2270,6 @@ function showChartPreview(pointIndex, sortedData, event) {
       if (meta && meta.data && meta.data[pointIndex]) {
         const el = meta.data[pointIndex];
         if (typeof el.x === 'number' && typeof el.y === 'number') {
-          // 캔버스 좌표 + 캔버스 오프셋 = wrap 내 좌표
           pointX = el.x + canvasOffsetX;
           pointY = el.y + canvasOffsetY;
         } else if (el.getProps) {
@@ -2069,25 +2278,24 @@ function showChartPreview(pointIndex, sortedData, event) {
           pointY = props.y + canvasOffsetY;
         }
       }
-    } catch (e) {
-      console.warn('Chart point coords error:', e);
-    }
+    } catch (e) {}
   }
 
-  // 점 바로 위에 표시 (가운데 정렬)
   let x = pointX - previewWidth / 2;
   let y = pointY - previewHeight - 10;
-
-  // 위쪽에 공간 없으면 점 아래로
   if (y < 0) y = pointY + 12;
-
-  // 좌우 경계 보정
   x = Math.max(2, Math.min(x, wrapW - previewWidth - 2));
-  // 아래 경계 보정
   y = Math.max(2, Math.min(y, wrapH - previewHeight - 2));
 
   preview.style.left = x + 'px';
   preview.style.top = y + 'px';
+}
+
+// 결과 객체에서 모달 직접 열기 (analysisResults에 없을 때 fallback)
+function showThumbDetailFromObj(r) {
+  const tmpIdx = analysisResults.length;
+  analysisResults.push(r);
+  showThumbDetail(tmpIdx);
 }
 
 function hideChartPreviewOnOutside(e) {
