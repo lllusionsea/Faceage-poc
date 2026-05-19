@@ -565,7 +565,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo" onclick="resetApp()" style="cursor:pointer;">Face<span class="accent">AGE</span></div>
-    <div class="badge" id="topBadge">POC v3.6</div>
+    <div class="badge" id="topBadge">POC v3.7</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -982,6 +982,29 @@ const AGE_CALIBRATION_ANCHOR = 30;        // 기준점
 function calibrateAge(rawAge) {
   // (raw - anchor) * scale + anchor + offset
   return (rawAge - AGE_CALIBRATION_ANCHOR) * AGE_CALIBRATION_SCALE + AGE_CALIBRATION_ANCHOR + AGE_CALIBRATION_OFFSET;
+}
+
+// 생년월일과 기준 날짜로 정확한 나이 계산 (생일 지난 여부 고려)
+// 소수점은 다음 생일까지 남은 비율로 표현
+// 예: 1979-09-17 생, 2026-05-19 기준 → 46.67세 (이미 46세, 다음 생일까지 약 4개월 남음)
+function calculateAge(birthDate, atDate) {
+  if (!(birthDate instanceof Date)) birthDate = new Date(birthDate);
+  if (!(atDate instanceof Date)) atDate = new Date(atDate);
+
+  let age = atDate.getFullYear() - birthDate.getFullYear();
+  // 생일이 아직 안 지났으면 1살 빼기
+  const monthDiff = atDate.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && atDate.getDate() < birthDate.getDate())) {
+    age--;
+  }
+
+  // 소수점 부분: 마지막 생일부터 다음 생일까지의 진행도
+  const lastBirthday = new Date(atDate.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+  if (lastBirthday > atDate) lastBirthday.setFullYear(lastBirthday.getFullYear() - 1);
+  const nextBirthday = new Date(lastBirthday.getFullYear() + 1, birthDate.getMonth(), birthDate.getDate());
+  const yearProgress = (atDate - lastBirthday) / (nextBirthday - lastBirthday);
+
+  return age + yearProgress;
 }
 
 let modelsLoaded = false;
@@ -2172,7 +2195,7 @@ async function analyzePhoto(file, timestamp) {
 
     // === 신뢰도 검증: 실제 나이 ±10세 범위만 valid (8→10 완화) ===
     const birthDateForCheck = new Date(document.getElementById('birthDate').value);
-    const realAgeAtPhoto = (result.timestamp - birthDateForCheck) / (365.25 * 24 * 3600 * 1000);
+    const realAgeAtPhoto = calculateAge(birthDateForCheck, result.timestamp);
     const ageDiff = Math.abs(calibratedAge - realAgeAtPhoto);
     if (ageDiff > 10) {
       result.rejectionReason = 'age_out_of_range';
@@ -2421,7 +2444,7 @@ async function runDemo() {
   document.getElementById('analyzeSub').textContent = '🎭 데모 데이터 20장으로 분석 플로우를 시연합니다. (가짜 결과)';
 
   const birthDate = new Date(document.getElementById('birthDate').value);
-  const realAgeNow = (new Date() - birthDate) / (365.25 * 24 * 3600 * 1000);
+  const realAgeNow = calculateAge(birthDate, new Date());
 
   analysisResults = [];
   const monthsBack = 36;
@@ -2529,7 +2552,7 @@ function showResults() {
   const avgAge = ages.reduce((a, v) => a + v, 0) / ages.length;
   const minAge = Math.min(...ages);
   const maxAge = Math.max(...ages);
-  const realAge = (new Date() - birthDate) / (365.25 * 24 * 3600 * 1000);
+  const realAge = calculateAge(birthDate, new Date());
 
   const recent = passed.slice(-Math.min(5, passed.length));
   const recentAvg = recent.reduce((a, r) => a + r.estimatedAge, 0) / recent.length;
@@ -2600,12 +2623,12 @@ function drawChart(passed, birthDate) {
   }));
   const realData = sorted.map(r => ({
     x: r.timestamp.getTime(),
-    y: parseFloat(((r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000)).toFixed(1)),
+    y: parseFloat((calculateAge(birthDate, r.timestamp)).toFixed(1)),
   }));
 
   // 포인트별 색 분기: 어려보임(초록) / 비슷(회색) / 들어보임(빨강)
   const pointColors = sorted.map(r => {
-    const realAge = (r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000);
+    const realAge = calculateAge(birthDate, r.timestamp);
     const diff = r.estimatedAge - realAge;
     if (diff < -0.7) return '#4ADE80'; // 어려 보임 (초록)
     if (diff > 0.7) return '#F87171';  // 들어 보임 (빨강)
@@ -2726,7 +2749,7 @@ function renderInsights(passed, birthDate) {
   }
 
   const insights = [];
-  const realAgeOf = (r) => (r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000);
+  const realAgeOf = (r) => calculateAge(birthDate, r.timestamp);
   const gapOf = (r) => r.estimatedAge - realAgeOf(r);
   const usedIndices = new Set();
   const getIdx = (r) => passed.indexOf(r);
@@ -3004,7 +3027,7 @@ function showInsightDetail(idx) {
     const dateStr = r.timestamp.getFullYear() + '.' +
       String(r.timestamp.getMonth() + 1).padStart(2, '0') + '.' +
       String(r.timestamp.getDate()).padStart(2, '0');
-    const realAge = (r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000);
+    const realAge = calculateAge(birthDate, r.timestamp);
     side.innerHTML = `
       <div class="side-label">${data.label}</div>
       <img src="${r.thumbUrl}" alt="">
@@ -3055,7 +3078,7 @@ function showThumbDetail(idx) {
 
   // 실제 나이 계산 (촬영 시점 기준)
   const birthDate = new Date(document.getElementById('birthDate').value);
-  const realAgeAtPhoto = (r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000);
+  const realAgeAtPhoto = calculateAge(birthDate, r.timestamp);
 
   // ===== 1부: 핵심 정보 (촬영시각 / 실제나이 / 얼굴나이) =====
   let infoHtml = `
@@ -3662,7 +3685,7 @@ async function confirmManualFace() {
     }
 
     const birthDate = new Date(document.getElementById('birthDate').value);
-    const realAgeAtPhoto = (r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000);
+    const realAgeAtPhoto = calculateAge(birthDate, r.timestamp);
     const rawAge = detection.age;
 
     // === 수동 분석 전용 보정 ===
@@ -3744,7 +3767,7 @@ function showChartPreview(pointIndex, sortedData) {
   if (!r) return;
 
   const birthDate = new Date(document.getElementById('birthDate').value);
-  const realAge = (r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000);
+  const realAge = calculateAge(birthDate, r.timestamp);
 
   const dateStr = r.timestamp.getFullYear() + '.' +
     String(r.timestamp.getMonth() + 1).padStart(2, '0') + '.' +
@@ -4207,7 +4230,7 @@ function renderMonthlyReport(passed, realAge) {
   const monthEntries = months.map((monthKey) => {
     const photos = monthlyReportData[monthKey];
     const avgAge = avg(photos.map(r => r.estimatedAge));
-    const realAgeAtMonth = (photos[0].timestamp - birthDate) / (365.25 * 24 * 3600 * 1000);
+    const realAgeAtMonth = calculateAge(birthDate, photos[0].timestamp);
     const delta = avgAge - realAgeAtMonth;
 
     // 대표 사진: 평균에 가장 가까운 사진
@@ -4277,7 +4300,7 @@ function selectMonthlyReport(monthIdx) {
   const passed = analysisResults.filter(r => r.passed);
   const birthDate = new Date(document.getElementById('birthDate').value);
   const realAge = passed.length > 0
-    ? (passed[passed.length - 1].timestamp - birthDate) / (365.25 * 24 * 3600 * 1000)
+    ? calculateAge(birthDate, passed[passed.length - 1].timestamp)
     : 0;
   renderMonthlyReport(passed, realAge);
 
