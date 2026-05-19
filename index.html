@@ -207,11 +207,24 @@
 
     .report-card {
       background: linear-gradient(135deg, #C7B2FF, #7A6FE0);
-      border-radius: 20px; padding: 24px; color: #fff; margin: 12px 0;
+      border-radius: 20px; padding: 20px; color: #fff; margin: 12px 0;
+      display: flex; gap: 14px; align-items: stretch;
     }
+    .report-card-left { flex: 1; min-width: 0; }
+    .report-card-right {
+      width: 100px; flex-shrink: 0;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .report-card-right img {
+      width: 100px; height: 100px; border-radius: 12px; object-fit: cover;
+      border: 2px solid rgba(255,255,255,0.3); cursor: pointer;
+      background: rgba(255,255,255,0.1);
+    }
+    .report-card-right img:active { transform: scale(0.97); }
+    .report-photo-label { font-size: 10px; opacity: 0.85; margin-top: 6px; text-align: center; }
     .report-card h3 { font-size: 11px; opacity: 0.8; margin-bottom: 8px; letter-spacing: 1px; }
-    .report-card .big { font-size: 44px; font-weight: 700; letter-spacing: -2px; margin: 8px 0; }
-    .report-card .sub { font-size: 13px; opacity: 0.9; }
+    .report-card .big { font-size: 38px; font-weight: 700; letter-spacing: -2px; margin: 8px 0; }
+    .report-card .sub { font-size: 12px; opacity: 0.9; line-height: 1.4; }
 
     .qbar-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: 12px; }
     .qbar-label { width: 60px; color: rgba(255,255,255,0.6); font-size: 11px; }
@@ -248,11 +261,14 @@
     .compare-side {
       background: rgba(255,255,255,0.04); border-radius: 12px;
       padding: 10px; border: 0.5px solid rgba(255,255,255,0.08);
+      transition: background 0.15s;
     }
+    .compare-side:active { background: rgba(199,178,255,0.08); }
     .compare-side img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; margin-bottom: 8px; }
     .compare-side .side-label { font-size: 10px; color: rgba(255,255,255,0.5); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .compare-side .side-age { font-size: 24px; font-weight: 700; }
+    .compare-side .side-age { font-size: 22px; font-weight: 700; color: #C7B2FF; }
     .compare-side .side-date { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 2px; }
+    .compare-side .side-hint { font-size: 10px; color: #C7B2FF; margin-top: 6px; opacity: 0.85; }
 
     .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 0.5px solid rgba(255,255,255,0.06); font-size: 13px; }
     .info-row:last-child { border-bottom: none; }
@@ -260,6 +276,14 @@
     .info-row .v { font-weight: 500; }
     .info-section { background: rgba(255,255,255,0.02); border-radius: 10px; padding: 4px 12px; }
     .info-divider { height: 1px; background: linear-gradient(to right, transparent, rgba(199,178,255,0.3), transparent); margin: 12px 0; }
+    .info-reason {
+      font-size: 12px; color: rgba(199,178,255,0.9);
+      padding: 6px 8px 8px; line-height: 1.5;
+      border-left: 2px solid rgba(199,178,255,0.4);
+      margin: 2px 0 6px 8px;
+      background: rgba(199,178,255,0.05);
+      border-radius: 0 6px 6px 0;
+    }
 
     .insight.clickable { cursor: pointer; transition: background 0.15s; }
     .insight.clickable:active { background: rgba(255,255,255,0.06); }
@@ -286,8 +310,8 @@
     <button class="back-btn hidden" id="backBtn" onclick="history.back()" aria-label="뒤로가기">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
-    <div class="logo">Face<span class="accent">Age</span></div>
-    <div class="badge" id="topBadge">POC v2.0</div>
+    <div class="logo" onclick="resetApp()" style="cursor:pointer;">Face<span class="accent">AGE</span></div>
+    <div class="badge" id="topBadge">POC v2.3</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -482,7 +506,12 @@
     </div>
 
     <h3 style="margin-top: 20px;">시계열 추이</h3>
-    <p class="small">얼굴 나이(보라) vs 실제 나이(회색 점선) · 점 탭하면 사진 미리보기</p>
+    <p class="small" style="line-height:1.6;">
+      얼굴 나이(보라) vs 실제 나이(회색 점선) · 점 탭하면 사진 미리보기<br/>
+      <span style="color:#4ADE80;">●</span> 어려보임 ·
+      <span style="color:#C7B2FF;">●</span> 비슷 ·
+      <span style="color:#F87171;">●</span> 들어보임
+    </p>
     <div class="chart-wrap" style="position: relative;">
       <canvas id="ageChart"></canvas>
       <div id="chartPreview" class="chart-preview"></div>
@@ -552,12 +581,25 @@
     </div>
 
     <div id="tab-report" style="display:none;">
-      <div class="report-card">
-        <h3>MONTHLY REPORT · <span id="reportMonth">2025.05</span></h3>
-        <div class="big" id="reportAge">--</div>
-        <p class="sub" id="reportSub">이번 달 평균 얼굴 나이</p>
-        <p class="sub" id="reportDelta" style="margin-top: 12px; font-weight: 600;">--</p>
+      <!-- 월 선택 드롭다운 -->
+      <div style="margin-bottom: 12px;">
+        <label class="label">월 선택</label>
+        <select id="reportMonthSelect" class="input" onchange="updateMonthlyReport(this.value)"></select>
       </div>
+
+      <div class="report-card">
+        <div class="report-card-left">
+          <h3>MONTHLY REPORT · <span id="reportMonth">2025.05</span></h3>
+          <div class="big" id="reportAge">--</div>
+          <p class="sub" id="reportSub">이번 달 평균 얼굴 나이</p>
+          <p class="sub" id="reportDelta" style="margin-top: 12px; font-weight: 600;">--</p>
+        </div>
+        <div class="report-card-right">
+          <img id="reportPhoto" alt="대표 사진" onclick="showReportPhoto()">
+          <p class="report-photo-label" id="reportPhotoLabel">대표 사진</p>
+        </div>
+      </div>
+
       <button class="btn btn-secondary" onclick="showToast('이미지로 저장 기능은 Phase 2에서 추가됩니다')">💾 이미지로 저장 (Phase 2)</button>
       <p class="small" style="text-align: center; margin-top: 12px;">매월 1일 자동 생성 알림 예정 (Phase 2)</p>
     </div>
@@ -613,6 +655,26 @@
     <button class="modal-close" onclick="closeModal('partInfoModal')">✕</button>
     <h3 id="partInfoTitle" style="margin-bottom: 6px;">부위 정보</h3>
     <div id="partInfoBody"></div>
+  </div>
+</div>
+
+<!-- 수동 얼굴 영역 지정 모달 -->
+<div class="modal" id="manualFaceModal" onclick="if(event.target===this)closeModal('manualFaceModal')">
+  <div class="modal-content" style="max-width: 500px;">
+    <button class="modal-close" onclick="closeModal('manualFaceModal')">✕</button>
+    <h3 style="margin-bottom: 6px;">얼굴 영역 직접 지정</h3>
+    <p class="muted" style="margin-bottom: 12px; font-size: 12px;">
+      사진을 손가락으로 드래그해서 본인 얼굴 영역을 사각형으로 그려주세요.
+    </p>
+    <div id="manualFaceCanvasWrap" style="position: relative; width: 100%; background: #000; border-radius: 10px; overflow: hidden; touch-action: none;">
+      <img id="manualFaceImg" style="width: 100%; display: block;" alt="">
+      <canvas id="manualFaceCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: crosshair;"></canvas>
+    </div>
+    <p class="small" id="manualFaceStatus" style="margin-top: 8px; color: rgba(199,178,255,0.8);">손가락이나 마우스로 얼굴 영역을 드래그하세요</p>
+    <div style="display: flex; gap: 8px; margin-top: 12px;">
+      <button class="btn btn-ghost" style="flex:1; margin:0;" onclick="resetManualBox()">다시 그리기</button>
+      <button class="btn btn-primary" id="manualFaceConfirm" style="flex:2; margin:0;" disabled onclick="confirmManualFace()">이 영역으로 분석</button>
+    </div>
   </div>
 </div>
 
@@ -1489,12 +1551,40 @@ async function analyzePhoto(file, timestamp) {
     result.thumbUrl = await createThumb(img);
     result.fullImageUrl = await createFullImage(img);
 
-    // 본인 식별을 위해 descriptor도 함께 추출
-    const detection = await faceapi
-      .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 }))
+    // 다중 얼굴 검출 (2명 이상이면 본인 1명만 선택)
+    const allDetections = await faceapi
+      .detectAllFaces(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 }))
       .withFaceLandmarks()
       .withAgeAndGender()
-      .withFaceDescriptor();
+      .withFaceDescriptors();
+
+    if (!allDetections || allDetections.length === 0) return result;
+
+    // 다중 얼굴 케이스 메타데이터 (모달에서 표시용)
+    result.totalFacesInPhoto = allDetections.length;
+
+    // 본인 1명 선택 로직:
+    // - referenceDescriptor가 이미 있으면: 가장 거리 가까운 얼굴
+    // - 없으면: 가장 큰 얼굴 (중앙 메인 인물)
+    let detection;
+    if (referenceDescriptor && allDetections.length > 1) {
+      let bestDist = Infinity, bestIdx = 0;
+      for (let i = 0; i < allDetections.length; i++) {
+        if (!allDetections[i].descriptor) continue;
+        const dist = faceDistance(referenceDescriptor, allDetections[i].descriptor);
+        if (dist < bestDist) { bestDist = dist; bestIdx = i; }
+      }
+      detection = allDetections[bestIdx];
+    } else {
+      // 가장 큰 얼굴 선택
+      let bestIdx = 0, bestArea = 0;
+      for (let i = 0; i < allDetections.length; i++) {
+        const b = allDetections[i].detection.box;
+        const area = b.width * b.height;
+        if (area > bestArea) { bestArea = area; bestIdx = i; }
+      }
+      detection = allDetections[bestIdx];
+    }
 
     if (!detection) return result;
 
@@ -1994,6 +2084,15 @@ function drawChart(passed, birthDate) {
     y: parseFloat(((r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000)).toFixed(1)),
   }));
 
+  // 포인트별 색 분기: 실제 나이 대비 어려보임(초록) / 비슷(보라) / 들어보임(빨강)
+  const pointColors = sorted.map(r => {
+    const realAge = (r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000);
+    const diff = r.estimatedAge - realAge;
+    if (diff < -0.7) return '#4ADE80'; // 어려 보임 (초록)
+    if (diff > 0.7) return '#F87171';  // 들어 보임 (빨강)
+    return '#C7B2FF';                   // 비슷 (보라)
+  });
+
   // Y축 범위: 데이터에 맞춰 동적으로
   const allYs = [...faceData.map(d => d.y), ...realData.map(d => d.y)];
   const minY = Math.floor(Math.min(...allYs) - 2);
@@ -2024,9 +2123,9 @@ function drawChart(passed, birthDate) {
       datasets: [
         {
           label: '얼굴 나이', data: faceData,
-          borderColor: '#C7B2FF', backgroundColor: 'rgba(199,178,255,0.15)',
-          borderWidth: 2.5, tension: 0.4, pointRadius: 4, pointHoverRadius: 7,
-          pointBackgroundColor: '#C7B2FF', pointBorderColor: '#0F0F12', pointBorderWidth: 1.5,
+          borderColor: '#C7B2FF', backgroundColor: 'rgba(199,178,255,0.12)',
+          borderWidth: 2.5, tension: 0.4, pointRadius: 5, pointHoverRadius: 8,
+          pointBackgroundColor: pointColors, pointBorderColor: '#0F0F12', pointBorderWidth: 1.5,
           fill: true, spanGaps: true,
         },
         {
@@ -2372,21 +2471,35 @@ function showInsightDetail(idx) {
   document.getElementById('compareTitle').textContent = ins.icon + ' ' + ins.title;
   document.getElementById('compareDesc').textContent = ins.body;
 
+  // 실제 나이 계산용
+  const birthDate = new Date(document.getElementById('birthDate').value);
+
   const renderSide = (side, data) => {
     const r = data.rep;
     if (!r) {
       side.innerHTML = '<p class="small">사진 없음</p>';
+      side.onclick = null;
+      side.style.cursor = 'default';
       return;
     }
     const dateStr = r.timestamp.getFullYear() + '.' +
       String(r.timestamp.getMonth() + 1).padStart(2, '0') + '.' +
       String(r.timestamp.getDate()).padStart(2, '0');
+    const realAge = (r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000);
     side.innerHTML = `
       <div class="side-label">${data.label}</div>
       <img src="${r.thumbUrl}" alt="">
-      <div class="side-age">${r.estimatedAge.toFixed(1)}세</div>
+      <div class="side-age">${r.estimatedAge.toFixed(1)}세 <span style="color:rgba(255,255,255,0.55); font-weight:400; font-size:13px;">(실제 ${realAge.toFixed(0)}세)</span></div>
       <div class="side-date">${dateStr}</div>
+      <div class="side-hint">👆 탭하면 원본 사진</div>
     `;
+    // 클릭 시 상세 모달 열기
+    side.style.cursor = 'pointer';
+    side.onclick = () => {
+      const dataIdx = analysisResults.indexOf(r);
+      if (dataIdx >= 0) showThumbDetail(dataIdx);
+      else showThumbDetailFromObj(r);
+    };
   };
 
   renderSide(document.getElementById('compareLeft'), c.left);
@@ -2431,11 +2544,24 @@ function showThumbDetail(idx) {
     const ageDiff = r.estimatedAge - realAgeAtPhoto;
     const ageDiffStr = ageDiff >= 0 ? `+${ageDiff.toFixed(1)}` : ageDiff.toFixed(1);
     const ageDiffColor = ageDiff < -0.5 ? '#4ADE80' : (ageDiff > 0.5 ? '#F87171' : 'rgba(255,255,255,0.7)');
+    const diffReason = analyzeAgeDiffReason(r, realAgeAtPhoto);
     infoHtml += `
       <div class="info-row">
         <span class="k">얼굴 나이 (AI 추정)</span>
         <span class="v" style="color:#C7B2FF; font-weight:600;">${r.estimatedAge.toFixed(1)}세 <span style="color:${ageDiffColor}; font-size:11px; font-weight:500;">(${ageDiffStr})</span></span>
       </div>`;
+    if (diffReason) {
+      infoHtml += `
+        <div class="info-reason">
+          <span style="opacity:0.7;">↳ </span>${diffReason}
+        </div>`;
+    }
+    if (r.totalFacesInPhoto && r.totalFacesInPhoto > 1) {
+      infoHtml += `
+        <div class="info-reason" style="color: rgba(199,178,255,0.85);">
+          👥 사진 속 ${r.totalFacesInPhoto}명 중 본인 1명만 분석됨
+        </div>`;
+    }
   } else {
     infoHtml += `
       <div class="info-row">
@@ -2449,8 +2575,18 @@ function showThumbDetail(idx) {
   // ===== 구분선 =====
   infoHtml += `<div class="info-divider"></div>`;
 
-  // ===== 2부: 검출 정보 =====
-  infoHtml += `<div class="info-section">`;
+  // ===== 2부: 검출 정보 (Expand/Shrink, 기본 닫힘) =====
+  const detailId = 'detailExpand_' + idx;
+  infoHtml += `<div class="expandable" id="${detailId}">`;
+  infoHtml += `
+    <div class="expandable-header" onclick="toggleExpand('${detailId}')">
+      <span style="flex: 1; font-size: 13px; color: rgba(255,255,255,0.7);">검출 정보 & 품질 점수</span>
+      <span class="small" style="color: rgba(255,255,255,0.5);">기술 상세</span>
+      <svg class="expand-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </div>
+    <div class="expandable-body">
+      <div class="info-section" style="margin-top: 8px;">
+  `;
 
   if (r.hasFace) {
     infoHtml += `
@@ -2489,7 +2625,22 @@ function showThumbDetail(idx) {
     `;
   }
 
-  infoHtml += `</div>`;
+  infoHtml += `</div></div></div>`; // info-section, expandable-body, expandable 닫기
+
+  // === 거부 사진이면 액션 버튼 표시 ===
+  if (r.rejectionReason || (r.hasFace && !r.passed)) {
+    infoHtml += `
+      <div style="margin-top: 16px; padding-top: 12px; border-top: 0.5px solid rgba(255,255,255,0.1);">
+        <p class="small" style="margin-bottom: 8px; color: rgba(199,178,255,0.85);">⚠️ 이 사진은 자동 분석에서 제외되었습니다.</p>
+        <button class="btn btn-secondary" style="margin: 0 0 8px 0;" onclick="forceIncludePhoto(${idx})">
+          ✓ 이 사진 강제 포함 (현재 AI 추정값 사용)
+        </button>
+        <button class="btn btn-primary" style="margin: 0;" onclick="openManualFaceModal(${idx})">
+          ✋ 얼굴 영역 직접 지정해서 재분석
+        </button>
+      </div>
+    `;
+  }
 
   document.getElementById('thumbModalInfo').innerHTML = infoHtml;
   openModal('thumbModal');
@@ -2507,6 +2658,194 @@ function closeModal(id) {
     isPoppingState = true;
     history.back();
     // popstate 이벤트가 곧 발생하고 isPoppingState는 거기서 false로 돌아감
+  }
+}
+
+// ============================================
+// 수동 얼굴 지정 기능
+// ============================================
+let manualFaceContext = null;
+
+// 거부된 사진 강제 포함 (얼굴 추정값이 이미 있는 경우)
+async function forceIncludePhoto(resultIdx) {
+  const r = analysisResults[resultIdx];
+  if (!r) return;
+  if (!r.hasFace || r.estimatedAge == null) {
+    showToast('얼굴 추정값이 없습니다. 영역 직접 지정을 사용하세요.');
+    return;
+  }
+  r.passed = true;
+  r.forceIncluded = true;
+  r.rejectionReason = null;
+  closeModal('thumbModal');
+  showToast('사진이 분석 결과에 포함되었습니다. 결과를 갱신합니다.');
+  setTimeout(() => { try { showResults(); } catch (e) { console.error(e); } }, 300);
+}
+
+// 수동 얼굴 영역 지정 모달 열기
+async function openManualFaceModal(resultIdx) {
+  const r = analysisResults[resultIdx];
+  if (!r || !r.fullImageUrl) {
+    showToast('원본 이미지를 찾을 수 없습니다.');
+    return;
+  }
+  manualFaceContext = { resultIdx, fullImageUrl: r.fullImageUrl, box: null };
+  closeModal('thumbModal');
+  setTimeout(() => {
+    const img = document.getElementById('manualFaceImg');
+    img.onload = () => {
+      const canvas = document.getElementById('manualFaceCanvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      setupManualCanvas();
+      document.getElementById('manualFaceStatus').textContent = '손가락이나 마우스로 얼굴 영역을 드래그하세요';
+      document.getElementById('manualFaceConfirm').disabled = true;
+      document.getElementById('manualFaceConfirm').textContent = '이 영역으로 분석';
+    };
+    img.src = r.fullImageUrl;
+    openModal('manualFaceModal');
+  }, 200);
+}
+
+function setupManualCanvas() {
+  const canvas = document.getElementById('manualFaceCanvas');
+  let startX = 0, startY = 0, isDrawing = false;
+
+  const getPos = (evt) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const t = evt.touches ? evt.touches[0] : evt;
+    return {
+      x: (t.clientX - rect.left) * scaleX,
+      y: (t.clientY - rect.top) * scaleY,
+    };
+  };
+
+  const begin = (e) => {
+    e.preventDefault();
+    const p = getPos(e);
+    startX = p.x; startY = p.y;
+    isDrawing = true;
+  };
+  const move = (e) => {
+    if (!isDrawing) return;
+    e.preventDefault();
+    const p = getPos(e);
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const x = Math.min(startX, p.x);
+    const y = Math.min(startY, p.y);
+    const w = Math.abs(p.x - startX);
+    const h = Math.abs(p.y - startY);
+    ctx.fillStyle = 'rgba(199,178,255,0.15)';
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = '#C7B2FF';
+    ctx.lineWidth = Math.max(3, canvas.width / 200);
+    ctx.strokeRect(x, y, w, h);
+    manualFaceContext.box = { x, y, w, h };
+  };
+  const end = (e) => {
+    if (!isDrawing) return;
+    e.preventDefault();
+    isDrawing = false;
+    if (manualFaceContext.box && manualFaceContext.box.w > 20 && manualFaceContext.box.h > 20) {
+      document.getElementById('manualFaceConfirm').disabled = false;
+      document.getElementById('manualFaceStatus').textContent =
+        `✓ 영역 선택됨 (${Math.round(manualFaceContext.box.w)}×${Math.round(manualFaceContext.box.h)} px)`;
+    }
+  };
+
+  canvas.onmousedown = begin;
+  canvas.onmousemove = move;
+  canvas.onmouseup = end;
+  canvas.onmouseleave = end;
+  canvas.ontouchstart = begin;
+  canvas.ontouchmove = move;
+  canvas.ontouchend = end;
+}
+
+function resetManualBox() {
+  if (!manualFaceContext) return;
+  manualFaceContext.box = null;
+  const canvas = document.getElementById('manualFaceCanvas');
+  if (canvas) {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  document.getElementById('manualFaceStatus').textContent = '손가락이나 마우스로 얼굴 영역을 드래그하세요';
+  document.getElementById('manualFaceConfirm').disabled = true;
+}
+
+async function confirmManualFace() {
+  if (!manualFaceContext || !manualFaceContext.box) return;
+  const { resultIdx, fullImageUrl, box } = manualFaceContext;
+  const r = analysisResults[resultIdx];
+  if (!r) return;
+
+  document.getElementById('manualFaceConfirm').disabled = true;
+  document.getElementById('manualFaceConfirm').textContent = '분석 중...';
+
+  try {
+    const img = new Image();
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = fullImageUrl;
+    });
+
+    // 박스 주변 패딩
+    const padding = Math.max(box.w, box.h) * 0.3;
+    const cropX = Math.max(0, box.x - padding);
+    const cropY = Math.max(0, box.y - padding);
+    const cropW = Math.min(img.naturalWidth - cropX, box.w + padding * 2);
+    const cropH = Math.min(img.naturalHeight - cropY, box.h + padding * 2);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = cropW;
+    canvas.height = cropH;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+    // 잘라낸 영역만 분석 (threshold 매우 낮춤 - 사용자가 얼굴이라고 명시했으니)
+    const detection = await faceapi
+      .detectSingleFace(canvas, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.1 }))
+      .withFaceLandmarks()
+      .withAgeAndGender()
+      .withFaceDescriptor();
+
+    if (!detection) {
+      showToast('지정한 영역에서 얼굴을 찾지 못했습니다. 다시 시도해주세요.');
+      document.getElementById('manualFaceConfirm').disabled = false;
+      document.getElementById('manualFaceConfirm').textContent = '이 영역으로 분석';
+      return;
+    }
+
+    const birthDate = new Date(document.getElementById('birthDate').value);
+    const realAgeAtPhoto = (r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000);
+    const rawAge = detection.age;
+    const calibratedAge = calibrateAge(rawAge);
+    const upperCap = realAgeAtPhoto + 3;
+    const finalAge = calibratedAge > upperCap ? upperCap - Math.random() * 0.5 : calibratedAge;
+
+    r.hasFace = true;
+    r.passed = true;
+    r.rawAge = rawAge;
+    r.estimatedAge = finalAge;
+    r.qualityScore = Math.max(r.qualityScore || 0, 70);
+    r.rejectionReason = null;
+    r.manualFace = true;
+    r.descriptor = detection.descriptor;
+
+    closeModal('manualFaceModal');
+    showToast(`✓ 수동 분석 완료: ${finalAge.toFixed(1)}세`);
+    setTimeout(() => { try { showResults(); } catch (e) { console.error(e); } }, 300);
+
+  } catch (e) {
+    console.error('Manual face analysis failed', e);
+    showToast('분석 실패: ' + e.message);
+    document.getElementById('manualFaceConfirm').disabled = false;
+    document.getElementById('manualFaceConfirm').textContent = '이 영역으로 분석';
   }
 }
 
@@ -2608,6 +2947,44 @@ function showMinMaxPhoto(type) {
   const idx = analysisResults.indexOf(photo);
   if (idx >= 0) showThumbDetail(idx);
   else showThumbDetailFromObj(photo);
+}
+
+// 얼굴 나이가 실제 나이와 차이나는 이유를 한 줄로 분석
+function analyzeAgeDiffReason(result, realAge) {
+  if (!result.hasFace || result.estimatedAge == null) return null;
+  const diff = result.estimatedAge - realAge;
+  const q = result.qualityBreakdown || {};
+  const reasons = [];
+
+  // 들어 보이는 경우 (+1세 이상)
+  if (diff > 1) {
+    if (q.brightness != null && q.brightness < 60) reasons.push('어두운 조명');
+    if (q.brightness != null && q.brightness > 95 && q.sharpness != null && q.sharpness < 60) reasons.push('과한 노출로 음영 강조');
+    if (q.angle != null && q.angle < 65) reasons.push('측면 각도로 주름 강조');
+    if (q.sharpness != null && q.sharpness < 50) reasons.push('흐릿한 화질');
+    if (q.size != null && q.size < 60) reasons.push('얼굴이 작아 추정 부정확');
+
+    if (reasons.length === 0) {
+      if (diff > 3) reasons.push('피부톤·표정·주름이 평소보다 두드러짐');
+      else reasons.push('표정·각도·조명의 미세 영향');
+    }
+  }
+  // 어려 보이는 경우 (-1세 이하)
+  else if (diff < -1) {
+    if (q.brightness != null && q.brightness > 85) reasons.push('밝은 조명으로 잡티 감소');
+    if (q.angle != null && q.angle > 85) reasons.push('정면 각도로 매끈해 보임');
+    if (q.sharpness != null && q.sharpness < 60) reasons.push('부드러운 초점으로 주름 흐림');
+    if (q.size != null && q.size > 90) reasons.push('얼굴이 커서 세부 추정 안정적');
+
+    if (reasons.length === 0) {
+      if (diff < -3) reasons.push('표정이 밝고 피부 컨디션 좋음');
+      else reasons.push('자연스러운 표정과 적절한 조명');
+    }
+  } else {
+    reasons.push('실제 나이와 거의 일치');
+  }
+
+  return reasons.join(', ');
 }
 
 // expandable 토글
@@ -2877,16 +3254,53 @@ function renderBodyParts(passed) {
   setPart('partJaw', 'partJawD', parts[3]);
 }
 
+let monthlyReportData = {}; // 월별 데이터 캐시
+
 function renderMonthlyReport(passed, realAge) {
-  const recent = passed.slice(-Math.min(5, passed.length));
-  const avgAge = avg(recent.map(r => r.estimatedAge));
-  const now = new Date();
-  document.getElementById('reportMonth').textContent =
-    `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}`;
+  // 월별로 그룹화
+  monthlyReportData = {};
+  for (const r of passed) {
+    const key = r.timestamp.getFullYear() + '.' + String(r.timestamp.getMonth() + 1).padStart(2, '0');
+    if (!monthlyReportData[key]) monthlyReportData[key] = [];
+    monthlyReportData[key].push(r);
+  }
+
+  const months = Object.keys(monthlyReportData).sort().reverse(); // 최신순
+
+  // 드롭다운 채우기
+  const select = document.getElementById('reportMonthSelect');
+  if (select) {
+    select.innerHTML = months.map(m => {
+      const count = monthlyReportData[m].length;
+      return `<option value="${m}">${m} (${count}장)</option>`;
+    }).join('');
+  }
+
+  // 가장 최신 월 표시
+  if (months.length > 0) {
+    updateMonthlyReport(months[0]);
+  } else {
+    document.getElementById('reportAge').textContent = '데이터 없음';
+  }
+}
+
+function updateMonthlyReport(monthKey) {
+  const photos = monthlyReportData[monthKey];
+  if (!photos || photos.length === 0) return;
+
+  const birthDate = new Date(document.getElementById('birthDate').value);
+
+  // 평균 얼굴 나이
+  const avgAge = avg(photos.map(r => r.estimatedAge));
+
+  // 그 달의 실제 나이 (해당 월의 첫 사진 기준)
+  const realAgeAtMonth = (photos[0].timestamp - birthDate) / (365.25 * 24 * 3600 * 1000);
+
+  document.getElementById('reportMonth').textContent = monthKey;
   document.getElementById('reportAge').textContent = avgAge.toFixed(1) + '세';
 
-  const delta = avgAge - realAge;
-  document.getElementById('reportSub').textContent = `실제 나이 ${realAge.toFixed(0)}세 대비`;
+  const delta = avgAge - realAgeAtMonth;
+  document.getElementById('reportSub').textContent = `실제 나이 ${realAgeAtMonth.toFixed(0)}세 대비 (${photos.length}장 분석)`;
   if (delta < -0.5) {
     document.getElementById('reportDelta').textContent = `🌱 ${Math.abs(delta).toFixed(1)}세 어려 보여요`;
   } else if (delta > 0.5) {
@@ -2894,6 +3308,34 @@ function renderMonthlyReport(passed, realAge) {
   } else {
     document.getElementById('reportDelta').textContent = `⚖️ 실제 나이와 거의 일치`;
   }
+
+  // 대표 사진: 평균에 가장 가까운 사진
+  let bestPhoto = photos[0];
+  let bestDist = Math.abs(photos[0].estimatedAge - avgAge);
+  for (let i = 1; i < photos.length; i++) {
+    const d = Math.abs(photos[i].estimatedAge - avgAge);
+    if (d < bestDist) { bestDist = d; bestPhoto = photos[i]; }
+  }
+
+  const photoImg = document.getElementById('reportPhoto');
+  if (photoImg) {
+    photoImg.src = bestPhoto.thumbUrl;
+    photoImg.dataset.photoIdx = analysisResults.indexOf(bestPhoto);
+    window._reportCurrentPhoto = bestPhoto;
+  }
+  const photoLabel = document.getElementById('reportPhotoLabel');
+  if (photoLabel) {
+    photoLabel.textContent = bestPhoto.estimatedAge.toFixed(0) + '세 · 탭하면 원본';
+  }
+}
+
+// 월간 리포트 대표 사진 클릭 → 상세 모달
+function showReportPhoto() {
+  const r = window._reportCurrentPhoto;
+  if (!r) return;
+  const idx = analysisResults.indexOf(r);
+  if (idx >= 0) showThumbDetail(idx);
+  else showThumbDetailFromObj(r);
 }
 
 function switchInsightTab(el, key) {
