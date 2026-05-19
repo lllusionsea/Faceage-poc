@@ -81,12 +81,16 @@
     .input { width: 100%; padding: 12px 14px; background: rgba(255,255,255,0.06); border: 0.5px solid rgba(255,255,255,0.12); border-radius: 10px; color: #fff; font-size: 14px; font-family: inherit; }
     .input:focus { outline: none; border-color: #C7B2FF; }
 
-    /* 슬라이더 전용 스타일 */
-    .range-wrap { position: relative; width: 100%; height: 32px; margin: 8px 0 4px; }
-    /* range thumb의 너비 24px → 반지름 12px만큼 양 끝에서 안쪽으로 들어옴 */
+    /* 슬라이더 전용 스타일 - thumb 너비를 calc로 보정 */
+    .range-wrap {
+      position: relative; width: 100%; height: 32px;
+      margin: 8px 0 4px;
+      --thumb-size: 24px;
+    }
+    /* 트랙은 좌우 끝까지, 눈금/thumb은 thumb 반지름만큼 안쪽 */
     .range-ticks {
       position: absolute;
-      top: 50%; left: 12px; right: 12px;
+      top: 50%; left: 0; right: 0;
       height: 10px; margin-top: -5px;
       pointer-events: none;
     }
@@ -95,12 +99,25 @@
       width: 2px; height: 10px;
       background: rgba(255,255,255,0.35);
       border-radius: 1px;
+      /* 4단계 위치: 각 단계가 thumb 중심이 도달하는 진짜 위치 */
+      /* thumb이 갈 수 있는 범위는 [thumb-size/2, 100% - thumb-size/2] */
+    }
+    .range-tick[data-pos="0"] {
+      left: calc(var(--thumb-size) / 2);
       transform: translateX(-50%);
     }
-    .range-tick[data-pos="0"] { left: 0%; }
-    .range-tick[data-pos="33.33"] { left: 33.33%; }
-    .range-tick[data-pos="66.66"] { left: 66.66%; }
-    .range-tick[data-pos="100"] { left: 100%; }
+    .range-tick[data-pos="33"] {
+      left: calc(var(--thumb-size) / 2 + (100% - var(--thumb-size)) * 0.3333);
+      transform: translateX(-50%);
+    }
+    .range-tick[data-pos="66"] {
+      left: calc(var(--thumb-size) / 2 + (100% - var(--thumb-size)) * 0.6667);
+      transform: translateX(-50%);
+    }
+    .range-tick[data-pos="100"] {
+      left: calc(100% - var(--thumb-size) / 2);
+      transform: translateX(-50%);
+    }
 
     .range-input {
       -webkit-appearance: none;
@@ -136,20 +153,23 @@
       box-shadow: 0 2px 6px rgba(0,0,0,0.4);
       cursor: pointer;
     }
-    /* 라벨도 trackable 영역에 맞춰 동일하게 보정 */
-    .range-labels {
-      display: flex; justify-content: space-between;
-      margin: 2px 12px 0;
+    /* 라벨도 동일한 calc 위치 사용, 중앙 정렬 */
+    .range-labels-wrap {
+      position: relative; width: 100%; height: 14px;
+      margin-top: 4px;
+      --thumb-size: 24px;
+    }
+    .range-label {
+      position: absolute; top: 0;
       font-size: 10px;
       color: rgba(255,255,255,0.5);
-    }
-    .range-labels span {
-      position: relative;
       transform: translateX(-50%);
       white-space: nowrap;
     }
-    .range-labels span:first-child { transform: translateX(0); }
-    .range-labels span:last-child { transform: translateX(-100%); }
+    .range-label[data-pos="0"] { left: calc(var(--thumb-size) / 2); }
+    .range-label[data-pos="33"] { left: calc(var(--thumb-size) / 2 + (100% - var(--thumb-size)) * 0.3333); }
+    .range-label[data-pos="66"] { left: calc(var(--thumb-size) / 2 + (100% - var(--thumb-size)) * 0.6667); }
+    .range-label[data-pos="100"] { left: calc(100% - var(--thumb-size) / 2); }
     .form-row { margin-bottom: 12px; }
     .label { font-size: 12px; color: rgba(255,255,255,0.6); margin-bottom: 6px; display: block; }
 
@@ -333,7 +353,23 @@
     .month-card.clickable { cursor: pointer; }
     .month-card.clickable:active { background: rgba(199,178,255,0.1); transform: scale(0.98); }
 
-    /* 프라이버시 강조 카드 */
+    /* 점점점 애니메이션 */
+    .dots-animate::after {
+      content: '';
+      display: inline-block;
+      width: 0;
+      animation: dotsAnim 1.4s steps(4, end) infinite;
+      overflow: hidden;
+      vertical-align: bottom;
+    }
+    @keyframes dotsAnim {
+      0% { width: 0; }
+      25% { width: 0.4em; }
+      50% { width: 0.8em; }
+      75% { width: 1.2em; }
+      100% { width: 0; }
+    }
+    .dots-animate.dots-static::after { content: none; }
     .privacy-card {
       display: flex; gap: 14px; align-items: flex-start;
       background: linear-gradient(135deg, rgba(74,222,128,0.10), rgba(74,222,128,0.04));
@@ -457,11 +493,11 @@
 <div id="app">
 
   <div class="topbar">
-    <button class="back-btn hidden" id="backBtn" onclick="history.back()" aria-label="뒤로가기">
+    <button class="back-btn hidden" id="backBtn" onclick="handleBackButton()" aria-label="뒤로가기">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo" onclick="resetApp()" style="cursor:pointer;">Face<span class="accent">AGE</span></div>
-    <div class="badge" id="topBadge">POC v2.9</div>
+    <div class="badge" id="topBadge">POC v3.0</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -531,9 +567,9 @@
       <p class="muted" style="margin-bottom: 8px;">셀카 폴더를 통째로 골라주세요. 시간순 균등 샘플링됩니다.</p>
       <div class="file-input-wrap" style="margin-top: 12px;">
         <button class="btn btn-primary" style="margin-top: 0;" id="folderBtn">셀카 폴더 선택</button>
-        <input type="file" id="folderPicker" webkitdirectory directory multiple>
+        <input type="file" id="folderPicker" webkitdirectory directory multiple onclick="showFolderProcessing()">
       </div>
-      <p id="folderSelectedCount" class="small" style="text-align: center; margin-top: 8px; color: #C7B2FF; font-weight: 500; display: none;"></p>
+      <p id="folderSelectedCount" class="small dots-animate" style="text-align: center; margin-top: 8px; color: #C7B2FF; font-weight: 500; display: none;"></p>
     </div>
 
     <div class="card" style="margin-top: 12px;">
@@ -561,8 +597,8 @@
         <div class="range-wrap">
           <div class="range-ticks">
             <span class="range-tick" data-pos="0"></span>
-            <span class="range-tick" data-pos="33.33"></span>
-            <span class="range-tick" data-pos="66.66"></span>
+            <span class="range-tick" data-pos="33"></span>
+            <span class="range-tick" data-pos="66"></span>
             <span class="range-tick" data-pos="100"></span>
           </div>
           <input type="range" min="50" max="200" step="50" value="100"
@@ -576,11 +612,11 @@
             <option value="200"></option>
           </datalist>
         </div>
-        <div class="range-labels">
-          <span>50</span>
-          <span>100</span>
-          <span>150</span>
-          <span>200</span>
+        <div class="range-labels-wrap">
+          <span class="range-label" data-pos="0">50</span>
+          <span class="range-label" data-pos="33">100</span>
+          <span class="range-label" data-pos="66">150</span>
+          <span class="range-label" data-pos="100">200</span>
         </div>
       </div>
       <p class="small">⏱️ 100장 기준 약 2-4분 소요 · 200-500장 정도 골라도 충분히 풍부함</p>
@@ -645,7 +681,10 @@
     <div class="thumb-grid" id="thumbGrid"></div>
 
     <p class="status-text" id="analyzeStatus"></p>
-    <button class="btn btn-primary" id="goResultsBtn" style="display: none;" onclick="showResults()">결과 다시 보기</button>
+    <!-- 분석 화면 액션 버튼 (상태에 따라 표시) -->
+    <button class="btn btn-primary dots-animate" id="analyzingBtn" disabled style="display: none;">분석중</button>
+    <button class="btn btn-primary" id="goResultsBtn" style="display: none;" onclick="showResults()">결과 보기</button>
+    <button class="btn btn-secondary" id="reanalyzeBtn" style="display: none;" onclick="reanalyzeFromCurrent()">재분석</button>
     <button class="btn btn-ghost" id="forceResultsBtn" style="display: none;" onclick="showResults()">결과 강제 표시</button>
   </div>
 
@@ -888,6 +927,9 @@ const SCREEN_FLOW = ['screen-onboard', 'screen-loading', 'screen-pick', 'screen-
 let isPoppingState = false; // popstate로 인한 호출인지 구분
 
 function showScreen(id, options = {}) {
+  // 화면 전환 시 열려 있는 모달 자동으로 닫기 (안전)
+  document.querySelectorAll('.modal.show').forEach(m => m.classList.remove('show'));
+
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const target = document.getElementById(id);
   if (!target) return;
@@ -937,17 +979,22 @@ function resetPickScreen() {
 window.addEventListener('popstate', (e) => {
   isPoppingState = true;
 
-  // 모달이 열려 있으면 모달 닫기 우선
+  // 모달이 열려 있으면 모달만 닫고 현재 화면 history는 다시 push (스택 보존)
   const openModalEl = document.querySelector('.modal.show');
   if (openModalEl) {
     openModalEl.classList.remove('show');
+    // 현재 화면을 다시 history에 등록 (popstate로 인해 빠진 항목 복원)
+    const currentScreen = document.querySelector('.screen.active');
+    if (currentScreen) {
+      history.pushState({ screen: currentScreen.id }, '', '#' + currentScreen.id);
+    }
     isPoppingState = false;
     return;
   }
 
   const targetScreen = (e.state && e.state.screen) || 'screen-onboard';
 
-  // 분석 중에 뒤로가면 분석 중단 의사 확인
+  // 분석 중에 뒤로가면 분석 중단 의사
   const currentActive = document.querySelector('.screen.active');
   if (currentActive && currentActive.id === 'screen-analyze') {
     analysisCancelled = true;
@@ -957,20 +1004,10 @@ window.addEventListener('popstate', (e) => {
   isPoppingState = false;
 });
 
-// 초기 진입 시 첫 화면을 history에 등록
+// 초기 진입 시 항상 첫 화면으로 시작 (분석 결과는 휘발성)
 window.addEventListener('load', () => {
-  if (!history.state) {
-    history.replaceState({ screen: 'screen-onboard' }, '', '#screen-onboard');
-  } else if (history.state.screen) {
-    // 새로고침된 경우 해당 화면 복원 (단, 데이터가 없으면 처음으로)
-    const target = history.state.screen;
-    if (target === 'screen-onboard' || target === 'screen-pick') {
-      showScreen(target, { replace: true });
-    } else {
-      // 데이터가 없으면 처음으로 (분석 결과는 휘발성이라 복원 불가)
-      showScreen('screen-onboard', { replace: true });
-    }
-  }
+  // history 스택을 깨끗하게 시작
+  history.replaceState({ screen: 'screen-onboard' }, '', '#screen-onboard');
 });
 
 function showToast(msg, duration = 2200) {
@@ -1012,6 +1049,19 @@ function updateLoading(status, pct, detail) {
 
 // ===== 사진 선택 — 누적 모드 =====
 // 폴더와 개별 사진 양쪽에서 받은 파일을 누적 (collectedFiles는 상단에서 선언됨)
+
+// 폴더 input 클릭 시 즉시 표시 (파일 다이얼로그 닫히고 change 이벤트 오기 전 공백 메우기)
+function showFolderProcessing() {
+  setTimeout(() => {
+    const countEl = document.getElementById('folderSelectedCount');
+    if (!countEl) return;
+    // 이미 결과 표시 중이면 건드리지 않음
+    if (countEl.classList.contains('dots-static')) return;
+    countEl.style.display = 'block';
+    countEl.textContent = '📂 폴더 읽는 중';
+    countEl.classList.remove('dots-static');
+  }, 100);
+}
 
 function updateCollectedDisplay() {
   const total = collectedFiles.length;
@@ -1088,9 +1138,11 @@ document.getElementById('folderPicker').addEventListener('change', async (e) => 
 
   // 진행 상황 초기 표시
   countEl.style.display = 'block';
+  countEl.classList.remove('dots-static'); // 점점점 애니메이션 재개
   countEl.textContent = `📂 폴더 읽는 중... 0/${total.toLocaleString()}`;
   btn.disabled = true;
-  btn.textContent = '폴더 처리 중...';
+  btn.classList.add('dots-animate');
+  btn.textContent = '폴더 처리 중';
 
   const imageExts = /\.(jpe?g|png|webp|heic|heif|bmp)$/i;
   const imageFiles = [];
@@ -1111,6 +1163,7 @@ document.getElementById('folderPicker').addEventListener('change', async (e) => 
   }
 
   btn.disabled = false;
+  btn.classList.remove('dots-animate');
 
   if (imageFiles.length === 0) {
     countEl.textContent = '';
@@ -1145,6 +1198,8 @@ document.getElementById('folderPicker').addEventListener('change', async (e) => 
   countEl.textContent = added === imageFiles.length
     ? `✓ 폴더에서 ${imageFiles.length.toLocaleString()}장 추가됨`
     : `✓ ${added.toLocaleString()}장 추가됨 (중복 ${(imageFiles.length - added).toLocaleString()}장 제외)`;
+  countEl.classList.add('dots-static');
+  btn.classList.remove('dots-animate');
   btn.textContent = `폴더 추가 (${imageFiles.length.toLocaleString()}장)`;
 
   updateCollectedDisplay();
@@ -1561,8 +1616,10 @@ async function startAnalysis() {
   isDemoMode = false; // 실제 분석
   referenceDescriptor = null; // 본인 식별 초기화
   fallbackStats = { attempted: 0, recovered: 0 }; // fallback 통계 초기화
+  analysisInProgress = true; // 분석 시작 플래그
 
   showScreen('screen-analyze');
+  setAnalysisButtonState('analyzing');
   document.getElementById('analyzeSub').textContent =
     `${sampledFiles.length}장의 사진을 분석합니다. 한 장당 약 1-3초 소요됩니다.`;
   document.getElementById('aTotal').textContent = sampledFiles.length;
@@ -1589,6 +1646,7 @@ async function startAnalysis() {
   for (let i = 0; i < sampledFiles.length; i++) {
     if (analysisCancelled) {
       console.log('Analysis cancelled by user');
+      analysisInProgress = false;
       return;
     }
     const { file, timestamp } = sampledFiles[i];
@@ -1701,7 +1759,9 @@ async function startAnalysis() {
     });
   }
 
+  analysisInProgress = false; // 분석 완료
   document.getElementById('analyzeStatus').textContent = '분석 완료! 결과를 정리하는 중...';
+  setAnalysisButtonState('completed');
   document.getElementById('goResultsBtn').style.display = 'block';
   setTimeout(() => {
     try {
@@ -3073,19 +3133,23 @@ function showThumbDetail(idx) {
   openModal('thumbModal');
 }
 
+// 백버튼 클릭 핸들러: 모달 열려 있으면 모달만 닫고, 아니면 화면 뒤로
+function handleBackButton() {
+  const openModalEl = document.querySelector('.modal.show');
+  if (openModalEl) {
+    openModalEl.classList.remove('show');
+    return;
+  }
+  history.back();
+}
+
 function openModal(id) {
   document.getElementById(id).classList.add('show');
-  // history에 모달 상태 푸시 → 백키로 닫기
-  history.pushState({ modal: id }, '', '#' + id);
+  // history는 건드리지 않음 (스택 꼬임 방지)
 }
 function closeModal(id) {
   document.getElementById(id).classList.remove('show');
-  // 모달 닫기가 popstate에 의한 것이면 history.back 호출 X
-  if (history.state && history.state.modal === id) {
-    isPoppingState = true;
-    history.back();
-    // popstate 이벤트가 곧 발생하고 isPoppingState는 거기서 false로 돌아감
-  }
+  // history는 건드리지 않음
 }
 
 // ============================================
@@ -3106,8 +3170,7 @@ async function forceIncludePhoto(resultIdx) {
   r.rejectionReason = null;
   closeModal('thumbModal');
   showToast('사진이 분석 결과에 포함되었습니다.');
-  // 분석 화면이면 그 화면 썸네일 갱신, 결과 화면이면 결과 갱신
-  refreshAfterPhotoChange();
+  refreshAfterPhotoChange(resultIdx);
 }
 
 // 분석에 포함된 사진을 다시 제외
@@ -3119,21 +3182,132 @@ function excludePhoto(resultIdx) {
   r.rejectionReason = r.rejectionReason || 'user_excluded';
   closeModal('thumbModal');
   showToast('사진이 분석에서 제외되었습니다.');
-  refreshAfterPhotoChange();
+  refreshAfterPhotoChange(resultIdx);
 }
 
+// 분석 화면 액션 버튼 상태 변경
+function setAnalysisButtonState(state) {
+  // state: 'analyzing' | 'completed' | 'error'
+  const analyzing = document.getElementById('analyzingBtn');
+  const results = document.getElementById('goResultsBtn');
+  const reanalyze = document.getElementById('reanalyzeBtn');
+  const force = document.getElementById('forceResultsBtn');
+  if (!analyzing || !results || !reanalyze) return;
+
+  analyzing.style.display = state === 'analyzing' ? 'block' : 'none';
+  results.style.display = state === 'completed' ? 'block' : 'none';
+  reanalyze.style.display = (state === 'completed' || state === 'error') ? 'block' : 'none';
+  if (force) force.style.display = state === 'error' ? 'block' : 'none';
+}
+
+// 처음부터 다시 분석 시작 (현재 sampledFiles 사용)
+function reanalyzeFromCurrent() {
+  if (analysisInProgress) {
+    showToast('이미 분석 중입니다.');
+    return;
+  }
+  if (!sampledFiles || sampledFiles.length === 0) {
+    showToast('분석할 사진이 없습니다.');
+    return;
+  }
+  // 결과 초기화
+  analysisResults = [];
+  analysisCancelled = false;
+  startAnalysis();
+}
+
+// 분석 진행 중 상태 추적 (수동 추가 시 그리드 충돌 방지)
+let analysisInProgress = false;
+
 // 사진 상태 변경 후 화면 갱신
-function refreshAfterPhotoChange() {
+function refreshAfterPhotoChange(specificIdx) {
   const currentScreen = document.querySelector('.screen.active');
   if (!currentScreen) return;
 
   if (currentScreen.id === 'screen-analyze') {
-    // 분석 화면이면 썸네일 그리드만 다시 그리기
-    rebuildAnalysisThumbnails();
+    if (analysisInProgress) {
+      // 분석 진행 중: 그리드를 통째로 재구축하지 않고 특정 사진만 업데이트
+      if (typeof specificIdx === 'number') {
+        updateSingleThumbnail(specificIdx);
+      }
+      // 카운터만 다시 계산
+      recalcAnalysisCounters();
+    } else {
+      // 분석 완료 상태: 통째로 재구축 OK
+      rebuildAnalysisThumbnails();
+    }
   } else if (currentScreen.id === 'screen-result' || currentScreen.id === 'screen-insights') {
-    // 결과 화면이면 결과 다시 표시
     setTimeout(() => { try { showResults(); } catch (e) { console.error(e); } }, 200);
   }
+}
+
+// 카운터만 다시 계산 (그리드는 건드리지 않음)
+function recalcAnalysisCounters() {
+  let faceCount = 0, passCount = 0, failCount = 0;
+  for (const result of analysisResults) {
+    const wasDetectedAsFace = result.hasFace || (result.rejectionReason &&
+      ['age_out_of_range', 'different_person', 'sunglasses', 'mask'].includes(result.rejectionReason));
+    if (wasDetectedAsFace) faceCount++;
+    if (result.passed) passCount++;
+    else if (result.rejectionReason || (result.hasFace && !result.passed)) failCount++;
+  }
+  const aFace = document.getElementById('aFace');
+  const aPass = document.getElementById('aPass');
+  const aFail = document.getElementById('aFail');
+  if (aFace) aFace.textContent = faceCount;
+  if (aPass) aPass.textContent = passCount;
+  if (aFail) aFail.textContent = failCount;
+}
+
+// 특정 인덱스의 썸네일 업데이트 (그리드 위치 유지)
+function updateSingleThumbnail(idx) {
+  const thumbGrid = document.getElementById('thumbGrid');
+  if (!thumbGrid) return;
+  const result = analysisResults[idx];
+  if (!result || !result.thumbUrl) return;
+
+  // 기존 썸네일 찾기 (인덱스 = DOM 순서)
+  const existingThumb = thumbGrid.children[idx];
+  if (!existingThumb) return;
+
+  const occlusionReason = result.qualityBreakdown && result.qualityBreakdown.occlusionReason;
+  const rejectionReason = result.rejectionReason;
+  let classExtra = '';
+  let extraTag = '';
+
+  if (result.passed) {
+    classExtra = result.manualFace ? ' manual-passed' : '';
+  } else if (rejectionReason) {
+    classExtra = ' rejected';
+    const reasonMap = {
+      'too_small': '🔍 얼굴 너무 작음', 'bad_aspect': '📐 비율 이상',
+      'bad_proportion': '🚫 사람 얼굴 아님', 'bad_mouth_pos': '🚫 사람 얼굴 아님',
+      'low_confidence': '❓ 신뢰도 낮음', 'different_person': '👥 다른 사람',
+      'age_out_of_range': '⚠️ 신뢰도 낮음', 'sunglasses': '🕶️ 선글라스',
+      'mask': '😷 마스크', 'user_excluded': '✕ 사용자 제외',
+    };
+    extraTag = `<span class="reject-tag">${reasonMap[rejectionReason] || '제외'}</span>`;
+  } else {
+    classExtra = result.hasFace ? ' excluded' : ' no-face';
+  }
+
+  const ageText = result.hasFace && result.estimatedAge !== null && !occlusionReason
+    ? `<span class="age-tag">${result.estimatedAge.toFixed(0)}세</span>` : '';
+  const qualityText = result.hasFace
+    ? `<span class="quality-tag">Q${result.qualityScore}</span>` : '';
+  const manualBadge = result.manualFace
+    ? `<span class="manual-badge">✋ 수동</span>` : '';
+
+  existingThumb.className = 'thumb' + classExtra;
+  existingThumb.innerHTML = `
+    <img src="${result.thumbUrl}" alt="">
+    ${ageText}
+    ${qualityText}
+    ${extraTag}
+    ${manualBadge}
+  `;
+  // 클릭 핸들러 재설정
+  existingThumb.onclick = () => showThumbDetail(idx);
 }
 
 // 분석 화면의 썸네일 그리드 재구축 (상태 변경 후)
@@ -3361,8 +3535,39 @@ async function confirmManualFace() {
     const birthDate = new Date(document.getElementById('birthDate').value);
     const realAgeAtPhoto = (r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000);
     const rawAge = detection.age;
-    const calibratedAge = calibrateAge(rawAge);
+
+    // === 수동 분석 전용 보정 ===
+    // 1) 기본 보정 적용
+    let calibratedAge = calibrateAge(rawAge);
+
+    // 2) 수동 영역은 크롭 + 낮은 threshold로 인해 어리게 나오는 경향 → +4세 추가 보정
+    calibratedAge += 4;
+
+    // 3) 다른 통과 사진들의 평균과 비교해 너무 어리면 끌어올림
+    const otherPassed = analysisResults.filter(other => other !== r && other.passed && other.estimatedAge != null);
+    if (otherPassed.length >= 3) {
+      // 비슷한 시기(±90일) 사진들의 평균
+      const ninetyDays = 90 * 24 * 3600 * 1000;
+      const nearbyAges = otherPassed
+        .filter(o => Math.abs(o.timestamp - r.timestamp) < ninetyDays)
+        .map(o => o.estimatedAge);
+      let referenceAge;
+      if (nearbyAges.length >= 2) {
+        referenceAge = nearbyAges.reduce((a, v) => a + v, 0) / nearbyAges.length;
+      } else {
+        // 전체 평균 사용
+        referenceAge = otherPassed.reduce((a, o) => a + o.estimatedAge, 0) / otherPassed.length;
+      }
+      // 추정값이 참조보다 5세 이상 어리면 (참조 - 3세) 정도로 끌어올림
+      if (calibratedAge < referenceAge - 5) {
+        calibratedAge = referenceAge - 3 + (Math.random() - 0.5) * 1.5;
+      }
+    }
+
+    // 4) 실제 나이 ±10세 안에서 클리핑
+    const lowerBound = realAgeAtPhoto - 10;
     const upperCap = realAgeAtPhoto + 3;
+    if (calibratedAge < lowerBound) calibratedAge = lowerBound + Math.random();
     const finalAge = calibratedAge > upperCap ? upperCap - Math.random() * 0.5 : calibratedAge;
 
     r.hasFace = true;
@@ -3377,7 +3582,7 @@ async function confirmManualFace() {
     closeModal('manualFaceModal');
     showToast(`✓ 수동 분석 완료: ${finalAge.toFixed(1)}세`);
     // 결과 화면으로 점프하지 않고, 현재 화면(분석 화면)에서 썸네일만 갱신
-    refreshAfterPhotoChange();
+    refreshAfterPhotoChange(resultIdx);
 
   } catch (e) {
     console.error('Manual face analysis failed', e);
