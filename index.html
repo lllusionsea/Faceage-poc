@@ -565,13 +565,12 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo" onclick="resetApp()" style="cursor:pointer;">Face<span class="accent">AGE</span></div>
-    <div class="badge" id="topBadge">POC v3.4</div>
+    <div class="badge" id="topBadge">POC v3.6</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
   <div class="screen active" id="screen-onboard">
     <h1>갤러리 셀피로<br/>얼굴 나이를 추적해요</h1>
-    <p class="muted">사진은 폰을 떠나지 않아요. 모든 분석은 이 기기 안에서만 일어납니다.</p>
 
     <div class="card" style="margin-top: 20px;">
       <div class="perm-row">
@@ -585,7 +584,7 @@
         <div class="perm-icon">🧠</div>
         <div class="perm-text">
           <p>온디바이스 AI 분석</p>
-          <p>face-api.js가 브라우저에서 얼굴 검출과 나이 추정을 수행합니다</p>
+          <p>face-api.js + MediaPipe Face Mesh로 얼굴 검출·나이 추정·정밀 랜드마크를 수행하며, 동양인에 맞춘 보정 계수를 적용합니다.</p>
         </div>
       </div>
       <div class="perm-row">
