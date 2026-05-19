@@ -71,6 +71,8 @@
     .btn-progress { background: linear-gradient(90deg, #C7B2FF, #7A6FE0); color: #0F0F12; opacity: 0.85; cursor: wait; }
     .btn-ghost { background: transparent; color: rgba(255,255,255,0.7); border: 0.5px solid rgba(255,255,255,0.15); }
     .btn-secondary { background: rgba(255,255,255,0.08); color: #fff; }
+    .btn-danger { background: rgba(248, 113, 113, 0.9); color: #fff; }
+    .btn-danger:active { background: rgba(248, 113, 113, 1); transform: scale(0.98); }
     .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
     .file-input-wrap { position: relative; }
@@ -130,6 +132,13 @@
     .thumb.excluded::after { content: '✕'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #F87171; font-size: 20px; font-weight: 700; }
     .thumb.no-face { opacity: 0.3; }
     .thumb.no-face::after { content: '얼굴 없음'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 500; }
+    .thumb.manual-passed { box-shadow: 0 0 0 2px #C7B2FF inset; }
+    .thumb .manual-badge {
+      position: absolute; top: 3px; right: 3px;
+      font-size: 9px; padding: 2px 5px;
+      background: #C7B2FF; color: #0F0F12;
+      border-radius: 4px; font-weight: 600;
+    }
     .thumb.occluded { opacity: 0.45; }
     .thumb.rejected { opacity: 0.35; }
     .thumb.rejected::after { content: ''; position: absolute; inset: 0; background: rgba(248,113,113,0.15); }
@@ -150,9 +159,25 @@
     .insight-body { font-size: 12px; color: rgba(255,255,255,0.55); margin-bottom: 6px; line-height: 1.45; }
     .insight-meta { font-size: 10px; color: rgba(255,255,255,0.4); }
 
-    .tabs { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; }
-    .tab { padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,0.06); font-size: 12px; cursor: pointer; white-space: nowrap; border: 0.5px solid transparent; }
-    .tab.active { background: #C7B2FF; color: #0F0F12; font-weight: 600; }
+    .tabs {
+      display: flex; gap: 4px; margin-bottom: 16px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 12px; padding: 4px;
+    }
+    .tab {
+      flex: 1; padding: 11px 8px; border-radius: 9px;
+      background: transparent; font-size: 13px; font-weight: 500;
+      cursor: pointer; text-align: center;
+      color: rgba(255,255,255,0.6);
+      transition: all 0.2s;
+      border: none;
+    }
+    .tab:active { transform: scale(0.97); }
+    .tab.active {
+      background: #C7B2FF; color: #0F0F12;
+      font-weight: 600;
+      box-shadow: 0 2px 6px rgba(199,178,255,0.25);
+    }
 
     .chart-wrap { position: relative; height: 200px; margin: 8px 0 16px; }
     .chart-preview {
@@ -226,6 +251,25 @@
     .report-card .big { font-size: 38px; font-weight: 700; letter-spacing: -2px; margin: 8px 0; }
     .report-card .sub { font-size: 12px; opacity: 0.9; line-height: 1.4; }
 
+    .month-card {
+      display: flex; gap: 12px; align-items: center;
+      background: rgba(255,255,255,0.04);
+      border: 0.5px solid rgba(255,255,255,0.08);
+      border-radius: 14px; padding: 12px;
+      margin: 8px 0;
+    }
+    .month-card-left { flex: 1; min-width: 0; }
+    .month-card-date { font-size: 11px; color: rgba(255,255,255,0.5); margin-bottom: 4px; letter-spacing: 0.5px; }
+    .month-card-age { font-size: 22px; font-weight: 700; color: #fff; line-height: 1.1; margin-bottom: 4px; }
+    .month-card-delta { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+    .month-card-count { font-size: 10px; color: rgba(255,255,255,0.4); }
+    .month-card-photo {
+      width: 64px; height: 64px; border-radius: 10px; object-fit: cover;
+      cursor: pointer; flex-shrink: 0;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .month-card-photo:active { transform: scale(0.96); }
+
     .qbar-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: 12px; }
     .qbar-label { width: 60px; color: rgba(255,255,255,0.6); font-size: 11px; }
     .qbar-track { flex: 1; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
@@ -295,11 +339,18 @@
     .pill-row { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
     .pill-mini { font-size: 11px; padding: 3px 9px; border-radius: 999px; background: rgba(199,178,255,0.12); color: #C7B2FF; }
 
-    .samp-bar { display: flex; height: 24px; border-radius: 6px; overflow: hidden; margin: 8px 0; background: rgba(255,255,255,0.05); }
-    .samp-bar-seg { flex: 1; border-right: 1px solid rgba(15,15,18,0.5); position: relative; }
-    .samp-bar-seg:last-child { border-right: none; }
-    .samp-bar-seg.picked { background: rgba(199,178,255,0.35); }
-    .samp-bar-seg.picked::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: #C7B2FF; }
+    .samp-bar {
+      display: flex; height: 56px; border-radius: 6px; overflow: hidden;
+      margin: 8px 0; background: rgba(255,255,255,0.04);
+      align-items: flex-end; gap: 1px; padding: 2px;
+    }
+    .samp-bar-seg {
+      flex: 1; min-width: 0;
+      background: rgba(255,255,255,0.15);
+      border-radius: 2px;
+      position: relative; transition: background 0.2s;
+    }
+    .samp-bar-seg.picked { background: #C7B2FF; box-shadow: 0 0 4px rgba(199,178,255,0.5); }
     .samp-labels { display: flex; justify-content: space-between; font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 4px; }
   </style>
 </head>
@@ -311,7 +362,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo" onclick="resetApp()" style="cursor:pointer;">Face<span class="accent">AGE</span></div>
-    <div class="badge" id="topBadge">POC v2.3</div>
+    <div class="badge" id="topBadge">POC v2.7</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -401,7 +452,13 @@
       <p class="muted" style="margin-bottom: 12px;">앱이 분석할 최대 장수입니다. 시간 범위 전체에서 균등 샘플링됩니다.</p>
       <div class="form-row">
         <label class="label">최대 분석 장수: <span id="maxSamplesVal">100</span>장</label>
-        <input type="range" min="10" max="150" value="100" id="maxSamples" class="input" oninput="document.getElementById('maxSamplesVal').textContent = this.value">
+        <input type="range" min="50" max="200" step="50" value="100" id="maxSamples" class="input" oninput="document.getElementById('maxSamplesVal').textContent = this.value">
+        <div style="display:flex; justify-content:space-between; margin-top:4px; font-size:10px; color:rgba(255,255,255,0.4);">
+          <span>50</span>
+          <span>100</span>
+          <span>150</span>
+          <span>200</span>
+        </div>
       </div>
       <p class="small">⏱️ 100장 기준 약 2-4분 소요 · 200-500장 정도 골라도 충분히 풍부함</p>
     </div>
@@ -424,7 +481,7 @@
 
     <div class="stat-grid">
       <div class="stat-mini"><div class="label">총 선택</div><div class="value" id="sTotal">0</div></div>
-      <div class="stat-mini"><div class="label">날짜 정보 있음</div><div class="value" id="sWithDate">0</div></div>
+      <div class="stat-mini"><div class="label">고유 날짜</div><div class="value" id="sWithDate">0</div></div>
       <div class="stat-mini"><div class="label">샘플링됨</div><div class="value" id="sSampled">0</div></div>
       <div class="stat-mini"><div class="label">기간</div><div class="value" id="sPeriod">--</div></div>
     </div>
@@ -507,9 +564,9 @@
 
     <h3 style="margin-top: 20px;">시계열 추이</h3>
     <p class="small" style="line-height:1.6;">
-      얼굴 나이(보라) vs 실제 나이(회색 점선) · 점 탭하면 사진 미리보기<br/>
+      얼굴 나이 vs 실제 나이(회색 점선) · 점 탭하면 사진 미리보기<br/>
       <span style="color:#4ADE80;">●</span> 어려보임 ·
-      <span style="color:#C7B2FF;">●</span> 비슷 ·
+      <span style="color:rgba(255,255,255,0.55);">●</span> 비슷 ·
       <span style="color:#F87171;">●</span> 들어보임
     </p>
     <div class="chart-wrap" style="position: relative;">
@@ -540,8 +597,8 @@
     <p class="muted">메타데이터(시간·계절·시간대) 기반 상관 분석입니다. 인과가 아닌 상관입니다.</p>
 
     <div class="tabs" style="margin-top: 16px;">
-      <div class="tab active" onclick="switchInsightTab(this, 'pattern')">패턴</div>
-      <div class="tab" onclick="switchInsightTab(this, 'parts')">부위별</div>
+      <div class="tab active" onclick="switchInsightTab(this, 'pattern')">종합 분석</div>
+      <div class="tab" onclick="switchInsightTab(this, 'parts')">부위별 분석</div>
       <div class="tab" onclick="switchInsightTab(this, 'report')">월간 리포트</div>
     </div>
 
@@ -550,7 +607,10 @@
     </div>
 
     <div id="tab-parts" style="display:none;">
-      <p class="muted" style="margin-bottom: 12px;">간이 분석 결과. 부위별 변화는 face-api.js의 랜드마크 좌표 변화를 기반으로 추정한 시뮬레이션 값입니다.</p>
+      <p class="muted" style="margin-bottom: 12px; line-height: 1.5;">
+        각 부위의 <b>현재 추정 나이</b>와, 초기 시점 대비 <b>변화량</b>을 보여줍니다.<br/>
+        <span class="small">⚠️ POC 시뮬레이션 값. 실제 부위별 모델은 Phase 2에서 추가됩니다.</span>
+      </p>
       <div class="part-grid">
         <div class="part-card clickable" onclick="showPartTimeline('eyes')">
           <h4>👁️ 눈가 <span class="info-btn" onclick="event.stopPropagation(); showPartInfo('eyes')">ⓘ</span></h4>
@@ -581,27 +641,10 @@
     </div>
 
     <div id="tab-report" style="display:none;">
-      <!-- 월 선택 드롭다운 -->
-      <div style="margin-bottom: 12px;">
-        <label class="label">월 선택</label>
-        <select id="reportMonthSelect" class="input" onchange="updateMonthlyReport(this.value)"></select>
-      </div>
+      <p class="muted" style="margin-bottom: 12px;">각 월의 평균 얼굴 나이를 최신순으로 보여드려요. 사진을 탭하면 원본을 볼 수 있어요.</p>
+      <div id="monthlyReportList"></div>
 
-      <div class="report-card">
-        <div class="report-card-left">
-          <h3>MONTHLY REPORT · <span id="reportMonth">2025.05</span></h3>
-          <div class="big" id="reportAge">--</div>
-          <p class="sub" id="reportSub">이번 달 평균 얼굴 나이</p>
-          <p class="sub" id="reportDelta" style="margin-top: 12px; font-weight: 600;">--</p>
-        </div>
-        <div class="report-card-right">
-          <img id="reportPhoto" alt="대표 사진" onclick="showReportPhoto()">
-          <p class="report-photo-label" id="reportPhotoLabel">대표 사진</p>
-        </div>
-      </div>
-
-      <button class="btn btn-secondary" onclick="showToast('이미지로 저장 기능은 Phase 2에서 추가됩니다')">💾 이미지로 저장 (Phase 2)</button>
-      <p class="small" style="text-align: center; margin-top: 12px;">매월 1일 자동 생성 알림 예정 (Phase 2)</p>
+      <p class="small" style="text-align: center; margin-top: 16px;">매월 1일 자동 생성 알림 예정 (Phase 2)</p>
     </div>
 
     <button class="btn btn-ghost" style="margin-top: 16px;" onclick="resetApp()">처음부터 다시 시작</button>
@@ -1110,10 +1153,17 @@ async function prepareSampling(files) {
 
   sampledFiles = sampled;
 
+  // 고유 날짜 수 계산 (전체 파일 기준)
+  const uniqueDates = new Set();
+  for (const f of filesWithTime) {
+    const d = f.timestamp;
+    uniqueDates.add(d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate());
+  }
+
   // 4단계: UI 업데이트
   document.getElementById('sTotal').textContent = files.length;
-  document.getElementById('sWithDate').textContent = withDate;
-  document.getElementById('sSampled').textContent = sampled.length;
+  document.getElementById('sWithDate').textContent = uniqueDates.size + '일';
+  document.getElementById('sSampled').textContent = sampled.length + '장';
 
   const firstDate = filesWithTime[0].timestamp;
   const lastDate = filesWithTime[filesWithTime.length - 1].timestamp;
@@ -1214,52 +1264,84 @@ function isValidPhotoDate(date) {
 }
 
 async function sampleEvenly(filesWithTime, maxSamples, onProgress) {
-  if (filesWithTime.length <= maxSamples) {
+  if (filesWithTime.length === 0) {
     if (onProgress) await onProgress(100);
-    return filesWithTime;
+    return [];
   }
 
-  const startTime = filesWithTime[0].timestamp.getTime();
-  const endTime = filesWithTime[filesWithTime.length - 1].timestamp.getTime();
+  // ===== 0단계: 같은 날짜에 찍은 사진은 1장만 남기기 =====
+  // 한 사용자가 하루에 셀카를 여러 장 찍어도 시계열 분석엔 1장만 필요
+  const dateGroups = new Map(); // YYYY-MM-DD -> [files]
+  for (const f of filesWithTime) {
+    const d = f.timestamp;
+    const dayKey = d.getFullYear() + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0');
+    if (!dateGroups.has(dayKey)) dateGroups.set(dayKey, []);
+    dateGroups.get(dayKey).push(f);
+  }
+
+  // 각 날짜에서 대표 1장 선정 (그날 중간 시각 사진)
+  const uniqueDayFiles = [];
+  for (const group of dateGroups.values()) {
+    if (group.length === 1) {
+      uniqueDayFiles.push(group[0]);
+    } else {
+      // 시간순 정렬 후 중간 사진
+      group.sort((a, b) => a.timestamp - b.timestamp);
+      uniqueDayFiles.push(group[Math.floor(group.length / 2)]);
+    }
+  }
+  // 시간순 재정렬
+  uniqueDayFiles.sort((a, b) => a.timestamp - b.timestamp);
+
+  console.log(`📅 날짜별 중복 제거: ${filesWithTime.length}장 → 고유 날짜 ${uniqueDayFiles.length}일`);
+
+  // ===== 1단계: 고유 날짜 사진들 중에서 균등 샘플링 =====
+  if (uniqueDayFiles.length <= maxSamples) {
+    if (onProgress) await onProgress(100);
+    return uniqueDayFiles;
+  }
+
+  const startTime = uniqueDayFiles[0].timestamp.getTime();
+  const endTime = uniqueDayFiles[uniqueDayFiles.length - 1].timestamp.getTime();
   const totalSpan = endTime - startTime;
 
   if (totalSpan === 0) {
-    // 같은 시간이면 간단 균등
-    const step = filesWithTime.length / maxSamples;
+    const step = uniqueDayFiles.length / maxSamples;
     const result = Array.from({ length: maxSamples }, (_, i) =>
-      filesWithTime[Math.floor(i * step)]);
+      uniqueDayFiles[Math.floor(i * step)]);
     if (onProgress) await onProgress(100);
     return result;
   }
 
-  // 최적화: 정렬된 배열에서 이진 탐색으로 각 타겟 시간에 가장 가까운 사진 찾기
-  // O(maxSamples * log N) — 100 × log(4400) ≈ 1200 연산
+  // 최적화: 이진 탐색으로 각 타겟 시간에 가장 가까운 사진
   const picked = [];
   const usedIndices = new Set();
 
   // 이진 탐색 헬퍼
   function findNearest(targetTime) {
-    let lo = 0, hi = filesWithTime.length - 1;
+    let lo = 0, hi = uniqueDayFiles.length - 1;
     while (lo < hi) {
       const mid = (lo + hi) >> 1;
-      if (filesWithTime[mid].timestamp.getTime() < targetTime) lo = mid + 1;
+      if (uniqueDayFiles[mid].timestamp.getTime() < targetTime) lo = mid + 1;
       else hi = mid;
     }
     // lo가 가장 가까운 후보 (또는 그 주변)
-    // 사용 안 된 인덱스 중 가장 가까운 것을 찾아 ±10 범위 내에서 탐색
+    // 사용 안 된 인덱스 중 가장 가까운 것을 찾아 ±20 범위 내에서 탐색
     let bestIdx = -1, bestDist = Infinity;
     const startSearch = Math.max(0, lo - 20);
-    const endSearch = Math.min(filesWithTime.length - 1, lo + 20);
+    const endSearch = Math.min(uniqueDayFiles.length - 1, lo + 20);
     for (let j = startSearch; j <= endSearch; j++) {
       if (usedIndices.has(j)) continue;
-      const dist = Math.abs(filesWithTime[j].timestamp.getTime() - targetTime);
+      const dist = Math.abs(uniqueDayFiles[j].timestamp.getTime() - targetTime);
       if (dist < bestDist) { bestDist = dist; bestIdx = j; }
     }
     // 만약 ±20 범위에 사용 안 된 게 없으면 전체 스캔 (드문 경우)
     if (bestIdx === -1) {
-      for (let j = 0; j < filesWithTime.length; j++) {
+      for (let j = 0; j < uniqueDayFiles.length; j++) {
         if (usedIndices.has(j)) continue;
-        const dist = Math.abs(filesWithTime[j].timestamp.getTime() - targetTime);
+        const dist = Math.abs(uniqueDayFiles[j].timestamp.getTime() - targetTime);
         if (dist < bestDist) { bestDist = dist; bestIdx = j; }
       }
     }
@@ -1270,7 +1352,7 @@ async function sampleEvenly(filesWithTime, maxSamples, onProgress) {
     const targetTime = startTime + (totalSpan * i / (maxSamples - 1));
     const bestIdx = findNearest(targetTime);
     if (bestIdx !== -1) {
-      picked.push(filesWithTime[bestIdx]);
+      picked.push(uniqueDayFiles[bestIdx]);
       usedIndices.add(bestIdx);
     }
 
@@ -1278,7 +1360,7 @@ async function sampleEvenly(filesWithTime, maxSamples, onProgress) {
     if ((i + 1) % 10 === 0 || i === maxSamples - 1) {
       const pct = Math.round(((i + 1) / maxSamples) * 100);
       if (onProgress) await onProgress(pct);
-      await new Promise(r => setTimeout(r, 0)); // 브라우저 양보
+      await new Promise(r => setTimeout(r, 0));
     }
   }
   return picked.sort((a, b) => a.timestamp - b.timestamp);
@@ -1286,24 +1368,45 @@ async function sampleEvenly(filesWithTime, maxSamples, onProgress) {
 
 function renderSamplingBar(allFiles, sampled) {
   const bar = document.getElementById('sampBar');
-  const N_SEGMENTS = 30; // 모바일에 맞게 30칸
+  const N_SEGMENTS = 30;
   bar.innerHTML = '';
 
   const startTime = allFiles[0].timestamp.getTime();
   const endTime = allFiles[allFiles.length - 1].timestamp.getTime();
   const totalSpan = endTime - startTime || 1;
 
-  // 각 세그먼트에 어떤 파일이 들어있는지
-  const sampledTimes = new Set(sampled.map(s => s.timestamp.getTime()));
+  // 각 세그먼트별 전체 사진 수 + 샘플링된 수 계산
+  const segCounts = new Array(N_SEGMENTS).fill(0);
+  const segSampledCounts = new Array(N_SEGMENTS).fill(0);
+
+  for (const f of allFiles) {
+    const t = f.timestamp.getTime();
+    let idx = Math.floor(((t - startTime) / totalSpan) * N_SEGMENTS);
+    if (idx >= N_SEGMENTS) idx = N_SEGMENTS - 1;
+    if (idx < 0) idx = 0;
+    segCounts[idx]++;
+  }
+  for (const s of sampled) {
+    const t = s.timestamp.getTime();
+    let idx = Math.floor(((t - startTime) / totalSpan) * N_SEGMENTS);
+    if (idx >= N_SEGMENTS) idx = N_SEGMENTS - 1;
+    if (idx < 0) idx = 0;
+    segSampledCounts[idx]++;
+  }
+
+  // 최대값으로 정규화 (높이 결정)
+  const maxCount = Math.max(...segCounts, 1);
+
+  // 히스토그램 + 샘플링 표시
   for (let i = 0; i < N_SEGMENTS; i++) {
-    const segStart = startTime + (totalSpan * i / N_SEGMENTS);
-    const segEnd = startTime + (totalSpan * (i + 1) / N_SEGMENTS);
-    const hasSampled = sampled.some(s => {
-      const t = s.timestamp.getTime();
-      return t >= segStart && t < segEnd;
-    });
+    const count = segCounts[i];
+    const hasSampled = segSampledCounts[i] > 0;
+    // 높이를 로그 스케일로 (편차 강조)
+    const heightPct = count === 0 ? 5 : Math.max(15, Math.round((Math.log(count + 1) / Math.log(maxCount + 1)) * 100));
     const seg = document.createElement('div');
     seg.className = 'samp-bar-seg' + (hasSampled ? ' picked' : '');
+    seg.style.height = heightPct + '%';
+    seg.title = `${count}장${hasSampled ? ' (샘플링됨)' : ''}`;
     bar.appendChild(seg);
   }
 }
@@ -1494,8 +1597,16 @@ function faceDistance(d1, d2) {
 async function tryAdjacentFallback(rejectedFile, rejectedTimestamp, sampleIdx) {
   if (!allFilesWithTime || allFilesWithTime.length === 0) return null;
 
-  // 이미 샘플링된 파일들의 이름 set (중복 방지)
+  // 이미 샘플링된 파일들의 이름 + 날짜 set (중복 방지)
   const sampledNames = new Set(sampledFiles.map(s => s.file.name));
+  const dayKey = (d) => d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
+  const sampledDates = new Set(sampledFiles.map(s => dayKey(s.timestamp)));
+  // 이미 분석 결과에 포함된(passed) 사진의 날짜도 회피
+  for (const r of analysisResults) {
+    if (r.passed && r.timestamp) sampledDates.add(dayKey(r.timestamp));
+  }
   const triedNames = new Set([rejectedFile.name]);
 
   // 거부된 파일이 전체 목록의 어느 인덱스인지 찾기
@@ -1515,11 +1626,13 @@ async function tryAdjacentFallback(rejectedFile, rejectedTimestamp, sampleIdx) {
     if (centerIdx + offset < allFilesWithTime.length) candidates.push(allFilesWithTime[centerIdx + offset]);
   }
 
-  // 샘플링에 안 포함되고, 안 시도한 사진을 최대 2장 시도
+  // 샘플링 안 포함, 안 시도, 같은 날짜 아닌 사진 최대 2장 시도
   let tried = 0;
   for (const cand of candidates) {
     if (tried >= 2) break;
     if (sampledNames.has(cand.file.name) || triedNames.has(cand.file.name)) continue;
+    // 같은 날짜 회피
+    if (sampledDates.has(dayKey(cand.timestamp))) continue;
     triedNames.add(cand.file.name);
     tried++;
 
@@ -2084,13 +2197,13 @@ function drawChart(passed, birthDate) {
     y: parseFloat(((r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000)).toFixed(1)),
   }));
 
-  // 포인트별 색 분기: 실제 나이 대비 어려보임(초록) / 비슷(보라) / 들어보임(빨강)
+  // 포인트별 색 분기: 어려보임(초록) / 비슷(회색) / 들어보임(빨강)
   const pointColors = sorted.map(r => {
     const realAge = (r.timestamp - birthDate) / (365.25 * 24 * 3600 * 1000);
     const diff = r.estimatedAge - realAge;
     if (diff < -0.7) return '#4ADE80'; // 어려 보임 (초록)
     if (diff > 0.7) return '#F87171';  // 들어 보임 (빨강)
-    return '#C7B2FF';                   // 비슷 (보라)
+    return 'rgba(255,255,255,0.55)';    // 비슷 (회색)
   });
 
   // Y축 범위: 데이터에 맞춰 동적으로
@@ -2627,20 +2740,45 @@ function showThumbDetail(idx) {
 
   infoHtml += `</div></div></div>`; // info-section, expandable-body, expandable 닫기
 
-  // === 거부 사진이면 액션 버튼 표시 ===
-  if (r.rejectionReason || (r.hasFace && !r.passed)) {
+  // === 액션 버튼 영역 ===
+  const isExcluded = r.rejectionReason || (r.hasFace && !r.passed);
+  const isIncluded = r.passed;
+  infoHtml += `<div style="margin-top: 16px; padding-top: 12px; border-top: 0.5px solid rgba(255,255,255,0.1);">`;
+
+  if (isIncluded) {
+    // 분석에 포함된 사진 → 빼기 버튼
     infoHtml += `
-      <div style="margin-top: 16px; padding-top: 12px; border-top: 0.5px solid rgba(255,255,255,0.1);">
-        <p class="small" style="margin-bottom: 8px; color: rgba(199,178,255,0.85);">⚠️ 이 사진은 자동 분석에서 제외되었습니다.</p>
+      <p class="small" style="margin-bottom: 8px; color: rgba(74,222,128,0.9);">✓ 이 사진은 분석에 포함되어 있습니다.</p>
+      <button class="btn btn-danger" style="margin: 0 0 8px 0;" onclick="excludePhoto(${idx})">
+        ✕ 이 사진 분석에서 빼기
+      </button>
+    `;
+  } else if (isExcluded) {
+    // 거부된 사진 → 포함 + 수동 지정
+    infoHtml += `
+      <p class="small" style="margin-bottom: 8px; color: rgba(199,178,255,0.85);">⚠️ 이 사진은 자동 분석에서 제외되었습니다.</p>
+    `;
+    if (r.hasFace && r.estimatedAge != null) {
+      infoHtml += `
         <button class="btn btn-secondary" style="margin: 0 0 8px 0;" onclick="forceIncludePhoto(${idx})">
           ✓ 이 사진 강제 포함 (현재 AI 추정값 사용)
         </button>
-        <button class="btn btn-primary" style="margin: 0;" onclick="openManualFaceModal(${idx})">
-          ✋ 얼굴 영역 직접 지정해서 재분석
-        </button>
-      </div>
-    `;
+      `;
+    }
   }
+
+  // 수동 영역 지정은 모든 사진에 가능 (검출 실패 사진 포함)
+  // 단, 이미 포함된 사진은 "재분석" 형태로
+  const manualBtnLabel = isIncluded
+    ? '✋ 얼굴 영역 다시 지정해서 재분석'
+    : '✋ 얼굴 영역 직접 지정해서 분석';
+  infoHtml += `
+    <button class="btn btn-primary" style="margin: 0;" onclick="openManualFaceModal(${idx})">
+      ${manualBtnLabel}
+    </button>
+  `;
+
+  infoHtml += `</div>`;
 
   document.getElementById('thumbModalInfo').innerHTML = infoHtml;
   openModal('thumbModal');
@@ -2678,18 +2816,128 @@ async function forceIncludePhoto(resultIdx) {
   r.forceIncluded = true;
   r.rejectionReason = null;
   closeModal('thumbModal');
-  showToast('사진이 분석 결과에 포함되었습니다. 결과를 갱신합니다.');
-  setTimeout(() => { try { showResults(); } catch (e) { console.error(e); } }, 300);
+  showToast('사진이 분석 결과에 포함되었습니다.');
+  // 분석 화면이면 그 화면 썸네일 갱신, 결과 화면이면 결과 갱신
+  refreshAfterPhotoChange();
+}
+
+// 분석에 포함된 사진을 다시 제외
+function excludePhoto(resultIdx) {
+  const r = analysisResults[resultIdx];
+  if (!r) return;
+  r.passed = false;
+  r.userExcluded = true;
+  r.rejectionReason = r.rejectionReason || 'user_excluded';
+  closeModal('thumbModal');
+  showToast('사진이 분석에서 제외되었습니다.');
+  refreshAfterPhotoChange();
+}
+
+// 사진 상태 변경 후 화면 갱신
+function refreshAfterPhotoChange() {
+  const currentScreen = document.querySelector('.screen.active');
+  if (!currentScreen) return;
+
+  if (currentScreen.id === 'screen-analyze') {
+    // 분석 화면이면 썸네일 그리드만 다시 그리기
+    rebuildAnalysisThumbnails();
+  } else if (currentScreen.id === 'screen-result' || currentScreen.id === 'screen-insights') {
+    // 결과 화면이면 결과 다시 표시
+    setTimeout(() => { try { showResults(); } catch (e) { console.error(e); } }, 200);
+  }
+}
+
+// 분석 화면의 썸네일 그리드 재구축 (상태 변경 후)
+function rebuildAnalysisThumbnails() {
+  const thumbGrid = document.getElementById('thumbGrid');
+  if (!thumbGrid) return;
+  thumbGrid.innerHTML = '';
+
+  let faceCount = 0, passCount = 0, failCount = 0;
+
+  analysisResults.forEach((result, idx) => {
+    const wasDetectedAsFace = result.hasFace || (result.rejectionReason &&
+      ['age_out_of_range', 'different_person', 'sunglasses', 'mask'].includes(result.rejectionReason));
+    if (wasDetectedAsFace) faceCount++;
+    if (result.passed) passCount++;
+    else if (result.rejectionReason || (result.hasFace && !result.passed)) failCount++;
+
+    if (!result.thumbUrl) return;
+
+    const occlusionReason = result.qualityBreakdown && result.qualityBreakdown.occlusionReason;
+    const rejectionReason = result.rejectionReason;
+    let classExtra = '';
+    let extraTag = '';
+
+    if (result.passed) {
+      // 통과한 사진 (수동 포함도 여기 포함)
+      classExtra = result.manualFace ? ' manual-passed' : '';
+    } else if (rejectionReason) {
+      classExtra = ' rejected';
+      const reasonMap = {
+        'too_small': '🔍 얼굴 너무 작음',
+        'bad_aspect': '📐 비율 이상',
+        'bad_proportion': '🚫 사람 얼굴 아님',
+        'bad_mouth_pos': '🚫 사람 얼굴 아님',
+        'low_confidence': '❓ 신뢰도 낮음',
+        'different_person': '👥 다른 사람',
+        'age_out_of_range': '⚠️ 신뢰도 낮음',
+        'sunglasses': '🕶️ 선글라스',
+        'mask': '😷 마스크',
+        'user_excluded': '✕ 사용자 제외',
+      };
+      extraTag = `<span class="reject-tag">${reasonMap[rejectionReason] || '제외'}</span>`;
+    } else if (occlusionReason) {
+      classExtra = ' occluded';
+    } else {
+      classExtra = result.hasFace ? ' excluded' : ' no-face';
+    }
+
+    const div = document.createElement('div');
+    div.className = 'thumb' + classExtra;
+    const ageText = result.hasFace && result.estimatedAge !== null && !occlusionReason
+      ? `<span class="age-tag">${result.estimatedAge.toFixed(0)}세</span>` : '';
+    const qualityText = result.hasFace
+      ? `<span class="quality-tag">Q${result.qualityScore}</span>` : '';
+    const occlusionTag = occlusionReason
+      ? `<span class="occlusion-tag">${occlusionReason === 'sunglasses' ? '🕶️' : '😷'}</span>` : '';
+    const manualBadge = result.manualFace
+      ? `<span class="manual-badge">✋ 수동</span>` : '';
+    div.innerHTML = `
+      <img src="${result.thumbUrl}" alt="">
+      ${ageText}
+      ${qualityText}
+      ${occlusionTag}
+      ${extraTag}
+      ${manualBadge}
+    `;
+    div.onclick = () => showThumbDetail(idx);
+    thumbGrid.appendChild(div);
+  });
+
+  // 카운터 갱신
+  const aFace = document.getElementById('aFace');
+  const aPass = document.getElementById('aPass');
+  const aFail = document.getElementById('aFail');
+  if (aFace) aFace.textContent = faceCount;
+  if (aPass) aPass.textContent = passCount;
+  if (aFail) aFail.textContent = failCount;
 }
 
 // 수동 얼굴 영역 지정 모달 열기
 async function openManualFaceModal(resultIdx) {
   const r = analysisResults[resultIdx];
-  if (!r || !r.fullImageUrl) {
+  if (!r) {
+    showToast('사진 데이터를 찾을 수 없습니다.');
+    return;
+  }
+  // fullImageUrl 우선, 없으면 thumbUrl, 둘 다 없으면 실패
+  const imageUrl = r.fullImageUrl || r.thumbUrl;
+  if (!imageUrl) {
     showToast('원본 이미지를 찾을 수 없습니다.');
     return;
   }
-  manualFaceContext = { resultIdx, fullImageUrl: r.fullImageUrl, box: null };
+  manualFaceContext = { resultIdx, fullImageUrl: imageUrl, box: null };
   closeModal('thumbModal');
   setTimeout(() => {
     const img = document.getElementById('manualFaceImg');
@@ -2702,7 +2950,7 @@ async function openManualFaceModal(resultIdx) {
       document.getElementById('manualFaceConfirm').disabled = true;
       document.getElementById('manualFaceConfirm').textContent = '이 영역으로 분석';
     };
-    img.src = r.fullImageUrl;
+    img.src = imageUrl;
     openModal('manualFaceModal');
   }, 200);
 }
@@ -2839,7 +3087,8 @@ async function confirmManualFace() {
 
     closeModal('manualFaceModal');
     showToast(`✓ 수동 분석 완료: ${finalAge.toFixed(1)}세`);
-    setTimeout(() => { try { showResults(); } catch (e) { console.error(e); } }, 300);
+    // 결과 화면으로 점프하지 않고, 현재 화면(분석 화면)에서 썸네일만 갱신
+    refreshAfterPhotoChange();
 
   } catch (e) {
     console.error('Manual face analysis failed', e);
@@ -2869,10 +3118,17 @@ function showChartPreview(pointIndex, sortedData) {
     String(r.timestamp.getMonth() + 1).padStart(2, '0') + '.' +
     String(r.timestamp.getDate()).padStart(2, '0');
 
+  // 얼굴 나이 색: 어려보임(초록) / 비슷(흰색) / 들어보임(빨강)
+  const diff = r.estimatedAge - realAge;
+  let ageColor;
+  if (diff < -0.7) ageColor = '#4ADE80';
+  else if (diff > 0.7) ageColor = '#F87171';
+  else ageColor = '#fff';
+
   preview.innerHTML = `
     <img src="${r.thumbUrl}" alt="">
     <div class="cp-info">
-      <div class="cp-row"><span class="cp-label">얼굴</span><span class="cp-age">${r.estimatedAge.toFixed(1)}세</span></div>
+      <div class="cp-row"><span class="cp-label">얼굴</span><span class="cp-age" style="color:${ageColor};">${r.estimatedAge.toFixed(1)}세</span></div>
       <div class="cp-row"><span class="cp-label">실제</span><span class="cp-real">${realAge.toFixed(0)}세</span></div>
       <div class="cp-date">${dateStr}</div>
     </div>
@@ -3235,16 +3491,19 @@ function renderBodyParts(passed) {
     { age: baseAge + (Math.random() - 0.5) * 2, delta: (Math.random() - 0.5) * 1.5 },
   ];
   const setPart = (id, didKey, p) => {
-    document.getElementById(id).textContent = p.age.toFixed(1);
+    // 부위 나이를 명확히 단위와 함께 표시
+    document.getElementById(id).innerHTML = `${p.age.toFixed(1)}<span style="font-size:14px; color:rgba(255,255,255,0.6); font-weight:500;">세</span>`;
     const dEl = document.getElementById(didKey);
     if (p.delta > 0.3) {
-      dEl.textContent = `↑ ${p.delta.toFixed(1)}세`;
+      // 들어 보임 (이전 시기 대비 부위 나이 증가)
+      dEl.innerHTML = `↑ <b>${p.delta.toFixed(1)}세 들어보임</b> <span style="opacity:0.7;">(이전 대비)</span>`;
       dEl.className = 'd delta-older';
     } else if (p.delta < -0.3) {
-      dEl.textContent = `↓ ${Math.abs(p.delta).toFixed(1)}세`;
+      // 어려 보임 (이전 시기 대비 부위 나이 감소)
+      dEl.innerHTML = `↓ <b>${Math.abs(p.delta).toFixed(1)}세 어려보임</b> <span style="opacity:0.7;">(이전 대비)</span>`;
       dEl.className = 'd delta-younger';
     } else {
-      dEl.textContent = '변화 없음';
+      dEl.innerHTML = `<b>변화 거의 없음</b> <span style="opacity:0.7;">(이전 대비)</span>`;
       dEl.className = 'd delta-neutral';
     }
   };
@@ -3254,7 +3513,7 @@ function renderBodyParts(passed) {
   setPart('partJaw', 'partJawD', parts[3]);
 }
 
-let monthlyReportData = {}; // 월별 데이터 캐시
+let monthlyReportData = {};
 
 function renderMonthlyReport(passed, realAge) {
   // 월별로 그룹화
@@ -3267,75 +3526,72 @@ function renderMonthlyReport(passed, realAge) {
 
   const months = Object.keys(monthlyReportData).sort().reverse(); // 최신순
 
-  // 드롭다운 채우기
-  const select = document.getElementById('reportMonthSelect');
-  if (select) {
-    select.innerHTML = months.map(m => {
-      const count = monthlyReportData[m].length;
-      return `<option value="${m}">${m} (${count}장)</option>`;
-    }).join('');
-  }
+  const container = document.getElementById('monthlyReportList');
+  if (!container) return;
 
-  // 가장 최신 월 표시
-  if (months.length > 0) {
-    updateMonthlyReport(months[0]);
-  } else {
-    document.getElementById('reportAge').textContent = '데이터 없음';
+  if (months.length === 0) {
+    container.innerHTML = '<p class="muted">분석된 사진이 없습니다.</p>';
+    return;
   }
-}
-
-function updateMonthlyReport(monthKey) {
-  const photos = monthlyReportData[monthKey];
-  if (!photos || photos.length === 0) return;
 
   const birthDate = new Date(document.getElementById('birthDate').value);
 
-  // 평균 얼굴 나이
-  const avgAge = avg(photos.map(r => r.estimatedAge));
+  container.innerHTML = months.map((monthKey, idx) => {
+    const photos = monthlyReportData[monthKey];
+    const avgAge = avg(photos.map(r => r.estimatedAge));
+    const realAgeAtMonth = (photos[0].timestamp - birthDate) / (365.25 * 24 * 3600 * 1000);
+    const delta = avgAge - realAgeAtMonth;
 
-  // 그 달의 실제 나이 (해당 월의 첫 사진 기준)
-  const realAgeAtMonth = (photos[0].timestamp - birthDate) / (365.25 * 24 * 3600 * 1000);
+    // 대표 사진: 평균에 가장 가까운 사진
+    let bestPhoto = photos[0];
+    let bestDist = Math.abs(photos[0].estimatedAge - avgAge);
+    for (let i = 1; i < photos.length; i++) {
+      const d = Math.abs(photos[i].estimatedAge - avgAge);
+      if (d < bestDist) { bestDist = d; bestPhoto = photos[i]; }
+    }
 
-  document.getElementById('reportMonth').textContent = monthKey;
-  document.getElementById('reportAge').textContent = avgAge.toFixed(1) + '세';
+    // 가장 최신 월만 보라색 강조 카드, 나머지는 일반 카드
+    const isLatest = idx === 0;
 
-  const delta = avgAge - realAgeAtMonth;
-  document.getElementById('reportSub').textContent = `실제 나이 ${realAgeAtMonth.toFixed(0)}세 대비 (${photos.length}장 분석)`;
-  if (delta < -0.5) {
-    document.getElementById('reportDelta').textContent = `🌱 ${Math.abs(delta).toFixed(1)}세 어려 보여요`;
-  } else if (delta > 0.5) {
-    document.getElementById('reportDelta').textContent = `📊 ${delta.toFixed(1)}세 더 들어 보여요`;
-  } else {
-    document.getElementById('reportDelta').textContent = `⚖️ 실제 나이와 거의 일치`;
-  }
+    let deltaText;
+    if (delta < -0.5) deltaText = `🌱 ${Math.abs(delta).toFixed(1)}세 어려 보임`;
+    else if (delta > 0.5) deltaText = `📊 ${delta.toFixed(1)}세 더 들어 보임`;
+    else deltaText = `⚖️ 실제 나이와 거의 일치`;
 
-  // 대표 사진: 평균에 가장 가까운 사진
-  let bestPhoto = photos[0];
-  let bestDist = Math.abs(photos[0].estimatedAge - avgAge);
-  for (let i = 1; i < photos.length; i++) {
-    const d = Math.abs(photos[i].estimatedAge - avgAge);
-    if (d < bestDist) { bestDist = d; bestPhoto = photos[i]; }
-  }
+    const photoIdx = analysisResults.indexOf(bestPhoto);
+    const onClickAttr = `onclick="(function(){ const ar = analysisResults; const idx = ${photoIdx}; if (idx>=0) showThumbDetail(idx); })()"`;
 
-  const photoImg = document.getElementById('reportPhoto');
-  if (photoImg) {
-    photoImg.src = bestPhoto.thumbUrl;
-    photoImg.dataset.photoIdx = analysisResults.indexOf(bestPhoto);
-    window._reportCurrentPhoto = bestPhoto;
-  }
-  const photoLabel = document.getElementById('reportPhotoLabel');
-  if (photoLabel) {
-    photoLabel.textContent = bestPhoto.estimatedAge.toFixed(0) + '세 · 탭하면 원본';
-  }
-}
-
-// 월간 리포트 대표 사진 클릭 → 상세 모달
-function showReportPhoto() {
-  const r = window._reportCurrentPhoto;
-  if (!r) return;
-  const idx = analysisResults.indexOf(r);
-  if (idx >= 0) showThumbDetail(idx);
-  else showThumbDetailFromObj(r);
+    if (isLatest) {
+      return `
+        <div class="report-card" style="margin: 12px 0;">
+          <div class="report-card-left">
+            <h3>MONTHLY REPORT · ${monthKey}</h3>
+            <div class="big">${avgAge.toFixed(1)}세</div>
+            <p class="sub">실제 ${realAgeAtMonth.toFixed(0)}세 (${photos.length}장 분석)</p>
+            <p class="sub" style="margin-top: 10px; font-weight: 600;">${deltaText}</p>
+          </div>
+          <div class="report-card-right">
+            <img src="${bestPhoto.thumbUrl}" alt="대표 사진" ${onClickAttr} style="cursor:pointer;">
+            <p class="report-photo-label">${bestPhoto.estimatedAge.toFixed(0)}세 · 탭</p>
+          </div>
+        </div>
+      `;
+    } else {
+      // 일반 월 카드 (간단한 형태)
+      const deltaColor = delta < -0.5 ? '#4ADE80' : (delta > 0.5 ? '#F87171' : 'rgba(255,255,255,0.7)');
+      return `
+        <div class="month-card">
+          <div class="month-card-left">
+            <div class="month-card-date">${monthKey}</div>
+            <div class="month-card-age">${avgAge.toFixed(1)}세 <span style="color:rgba(255,255,255,0.5); font-size:12px;">(실제 ${realAgeAtMonth.toFixed(0)})</span></div>
+            <div class="month-card-delta" style="color:${deltaColor};">${deltaText}</div>
+            <div class="month-card-count">${photos.length}장 분석</div>
+          </div>
+          <img class="month-card-photo" src="${bestPhoto.thumbUrl}" alt="" ${onClickAttr}>
+        </div>
+      `;
+    }
+  }).join('');
 }
 
 function switchInsightTab(el, key) {
