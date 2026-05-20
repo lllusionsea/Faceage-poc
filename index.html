@@ -583,6 +583,67 @@
     .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(40,40,46,0.95); padding: 10px 18px; border-radius: 22px; font-size: 13px; z-index: 1000; opacity: 0; transition: opacity 0.3s; pointer-events: none; max-width: 90%; text-align: center; }
     .toast.show { opacity: 1; }
 
+    /* iOS 사진 처리 풀스크린 오버레이 */
+    .fs-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 15, 24, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 9999;
+      display: none;
+      align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .fs-overlay.show { display: flex; }
+    .fs-overlay-content {
+      max-width: 320px; width: 100%;
+      text-align: center;
+    }
+    .fs-overlay-spinner {
+      width: 60px; height: 60px;
+      margin: 0 auto 24px;
+      position: relative;
+    }
+    .fs-spinner-ring {
+      width: 60px; height: 60px;
+      border: 3px solid rgba(199,178,255,0.15);
+      border-top-color: #C7B2FF;
+      border-radius: 50%;
+      animation: fs-spin 0.9s linear infinite;
+    }
+    @keyframes fs-spin { to { transform: rotate(360deg); } }
+    .fs-overlay-title {
+      font-size: 20px; font-weight: 700;
+      color: #fff; margin-bottom: 8px;
+      letter-spacing: -0.3px;
+    }
+    .fs-overlay-msg {
+      font-size: 14px; color: rgba(255,255,255,0.7);
+      line-height: 1.55; margin-bottom: 20px;
+    }
+    .fs-overlay-progress {
+      margin-bottom: 16px;
+    }
+    .fs-overlay-bar {
+      height: 6px; background: rgba(255,255,255,0.08);
+      border-radius: 3px; overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .fs-overlay-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #C7B2FF, #8B7BB8);
+      border-radius: 3px;
+      transition: width 0.25s ease;
+      width: 0%;
+    }
+    .fs-overlay-count {
+      font-size: 13px; color: #C7B2FF; font-weight: 600;
+    }
+    .fs-overlay-hint {
+      font-size: 12px; color: rgba(255,255,255,0.45);
+      line-height: 1.55; margin-top: 12px;
+    }
+
     /* Modal */
     .modal {
       display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
@@ -710,7 +771,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo" onclick="resetApp()" style="cursor:pointer;">Face<span class="accent">AGE</span></div>
-    <div class="badge" id="topBadge">POC v4.7</div>
+    <div class="badge" id="topBadge">POC v4.8</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -1068,6 +1129,22 @@
 
 <canvas id="hiddenCanvas"></canvas>
 <div class="toast" id="toast"></div>
+
+<!-- iOS 사진 처리 풀스크린 오버레이 - 다이얼로그 닫힌 직후 즉시 표시 -->
+<div class="fs-overlay" id="iosPhotoOverlay">
+  <div class="fs-overlay-content">
+    <div class="fs-overlay-spinner">
+      <div class="fs-spinner-ring"></div>
+    </div>
+    <div class="fs-overlay-title">📷 사진 처리 중</div>
+    <div class="fs-overlay-msg" id="iosPhotoOverlayMsg">선택하신 사진을 가져오고 있어요</div>
+    <div class="fs-overlay-progress" id="iosPhotoOverlayProgress" style="display:none;">
+      <div class="fs-overlay-bar"><div class="fs-overlay-bar-fill" id="iosPhotoOverlayBarFill"></div></div>
+      <div class="fs-overlay-count" id="iosPhotoOverlayCount">0 / 0</div>
+    </div>
+    <div class="fs-overlay-hint" id="iosPhotoOverlayHint">사진이 많으면 최대 30초가 걸릴 수 있어요. 잠시만 기다려주세요.</div>
+  </div>
+</div>
 
 <!-- 사진 선택 도움말 모달 -->
 <div class="modal" id="photoHelpModal" onclick="if(event.target===this)closeModal('photoHelpModal')">
@@ -1646,18 +1723,75 @@ function showFolderProcessing() {
   }, 100);
 }
 
+// 풀스크린 오버레이 제어 헬퍼
+function showIOSOverlay(msg) {
+  const overlay = document.getElementById('iosPhotoOverlay');
+  const msgEl = document.getElementById('iosPhotoOverlayMsg');
+  const progEl = document.getElementById('iosPhotoOverlayProgress');
+  const hintEl = document.getElementById('iosPhotoOverlayHint');
+  if (!overlay) return;
+  if (msgEl && msg) msgEl.textContent = msg;
+  if (progEl) progEl.style.display = 'none';
+  if (hintEl) {
+    hintEl.style.display = 'block';
+    hintEl.textContent = '사진이 많으면 최대 30초가 걸릴 수 있어요. 잠시만 기다려주세요.';
+  }
+  overlay.classList.add('show');
+}
+
+function updateIOSOverlayProgress(current, total, msg) {
+  const msgEl = document.getElementById('iosPhotoOverlayMsg');
+  const progEl = document.getElementById('iosPhotoOverlayProgress');
+  const barFill = document.getElementById('iosPhotoOverlayBarFill');
+  const countEl = document.getElementById('iosPhotoOverlayCount');
+  const hintEl = document.getElementById('iosPhotoOverlayHint');
+  if (msgEl && msg) msgEl.textContent = msg;
+  if (progEl) progEl.style.display = 'block';
+  if (barFill && total > 0) {
+    const pct = Math.min(100, Math.round((current / total) * 100));
+    barFill.style.width = pct + '%';
+  }
+  if (countEl) countEl.textContent = `${current.toLocaleString()} / ${total.toLocaleString()}`;
+  if (hintEl) hintEl.style.display = 'none';
+}
+
+function hideIOSOverlay() {
+  const overlay = document.getElementById('iosPhotoOverlay');
+  if (overlay) overlay.classList.remove('show');
+}
+
 // 갤러리 다이얼로그 클릭 시 - iOS 다이얼로그 닫힐 때 공백 메우기
 // 시스템 다이얼로그가 모달이라 click 이벤트 후 다이얼로그 닫힐 때까지 JS 실행 안 됨
 // → click 시점에 미리 UI 변경 예약, 다이얼로그 닫히면 즉시 표시됨
 function showGalleryProcessing() {
-  // 약간의 지연으로 다이얼로그 닫힌 직후 표시
+  const os = typeof detectOS === 'function' ? detectOS() : { isIOS: false };
+
+  // iOS는 풀스크린 오버레이로 30초 freeze를 분명히 가림
+  if (os.isIOS) {
+    // 약간의 지연 후 오버레이 표시 (다이얼로그가 실제로 열리고 나서)
+    // iOS는 다이얼로그가 즉시 안 닫혀서 이 시점에 오버레이가 떠도 보이진 않음 → 닫힐 때 보임
+    setTimeout(() => {
+      showIOSOverlay('사진 앱에서 가져오는 중이에요');
+    }, 100);
+
+    // 사용자가 취소했을 경우 대비 (다이얼로그를 그냥 닫음 → change 이벤트 안 옴)
+    // iOS는 30초 이상 걸릴 수도 있어서 충분히 대기 후 자동 숨김
+    if (window._galleryProcessingTimer) clearTimeout(window._galleryProcessingTimer);
+    window._galleryProcessingTimer = setTimeout(() => {
+      // 60초까지 안 오면 취소로 간주 (사용자가 다이얼로그 그냥 닫음)
+      // change 이벤트가 왔으면 이 타이머는 이미 clear됨
+      hideIOSOverlay();
+    }, 60000);
+
+    return;
+  }
+
+  // Android/Desktop은 기존 점점점 방식
   setTimeout(() => {
     const countEl = document.getElementById('selectedCount');
     const btn = document.getElementById('galleryBtn');
     if (!countEl) return;
-    // 이미 결과 표시 중(✓ 시작)이면 건드리지 않음
     if (countEl.classList.contains('dots-static')) return;
-    // 사용자가 취소(파일 0개)했는지는 모르므로, 잠시 후 change 이벤트가 안 오면 자동 숨김
     countEl.style.display = 'block';
     countEl.textContent = '📷 사진 추가 중';
     countEl.classList.remove('dots-static');
@@ -1667,15 +1801,12 @@ function showGalleryProcessing() {
       btn.classList.add('dots-animate');
       btn.textContent = '사진 추가 중';
     }
-    // 사용자가 취소했을 경우 대비 - 1.5초 후 change 이벤트가 안 왔으면 원복
     if (window._galleryProcessingTimer) clearTimeout(window._galleryProcessingTimer);
     window._galleryProcessingTimer = setTimeout(() => {
       const stillProcessing = btn && btn.classList.contains('dots-animate') && !countEl.classList.contains('dots-static');
       if (stillProcessing) {
-        // change 이벤트가 안 옴 → 사용자가 취소했을 가능성. 단, iOS는 5초 이상 걸릴 수 있으니 5초까지 더 기다림.
         window._galleryProcessingTimer = setTimeout(() => {
           if (btn && btn.classList.contains('dots-animate') && !countEl.classList.contains('dots-static')) {
-            // 그래도 안 왔으면 취소로 간주
             btn.disabled = false;
             btn.classList.remove('dots-animate');
             btn.textContent = '갤러리에서 사진 선택';
@@ -1718,9 +1849,11 @@ document.getElementById('filePicker').addEventListener('change', async (e) => {
 
   const countEl = document.getElementById('selectedCount');
   const btn = document.getElementById('galleryBtn');
+  const os = typeof detectOS === 'function' ? detectOS() : { isIOS: false };
 
   // 사용자가 다이얼로그에서 취소(파일 0개)한 경우
   if (files.length === 0) {
+    if (os.isIOS) hideIOSOverlay();
     if (btn) {
       btn.disabled = false;
       btn.classList.remove('dots-animate');
@@ -1734,14 +1867,19 @@ document.getElementById('filePicker').addEventListener('change', async (e) => {
   }
 
   try {
-    // 모든 장수에 진행 표시 (iOS에서 사진 객체 만드는 데 시간 걸림)
-    countEl.style.display = 'block';
-    countEl.classList.remove('dots-static');
-    countEl.classList.add('dots-animate');
-    countEl.textContent = `📷 ${files.length}장 처리 중`;
-    btn.disabled = true;
-    btn.classList.add('dots-animate');
-    btn.textContent = '사진 추가 중';
+    // iOS는 풀스크린 오버레이로 진행률 표시
+    if (os.isIOS) {
+      updateIOSOverlayProgress(0, files.length, `${files.length}장의 사진을 추가하고 있어요`);
+    } else {
+      // Android/Desktop은 기존 인라인 표시
+      countEl.style.display = 'block';
+      countEl.classList.remove('dots-static');
+      countEl.classList.add('dots-animate');
+      countEl.textContent = `📷 ${files.length}장 처리 중`;
+      btn.disabled = true;
+      btn.classList.add('dots-animate');
+      btn.textContent = '사진 추가 중';
+    }
 
     // 다음 프레임 양보 (UI 즉시 반영)
     await new Promise(r => setTimeout(r, 30));
@@ -1765,10 +1903,21 @@ document.getElementById('filePicker').addEventListener('change', async (e) => {
         }
       }
       // 진행률 갱신 (모든 장수에)
-      countEl.textContent = `📷 ${end}/${files.length}장 처리 중`;
+      if (os.isIOS) {
+        updateIOSOverlayProgress(end, files.length, `${files.length}장의 사진을 추가하고 있어요`);
+      } else {
+        countEl.textContent = `📷 ${end}/${files.length}장 처리 중`;
+      }
       await new Promise(r => setTimeout(r, 0));
     }
 
+    // 완료 표시
+    if (os.isIOS) {
+      // iOS: 오버레이에 완료 표시 잠깐 보여주고 닫음
+      updateIOSOverlayProgress(files.length, files.length, '✓ 완료');
+      await new Promise(r => setTimeout(r, 400));
+      hideIOSOverlay();
+    }
     countEl.classList.remove('dots-animate');
     countEl.classList.add('dots-static');
     countEl.textContent = added === files.length
@@ -1780,9 +1929,10 @@ document.getElementById('filePicker').addEventListener('change', async (e) => {
 
   } catch (err) {
     console.error('[filePicker] 에러:', err);
+    if (os.isIOS) hideIOSOverlay();
     showToast('사진 추가 중 오류: ' + err.message);
   } finally {
-    btn.disabled = false; // 항상 버튼 복원
+    btn.disabled = false;
     btn.classList.remove('dots-animate');
     updateCollectedDisplay();
   }
