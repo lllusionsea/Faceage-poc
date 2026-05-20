@@ -29,6 +29,68 @@
       cursor: pointer; padding: 0; transition: background 0.15s;
     }
     .back-btn:active { background: rgba(255,255,255,0.12); }
+
+    /* 도움말 아이콘 버튼 (제목 옆) */
+    .help-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px;
+      margin-left: 8px;
+      background: rgba(199,178,255,0.12);
+      border: 1px solid rgba(199,178,255,0.3);
+      color: #C7B2FF;
+      border-radius: 50%;
+      cursor: pointer;
+      padding: 0;
+      vertical-align: middle;
+      transition: background 0.15s;
+    }
+    .help-btn:active { background: rgba(199,178,255,0.25); transform: scale(0.95); }
+
+    /* 도움말 모달 - 단계별 안내 */
+    .help-step {
+      display: flex; gap: 14px; align-items: flex-start;
+      padding: 12px 0;
+      border-bottom: 0.5px solid rgba(255,255,255,0.08);
+    }
+    .help-step:last-child { border-bottom: none; }
+    .help-step-num {
+      flex-shrink: 0;
+      width: 28px; height: 28px;
+      background: #C7B2FF; color: #0F0F18;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 14px;
+    }
+    .help-step-body { flex: 1; min-width: 0; }
+    .help-step-title { font-weight: 600; color: #fff; font-size: 14px; margin-bottom: 4px; }
+    .help-step-desc { font-size: 12px; color: rgba(255,255,255,0.7); line-height: 1.55; margin-bottom: 8px; }
+    .help-step-img {
+      width: 100%; max-width: 240px;
+      background: rgba(255,255,255,0.04);
+      border: 0.5px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 4px;
+    }
+    .help-tab-bar {
+      display: flex; gap: 4px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 10px; padding: 4px;
+      margin-bottom: 16px;
+    }
+    .help-tab {
+      flex: 1; padding: 10px 8px; border-radius: 7px;
+      background: transparent;
+      font-size: 13px; font-weight: 500;
+      cursor: pointer; text-align: center;
+      color: rgba(255,255,255,0.6);
+      border: none;
+      transition: all 0.15s;
+    }
+    .help-tab.active {
+      background: #C7B2FF; color: #0F0F18;
+      font-weight: 600;
+    }
     .back-btn.hidden { visibility: hidden; pointer-events: none; }
 
     .screen { display: none; padding: 20px; animation: fadeIn 0.3s ease; }
@@ -565,7 +627,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo" onclick="resetApp()" style="cursor:pointer;">Face<span class="accent">AGE</span></div>
-    <div class="badge" id="topBadge">POC v3.9</div>
+    <div class="badge" id="topBadge">POC v4.0</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -626,10 +688,19 @@
 
   <!-- SCREEN 3: 사진 선택 -->
   <div class="screen" id="screen-pick">
-    <h1>셀피 사진 선택</h1>
-    <p class="muted">갤러리에서 셀피 폴더의 사진을 가능한 많이 선택해주세요. 앱이 시간순 100분위로 자동 샘플링합니다.</p>
+    <h1>셀피 사진 선택
+      <button class="help-btn" onclick="showPhotoHelp()" aria-label="사진 선택 도움말">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+      </button>
+    </h1>
+    <p class="muted" id="pickIntro">갤러리에서 셀피 사진을 가능한 많이 선택해주세요. 앱이 시간순 균등 샘플링합니다.</p>
 
-    <div class="card" style="margin-top: 20px; background: linear-gradient(135deg, rgba(199,178,255,0.12), rgba(199,178,255,0.04)); border-color: rgba(199,178,255,0.3);">
+    <!-- 폴더 선택 카드 (Android/Desktop만 표시) -->
+    <div class="card" id="folderPickCard" style="margin-top: 20px; background: linear-gradient(135deg, rgba(199,178,255,0.12), rgba(199,178,255,0.04)); border-color: rgba(199,178,255,0.3);">
       <h3>📂 폴더 통째로 선택 (추천)</h3>
       <p class="muted" style="margin-bottom: 8px;">셀카 폴더를 통째로 골라주세요. 시간순 균등 샘플링됩니다.</p>
       <div class="file-input-wrap" style="margin-top: 12px;">
@@ -639,14 +710,24 @@
       <p id="folderSelectedCount" class="small dots-animate" style="text-align: center; margin-top: 8px; color: #C7B2FF; font-weight: 500; display: none;"></p>
     </div>
 
-    <div class="card" style="margin-top: 12px;">
-      <h3>📁 추가로 개별 사진 선택 (선택사항)</h3>
-      <p class="muted" style="margin-bottom: 8px;">폴더 외에 특정 사진을 더 추가하고 싶을 때</p>
+    <!-- 갤러리 선택 카드 (iOS에서는 강조, 다른 OS에서는 보조) -->
+    <div class="card" id="galleryPickCard" style="margin-top: 12px;">
+      <h3 id="galleryPickTitle">📁 추가로 개별 사진 선택 (선택사항)</h3>
+      <p class="muted" style="margin-bottom: 8px;" id="galleryPickDesc">폴더 외에 특정 사진을 더 추가하고 싶을 때</p>
       <div class="file-input-wrap" style="margin-top: 12px;">
         <button class="btn btn-secondary" style="margin-top: 0;" id="galleryBtn">갤러리에서 사진 선택</button>
-        <input type="file" id="filePicker" accept="image/jpeg,image/png,image/jpg,image/webp,image/heic,image/heif" multiple>
+        <input type="file" id="filePicker" accept="image/*" multiple>
       </div>
       <p id="selectedCount" class="small" style="text-align: center; margin-top: 8px; color: #C7B2FF; font-weight: 500; display: none;"></p>
+    </div>
+
+    <!-- iOS 전용 안내 카드 (자동 표시) -->
+    <div class="card" id="iosHintCard" style="margin-top: 12px; display:none; background: rgba(199,178,255,0.06); border-color: rgba(199,178,255,0.2);">
+      <p style="font-size: 13px; line-height: 1.55; margin: 0;">
+        💡 <b>iOS 사용자 팁:</b> 사진 앱에서 "셀카" 앨범에 들어간 뒤, 우상단 <b>선택</b> 버튼을 누르고
+        <b>두 손가락으로 빠르게 드래그</b>하면 한 번에 수십 장 선택할 수 있습니다.
+        <a onclick="showPhotoHelp()" style="color:#C7B2FF; text-decoration:underline; cursor:pointer; font-weight:600;">자세히 보기 →</a>
+      </p>
     </div>
 
     <!-- 선택 완료 영역 -->
@@ -884,6 +965,199 @@
 <canvas id="hiddenCanvas"></canvas>
 <div class="toast" id="toast"></div>
 
+<!-- 사진 선택 도움말 모달 -->
+<div class="modal" id="photoHelpModal" onclick="if(event.target===this)closeModal('photoHelpModal')">
+  <div class="modal-content" style="max-width: 460px;">
+    <button class="modal-close" onclick="closeModal('photoHelpModal')">✕</button>
+    <h3 style="margin-bottom: 10px;">📸 사진 선택 방법</h3>
+    <p class="muted" style="font-size: 12px; margin-bottom: 14px;">기기별로 다중 선택 방법이 달라요. 사용 중인 기기를 선택하세요.</p>
+
+    <div class="help-tab-bar">
+      <button class="help-tab" data-os="ios" onclick="switchHelpTab('ios')">📱 iPhone / iPad</button>
+      <button class="help-tab" data-os="android" onclick="switchHelpTab('android')">🤖 Android</button>
+    </div>
+
+    <!-- iOS 가이드 -->
+    <div id="helpContent-ios">
+      <div class="help-step">
+        <div class="help-step-num">1</div>
+        <div class="help-step-body">
+          <div class="help-step-title">사진 앱 열기</div>
+          <div class="help-step-desc">iPhone의 <b>사진</b> 앱을 실행하고 <b>앨범</b> 탭으로 이동하세요.</div>
+          <svg class="help-step-img" viewBox="0 0 240 130" xmlns="http://www.w3.org/2000/svg">
+            <!-- iPhone 화면 -->
+            <rect x="60" y="10" width="120" height="110" rx="12" fill="#1a1a24" stroke="#444" stroke-width="1"/>
+            <rect x="65" y="15" width="110" height="20" rx="4" fill="#2a2a38"/>
+            <text x="120" y="28" text-anchor="middle" fill="#fff" font-size="9" font-weight="600">사진</text>
+            <!-- 탭바 -->
+            <rect x="65" y="100" width="110" height="15" rx="3" fill="#2a2a38"/>
+            <text x="78" y="111" fill="#999" font-size="7">보관함</text>
+            <text x="105" y="111" fill="#999" font-size="7">For You</text>
+            <text x="138" y="111" fill="#C7B2FF" font-size="7" font-weight="700">앨범 ▾</text>
+            <text x="165" y="111" fill="#999" font-size="7">검색</text>
+            <!-- 화살표 -->
+            <path d="M 138 95 L 138 102" stroke="#C7B2FF" stroke-width="1.5" fill="none" marker-end="url(#arrow1)"/>
+            <defs>
+              <marker id="arrow1" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#C7B2FF"/>
+              </marker>
+            </defs>
+          </svg>
+        </div>
+      </div>
+
+      <div class="help-step">
+        <div class="help-step-num">2</div>
+        <div class="help-step-body">
+          <div class="help-step-title">"셀카" 앨범 진입</div>
+          <div class="help-step-desc">미디어 유형 섹션에서 <b>셀카</b>를 누르면 iOS가 자동 분류한 셀카만 모여 있어요.</div>
+          <svg class="help-step-img" viewBox="0 0 240 130" xmlns="http://www.w3.org/2000/svg">
+            <rect x="60" y="10" width="120" height="110" rx="12" fill="#1a1a24" stroke="#444" stroke-width="1"/>
+            <text x="68" y="28" fill="#fff" font-size="9" font-weight="600">미디어 유형</text>
+            <!-- 셀카 카드 강조 -->
+            <rect x="68" y="36" width="50" height="38" rx="4" fill="#C7B2FF" opacity="0.2" stroke="#C7B2FF" stroke-width="1.5"/>
+            <circle cx="93" cy="51" r="7" fill="none" stroke="#C7B2FF" stroke-width="1.5"/>
+            <text x="93" y="68" text-anchor="middle" fill="#C7B2FF" font-size="7" font-weight="700">셀카</text>
+            <!-- 다른 카드들 -->
+            <rect x="122" y="36" width="50" height="38" rx="4" fill="#2a2a38"/>
+            <text x="147" y="60" text-anchor="middle" fill="#888" font-size="7">비디오</text>
+            <rect x="68" y="80" width="50" height="32" rx="4" fill="#2a2a38"/>
+            <text x="93" y="99" text-anchor="middle" fill="#888" font-size="7">라이브 포토</text>
+            <rect x="122" y="80" width="50" height="32" rx="4" fill="#2a2a38"/>
+            <text x="147" y="99" text-anchor="middle" fill="#888" font-size="7">파노라마</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="help-step">
+        <div class="help-step-num">3</div>
+        <div class="help-step-body">
+          <div class="help-step-title">"선택" + 두 손가락 드래그 (핵심!)</div>
+          <div class="help-step-desc">우상단 <b>선택</b> 버튼을 누른 뒤, <b>두 손가락으로 빠르게 위아래로 드래그</b>하면 한 번에 수십 장 선택돼요. 일일이 탭할 필요 없어요.</div>
+          <svg class="help-step-img" viewBox="0 0 240 130" xmlns="http://www.w3.org/2000/svg">
+            <rect x="60" y="10" width="120" height="110" rx="12" fill="#1a1a24" stroke="#444" stroke-width="1"/>
+            <!-- 상단 -->
+            <text x="68" y="25" fill="#fff" font-size="8">‹ 셀카</text>
+            <rect x="148" y="18" width="28" height="14" rx="3" fill="#C7B2FF"/>
+            <text x="162" y="28" text-anchor="middle" fill="#0F0F18" font-size="7" font-weight="700">선택</text>
+            <!-- 사진 그리드 - 선택된 것은 보라 -->
+            <g>
+              <rect x="68" y="40" width="22" height="22" rx="2" fill="#C7B2FF"/>
+              <circle cx="86" cy="44" r="3" fill="#fff"/>
+              <text x="86" y="46" text-anchor="middle" fill="#C7B2FF" font-size="5" font-weight="700">✓</text>
+
+              <rect x="93" y="40" width="22" height="22" rx="2" fill="#C7B2FF"/>
+              <circle cx="111" cy="44" r="3" fill="#fff"/>
+              <text x="111" y="46" text-anchor="middle" fill="#C7B2FF" font-size="5" font-weight="700">✓</text>
+
+              <rect x="118" y="40" width="22" height="22" rx="2" fill="#C7B2FF"/>
+              <circle cx="136" cy="44" r="3" fill="#fff"/>
+              <text x="136" y="46" text-anchor="middle" fill="#C7B2FF" font-size="5" font-weight="700">✓</text>
+
+              <rect x="143" y="40" width="22" height="22" rx="2" fill="#2a2a38"/>
+
+              <rect x="68" y="65" width="22" height="22" rx="2" fill="#C7B2FF"/>
+              <rect x="93" y="65" width="22" height="22" rx="2" fill="#C7B2FF"/>
+              <rect x="118" y="65" width="22" height="22" rx="2" fill="#2a2a38"/>
+              <rect x="143" y="65" width="22" height="22" rx="2" fill="#2a2a38"/>
+            </g>
+            <!-- 두 손가락 표시 -->
+            <circle cx="105" cy="100" r="6" fill="#FBBF24" opacity="0.85"/>
+            <circle cx="125" cy="100" r="6" fill="#FBBF24" opacity="0.85"/>
+            <path d="M 115 95 Q 115 80, 115 55" stroke="#FBBF24" stroke-width="1.5" stroke-dasharray="2 2" fill="none" marker-end="url(#arrow2)"/>
+            <defs>
+              <marker id="arrow2" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#FBBF24"/>
+              </marker>
+            </defs>
+            <text x="120" y="118" text-anchor="middle" fill="#FBBF24" font-size="7" font-weight="600">두 손가락 드래그</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="help-step">
+        <div class="help-step-num">4</div>
+        <div class="help-step-body">
+          <div class="help-step-title">완료 후 본 앱으로 돌아오기</div>
+          <div class="help-step-desc">아래 <b>갤러리에서 사진 선택</b> 버튼을 누르고, 위에서 익힌 방법으로 한 번에 셀카를 다중 선택한 뒤 <b>완료</b>를 누르세요.</div>
+        </div>
+      </div>
+
+      <div style="background: rgba(251,191,36,0.08); border: 0.5px solid rgba(251,191,36,0.3); border-radius: 10px; padding: 12px; margin-top: 12px;">
+        <p style="font-size: 12px; color: rgba(255,255,255,0.85); line-height: 1.55; margin: 0;">
+          ⚠️ <b>iOS 제약:</b> iPhone Safari는 폴더 통째 선택을 지원하지 않아요. 위 방법으로 다중 선택해주세요.
+        </p>
+      </div>
+    </div>
+
+    <!-- Android 가이드 -->
+    <div id="helpContent-android" style="display:none;">
+      <div class="help-step">
+        <div class="help-step-num">1</div>
+        <div class="help-step-body">
+          <div class="help-step-title">방법 A: 폴더 통째 선택 (추천)</div>
+          <div class="help-step-desc"><b>셀카 폴더 선택</b> 버튼을 누르고, 갤러리에서 셀카가 들어있는 폴더(예: <b>Camera</b>, <b>Selfies</b>)를 선택하세요. 폴더 안의 모든 사진이 한 번에 들어와요.</div>
+          <svg class="help-step-img" viewBox="0 0 240 130" xmlns="http://www.w3.org/2000/svg">
+            <rect x="60" y="10" width="120" height="110" rx="12" fill="#1a1a24" stroke="#444" stroke-width="1"/>
+            <text x="68" y="25" fill="#fff" font-size="8" font-weight="600">폴더 선택</text>
+            <!-- 폴더 아이콘 강조 -->
+            <g transform="translate(70, 40)">
+              <path d="M 0 4 L 0 26 L 28 26 L 28 8 L 12 8 L 8 4 Z" fill="#C7B2FF" opacity="0.3" stroke="#C7B2FF" stroke-width="1.2"/>
+              <text x="14" y="38" text-anchor="middle" fill="#C7B2FF" font-size="7" font-weight="700">Camera</text>
+            </g>
+            <g transform="translate(110, 40)">
+              <path d="M 0 4 L 0 26 L 28 26 L 28 8 L 12 8 L 8 4 Z" fill="#2a2a38" stroke="#555" stroke-width="1"/>
+              <text x="14" y="38" text-anchor="middle" fill="#888" font-size="7">Download</text>
+            </g>
+            <g transform="translate(150, 40)">
+              <path d="M 0 4 L 0 26 L 28 26 L 28 8 L 12 8 L 8 4 Z" fill="#2a2a38" stroke="#555" stroke-width="1"/>
+              <text x="14" y="38" text-anchor="middle" fill="#888" font-size="7">기타</text>
+            </g>
+            <rect x="68" y="78" width="104" height="22" rx="3" fill="#C7B2FF"/>
+            <text x="120" y="93" text-anchor="middle" fill="#0F0F18" font-size="9" font-weight="700">이 폴더 선택</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="help-step">
+        <div class="help-step-num">2</div>
+        <div class="help-step-body">
+          <div class="help-step-title">방법 B: 사진 다중 선택</div>
+          <div class="help-step-desc">갤러리에서 한 사진을 <b>길게 눌러</b> 다중 선택 모드 진입, 첫 사진 탭 후 마지막 사진을 길게 눌러 <b>범위 선택</b>이 가능해요.</div>
+          <svg class="help-step-img" viewBox="0 0 240 130" xmlns="http://www.w3.org/2000/svg">
+            <rect x="60" y="10" width="120" height="110" rx="12" fill="#1a1a24" stroke="#444" stroke-width="1"/>
+            <text x="68" y="25" fill="#fff" font-size="8" font-weight="600">12장 선택됨</text>
+            <g>
+              <rect x="68" y="35" width="22" height="22" rx="2" fill="#C7B2FF"/>
+              <text x="79" y="49" text-anchor="middle" fill="#0F0F18" font-size="8" font-weight="700">✓</text>
+              <rect x="93" y="35" width="22" height="22" rx="2" fill="#C7B2FF"/>
+              <text x="104" y="49" text-anchor="middle" fill="#0F0F18" font-size="8" font-weight="700">✓</text>
+              <rect x="118" y="35" width="22" height="22" rx="2" fill="#C7B2FF"/>
+              <text x="129" y="49" text-anchor="middle" fill="#0F0F18" font-size="8" font-weight="700">✓</text>
+              <rect x="143" y="35" width="22" height="22" rx="2" fill="#C7B2FF"/>
+              <text x="154" y="49" text-anchor="middle" fill="#0F0F18" font-size="8" font-weight="700">✓</text>
+              <rect x="68" y="60" width="22" height="22" rx="2" fill="#C7B2FF"/>
+              <rect x="93" y="60" width="22" height="22" rx="2" fill="#C7B2FF"/>
+              <rect x="118" y="60" width="22" height="22" rx="2" fill="#C7B2FF"/>
+              <rect x="143" y="60" width="22" height="22" rx="2" fill="#C7B2FF"/>
+            </g>
+            <rect x="68" y="92" width="104" height="20" rx="3" fill="#C7B2FF"/>
+            <text x="120" y="106" text-anchor="middle" fill="#0F0F18" font-size="9" font-weight="700">완료</text>
+          </svg>
+        </div>
+      </div>
+
+      <div style="background: rgba(74,222,128,0.08); border: 0.5px solid rgba(74,222,128,0.3); border-radius: 10px; padding: 12px; margin-top: 12px;">
+        <p style="font-size: 12px; color: rgba(255,255,255,0.85); line-height: 1.55; margin: 0;">
+          ✓ Android는 폴더 통째 선택 가능. 가장 빠르고 정확합니다.
+        </p>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" style="margin-top: 16px;" onclick="closeModal('photoHelpModal')">이해했어요</button>
+  </div>
+</div>
+
 <!-- 썸네일 상세 모달 -->
 <div class="modal" id="thumbModal" onclick="if(event.target===this)closeModal('thumbModal')">
   <div class="modal-content">
@@ -1071,6 +1345,8 @@ function resetPickScreen() {
   sampledFiles = [];
   analysisResults = [];
   analysisCancelled = false;
+  // OS별 UI 분기 적용
+  if (typeof adaptUIForOS === 'function') adaptUIForOS();
 }
 
 // 뒤로가기 (백키 / 브라우저 뒤로가기) 처리
@@ -1149,6 +1425,69 @@ function updateLoading(status, pct, detail) {
 // 폴더와 개별 사진 양쪽에서 받은 파일을 누적 (collectedFiles는 상단에서 선언됨)
 
 // 폴더 input 클릭 시 즉시 표시 (파일 다이얼로그 닫히고 change 이벤트 오기 전 공백 메우기)
+// OS 감지 + iOS/Android별 UI 분기
+function detectOS() {
+  const ua = navigator.userAgent;
+  const platform = navigator.platform || '';
+  // iOS: iPhone, iPad, iPod (Safari + Chrome 모두)
+  const isIOS = /iPad|iPhone|iPod/.test(ua) ||
+                (platform === 'MacIntel' && navigator.maxTouchPoints > 1);  // iPadOS 13+
+  const isAndroid = /Android/.test(ua);
+  return { isIOS, isAndroid, isMobile: isIOS || isAndroid };
+}
+
+function adaptUIForOS() {
+  const os = detectOS();
+  const folderCard = document.getElementById('folderPickCard');
+  const galleryCard = document.getElementById('galleryPickCard');
+  const galleryTitle = document.getElementById('galleryPickTitle');
+  const galleryDesc = document.getElementById('galleryPickDesc');
+  const iosHint = document.getElementById('iosHintCard');
+  const pickIntro = document.getElementById('pickIntro');
+
+  if (os.isIOS) {
+    // iOS: 폴더 카드 숨김, 갤러리 카드를 메인으로 강조
+    if (folderCard) folderCard.style.display = 'none';
+    if (iosHint) iosHint.style.display = 'block';
+    if (galleryTitle) galleryTitle.innerHTML = '📸 셀카 사진 선택 (추천)';
+    if (galleryDesc) galleryDesc.textContent = '사진 앱의 "셀카" 앨범에서 가능한 많이 선택해주세요';
+    if (galleryCard) {
+      galleryCard.style.background = 'linear-gradient(135deg, rgba(199,178,255,0.12), rgba(199,178,255,0.04))';
+      galleryCard.style.borderColor = 'rgba(199,178,255,0.3)';
+    }
+    // 메인 버튼을 primary로
+    const galleryBtn = document.getElementById('galleryBtn');
+    if (galleryBtn) {
+      galleryBtn.classList.remove('btn-secondary');
+      galleryBtn.classList.add('btn-primary');
+    }
+    if (pickIntro) pickIntro.innerHTML = 'iPhone에서 셀카를 다중 선택해주세요. 처음이라면 우측 상단 <b>ⓘ</b> 아이콘에서 자세한 방법을 확인하세요.';
+  } else if (os.isAndroid) {
+    // Android: 기본 - 폴더 추천
+    if (iosHint) iosHint.style.display = 'none';
+  } else {
+    // Desktop: 폴더 추천
+    if (iosHint) iosHint.style.display = 'none';
+  }
+}
+
+// 도움말 모달 열기
+function showPhotoHelp() {
+  // 현재 OS에 맞는 탭 자동 선택
+  const os = detectOS();
+  switchHelpTab(os.isAndroid ? 'android' : 'ios');
+  openModal('photoHelpModal');
+}
+
+// 도움말 탭 전환
+function switchHelpTab(osKey) {
+  document.querySelectorAll('.help-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.os === osKey);
+  });
+  document.getElementById('helpContent-ios').style.display = osKey === 'ios' ? 'block' : 'none';
+  document.getElementById('helpContent-android').style.display = osKey === 'android' ? 'block' : 'none';
+}
+
 function showFolderProcessing() {
   setTimeout(() => {
     const countEl = document.getElementById('folderSelectedCount');
@@ -1181,48 +1520,56 @@ function updateCollectedDisplay() {
 
 document.getElementById('filePicker').addEventListener('change', async (e) => {
   const files = Array.from(e.target.files);
+  console.log(`[filePicker] ${files.length}개 파일 선택됨`);
   if (files.length === 0) return;
 
   const countEl = document.getElementById('selectedCount');
   const btn = document.getElementById('galleryBtn');
 
-  // 많은 사진 선택 시 진행 표시
-  if (files.length > 100) {
-    countEl.style.display = 'block';
-    countEl.textContent = `📷 사진 추가 중... 0/${files.length.toLocaleString()}`;
-    btn.disabled = true;
-  }
+  try {
+    // 많은 사진 선택 시 진행 표시
+    if (files.length > 100) {
+      countEl.style.display = 'block';
+      countEl.textContent = `📷 사진 추가 중... 0/${files.length.toLocaleString()}`;
+      btn.disabled = true;
+    }
 
-  // 중복 제거 (청크 단위)
-  const existingKeys = new Set(collectedFiles.map(f => `${f.name}_${f.size}`));
-  let added = 0;
-  const CHUNK = 100;
+    // 중복 제거 (청크 단위)
+    const existingKeys = new Set(collectedFiles.map(f => `${f.name}_${f.size}`));
+    let added = 0;
+    const CHUNK = 100;
 
-  for (let i = 0; i < files.length; i += CHUNK) {
-    const end = Math.min(i + CHUNK, files.length);
-    for (let j = i; j < end; j++) {
-      const f = files[j];
-      const key = `${f.name}_${f.size}`;
-      if (!existingKeys.has(key)) {
-        collectedFiles.push(f);
-        existingKeys.add(key);
-        added++;
+    for (let i = 0; i < files.length; i += CHUNK) {
+      const end = Math.min(i + CHUNK, files.length);
+      for (let j = i; j < end; j++) {
+        const f = files[j];
+        const key = `${f.name}_${f.size}`;
+        if (!existingKeys.has(key)) {
+          collectedFiles.push(f);
+          existingKeys.add(key);
+          added++;
+        }
+      }
+      if (files.length > 100) {
+        countEl.textContent = `📷 사진 추가 중... ${end.toLocaleString()}/${files.length.toLocaleString()}`;
+        await new Promise(r => setTimeout(r, 0));
       }
     }
-    if (files.length > 100) {
-      countEl.textContent = `📷 사진 추가 중... ${end.toLocaleString()}/${files.length.toLocaleString()}`;
-      await new Promise(r => setTimeout(r, 0));
-    }
+
+    countEl.textContent = added === files.length
+      ? `✓ ${files.length.toLocaleString()}장 추가됨`
+      : `✓ ${added.toLocaleString()}장 추가됨 (중복 ${(files.length - added).toLocaleString()}장 제외)`;
+    countEl.style.display = 'block';
+    btn.textContent = `사진 추가 선택 (${collectedFiles.length.toLocaleString()}장 누적)`;
+    console.log(`[filePicker] ${added}장 추가 완료, 누적 ${collectedFiles.length}장`);
+
+  } catch (err) {
+    console.error('[filePicker] 에러:', err);
+    showToast('사진 추가 중 오류: ' + err.message);
+  } finally {
+    btn.disabled = false; // 항상 버튼 복원
+    updateCollectedDisplay();
   }
-
-  btn.disabled = false;
-  countEl.textContent = added === files.length
-    ? `✓ ${files.length.toLocaleString()}장 추가됨`
-    : `✓ ${added.toLocaleString()}장 추가됨 (중복 ${(files.length - added).toLocaleString()}장 제외)`;
-  countEl.style.display = 'block';
-  btn.textContent = `사진 추가 선택 (${files.length.toLocaleString()}장 추가됨)`;
-
-  updateCollectedDisplay();
 });
 
 // 폴더 선택 핸들러 (webkitdirectory)
