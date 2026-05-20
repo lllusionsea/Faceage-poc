@@ -710,7 +710,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo" onclick="resetApp()" style="cursor:pointer;">Face<span class="accent">AGE</span></div>
-    <div class="badge" id="topBadge">POC v4.5</div>
+    <div class="badge" id="topBadge">POC v4.7</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -2475,7 +2475,25 @@ async function startAnalysis() {
   document.getElementById('analyzeStatus').textContent = '분석 완료! 결과를 정리하는 중...';
   setAnalysisButtonState('completed');
   document.getElementById('goResultsBtn').style.display = 'block';
+
+  // 모달이 열려 있으면 (사용자가 수정 중) 자동 전환 안 함 - 보류 상태로 표시
+  const openModalEl = document.querySelector('.modal.show');
+  if (openModalEl) {
+    console.log('[autoShowResults] 모달 열림 감지, 자동 전환 보류');
+    pendingResultsAfterModal = true;
+    // 분석 화면 상단에 안내 표시
+    document.getElementById('analyzeStatus').textContent = '✓ 분석 완료. 현재 작업이 끝나면 결과를 볼 수 있어요.';
+    return;
+  }
+
   setTimeout(() => {
+    // 600ms 사이에 사용자가 모달 열었을 수도 있으니 다시 체크
+    const stillOpenModal = document.querySelector('.modal.show');
+    if (stillOpenModal) {
+      pendingResultsAfterModal = true;
+      document.getElementById('analyzeStatus').textContent = '✓ 분석 완료. 현재 작업이 끝나면 결과를 볼 수 있어요.';
+      return;
+    }
     try {
       showResults();
     } catch (e) {
@@ -2875,25 +2893,32 @@ function loadImage(file) {
   });
 }
 
-function createThumb(img, size = 200) {
+function createThumb(img, size = 320) {
   const canvas = document.getElementById('hiddenCanvas');
-  const scale = Math.min(size / img.width, size / img.height);
-  canvas.width = img.width * scale;
-  canvas.height = img.height * scale;
+  // 고DPR 보정: Retina 등에서 표시 시 픽셀 깨짐 방지
+  // 모바일 그리드(120-160px 표시) × 2~3 DPR = 240~480px 필요
+  const scale = Math.min(size / img.width, size / img.height, 1);
+  canvas.width = Math.round(img.width * scale);
+  canvas.height = Math.round(img.height * scale);
   const ctx = canvas.getContext('2d');
+  // 이미지 스무딩을 high로 (작은 사이즈로 줄일 때 품질)
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL('image/jpeg', 0.7);
+  return canvas.toDataURL('image/jpeg', 0.85);
 }
 
 // 원본 이미지 (모달용 - 더 큰 사이즈로 보존)
 function createFullImage(img, maxSize = 800) {
   const canvas = document.getElementById('hiddenCanvas');
   const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
-  canvas.width = img.width * scale;
-  canvas.height = img.height * scale;
+  canvas.width = Math.round(img.width * scale);
+  canvas.height = Math.round(img.height * scale);
   const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL('image/jpeg', 0.85);
+  return canvas.toDataURL('image/jpeg', 0.9);
 }
 
 async function assessQuality(img, detection) {
@@ -3145,7 +3170,14 @@ async function runDemo() {
   }
 
   document.getElementById('goResultsBtn').style.display = 'block';
-  setTimeout(() => showResults(), 600);
+  setTimeout(() => {
+    // 모달 열려있으면 보류
+    if (document.querySelector('.modal.show')) {
+      pendingResultsAfterModal = true;
+      return;
+    }
+    showResults();
+  }, 600);
 }
 
 function generateDemoThumb(c1, c2, idx) {
@@ -3747,7 +3779,7 @@ function showInsightDetail(idx) {
     const realAge = calculateAge(birthDate, r.timestamp);
     side.innerHTML = `
       <div class="side-label">${data.label}</div>
-      <img src="${r.thumbUrl}" alt="">
+      <img src="${r.fullImageUrl || r.thumbUrl}" alt="">
       <div class="side-age">${r.estimatedAge.toFixed(1)}세 <span style="color:rgba(255,255,255,0.55); font-weight:400; font-size:13px;">(실제 ${realAge.toFixed(0)}세)</span></div>
       <div class="side-date">${dateStr}</div>
       <div class="side-hint">👆 탭하면 원본 사진</div>
@@ -3972,6 +4004,22 @@ function closeModal(id) {
   const remaining = document.querySelectorAll('.modal.show');
   if (remaining.length > 0) {
     remaining[remaining.length - 1].classList.add('top-modal');
+    return;
+  }
+  // 모든 모달이 닫혔고, 분석 완료가 보류 중이었으면 결과 화면으로 이동
+  if (pendingResultsAfterModal) {
+    pendingResultsAfterModal = false;
+    // 현재 화면이 분석 화면일 때만 자동 이동
+    const currentScreen = document.querySelector('.screen.active');
+    if (currentScreen && currentScreen.id === 'screen-analyze') {
+      setTimeout(() => {
+        try {
+          showResults();
+        } catch (e) {
+          console.error('Pending showResults failed', e);
+        }
+      }, 300);
+    }
   }
 }
 
@@ -4041,6 +4089,9 @@ function reanalyzeFromCurrent() {
 
 // 분석 진행 중 상태 추적 (수동 추가 시 그리드 충돌 방지)
 let analysisInProgress = false;
+// 모달이 열려있는 동안 분석이 완료되면 true로 설정.
+// 모달이 닫힐 때 자동으로 결과 화면으로 이동.
+let pendingResultsAfterModal = false;
 
 // 사진 상태 변경 후 화면 갱신
 function refreshAfterPhotoChange(specificIdx) {
@@ -4987,7 +5038,7 @@ function renderMonthlyReport(passed, realAge) {
             <p class="sub" style="margin-top: 10px; font-weight: 600;">${e.deltaText}</p>
           </div>
           <div class="report-card-right">
-            <img src="${e.bestPhoto.thumbUrl}" alt="대표 사진" ${photoClickAttr(e.bestPhoto)} style="cursor:pointer;">
+            <img src="${e.bestPhoto.fullImageUrl || e.bestPhoto.thumbUrl}" alt="대표 사진" ${photoClickAttr(e.bestPhoto)} style="cursor:pointer;">
           </div>
         </div>
       `;
