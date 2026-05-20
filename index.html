@@ -11,7 +11,7 @@
     :root {
       /* 배경 */
       --bg: #FFFFFF;
-      --bg-page: #FAFBFC;
+      --bg-page: #F7F9FC;
       --bg-subtle: #F2F4F6;
       --bg-card: #FFFFFF;
 
@@ -55,7 +55,25 @@
       font-feature-settings: 'tnum' 1;
       -webkit-font-smoothing: antialiased;
     }
-    #app { max-width: 480px; margin: 0 auto; min-height: 100vh; min-height: 100dvh; position: relative; padding-bottom: 24px; background: var(--bg-page); }
+    #app {
+      max-width: 480px; margin: 0 auto; min-height: 100vh; min-height: 100dvh;
+      position: relative; padding-bottom: 24px;
+      background: var(--bg-page);
+    }
+    /* 페이지 배경 부드러운 컬러 패치 (살짝) */
+    #app::before {
+      content: '';
+      position: fixed; top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 480px; max-width: 100%;
+      height: 380px;
+      background:
+        radial-gradient(ellipse 50% 60% at 20% 30%, rgba(49,130,246,0.06) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 60% at 80% 20%, rgba(0,200,150,0.05) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .topbar, .screen { position: relative; z-index: 1; }
 
     .topbar {
       display: flex; justify-content: space-between; align-items: center;
@@ -149,6 +167,7 @@
       background: var(--bg-card);
       border: 1px solid var(--line);
       border-radius: 16px; padding: 18px; margin-bottom: 12px;
+      box-shadow: 0 1px 2px rgba(17,24,39,0.03);
     }
     .card-glow {
       background: var(--primary-soft);
@@ -308,23 +327,24 @@
 
     /* 결과 화면 - Hero 카드 */
     .hero-result-card {
-      background: linear-gradient(135deg, var(--primary-soft) 0%, #fff 100%);
+      background: linear-gradient(135deg, #E8F2FE 0%, #F0F7FF 50%, #fff 100%);
       border: 1px solid rgba(49,130,246,0.15);
       border-radius: 20px;
-      padding: 20px 22px;
+      padding: 22px 24px;
       margin-top: 16px;
+      box-shadow: 0 4px 16px rgba(49,130,246,0.06);
     }
     .hero-result-label {
       font-size: 13px;
       color: var(--primary);
       font-weight: 700;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
       letter-spacing: -0.2px;
     }
 
-    .age-hero { display: flex; align-items: baseline; gap: 12px; margin: 4px 0 6px; flex-wrap: wrap; }
-    .age-big { font-size: 64px; font-weight: 800; letter-spacing: -3px; line-height: 1; color: var(--text-1); }
-    .age-big::after { content: '세'; font-size: 24px; font-weight: 700; color: var(--text-2); margin-left: 4px; letter-spacing: -1px; }
+    .age-hero { display: flex; align-items: baseline; gap: 12px; margin: 4px 0 8px; flex-wrap: wrap; }
+    .age-big { font-size: 72px; font-weight: 800; letter-spacing: -3px; line-height: 1; color: var(--text-1); }
+    .age-big::after { content: '세'; font-size: 26px; font-weight: 700; color: var(--text-2); margin-left: 4px; letter-spacing: -1px; }
     .age-delta { padding: 6px 12px; border-radius: 100px; font-size: 13px; font-weight: 700; }
     .delta-younger { background: var(--younger-soft); color: #00A87C; }
     .delta-older { background: var(--older-soft); color: #E85A3A; }
@@ -389,7 +409,7 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.08);
     }
 
-    .chart-wrap { position: relative; height: 220px; margin: 8px 0 16px; background: var(--bg-card); border-radius: 16px; padding: 12px; border: 1px solid var(--line); }
+    .chart-wrap { position: relative; height: 260px; margin: 8px 0 16px; background: var(--bg-card); border-radius: 16px; padding: 14px; border: 1px solid var(--line); box-shadow: 0 1px 2px rgba(17,24,39,0.03); }
     .chart-preview {
       position: absolute; display: none;
       background: #fff; border: 1px solid var(--line-strong);
@@ -705,7 +725,7 @@
 
     #hiddenCanvas { display: none; }
 
-    .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(40,40,46,0.95); padding: 10px 18px; border-radius: 22px; font-size: 13px; z-index: 1000; opacity: 0; transition: opacity 0.3s; pointer-events: none; max-width: 90%; text-align: center; }
+    .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(25,31,40,0.95); color: #fff; padding: 12px 20px; border-radius: 100px; font-size: 14px; font-weight: 500; z-index: 1000; opacity: 0; transition: opacity 0.3s; pointer-events: none; max-width: 90%; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
     .toast.show { opacity: 1; }
 
     /* iOS 사진 처리 풀스크린 오버레이 */
@@ -898,7 +918,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo" onclick="resetApp()" style="cursor:pointer;">Face<span class="accent">AGE</span></div>
-    <div class="badge" id="topBadge">POC v5.0</div>
+    <div class="badge" id="topBadge">POC v5.2</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -1086,10 +1106,10 @@
         <svg class="expand-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </div>
       <div class="expandable-body">
-        <p class="muted" style="margin-bottom: 14px; font-size: 13px;">앱이 분석할 최대 사진 수</p>
-        <div class="form-row">
-          <label class="label">최대 분석 장수: <b style="color:var(--primary);" id="maxSamplesVal">100</b>장</label>
-          <div class="range-wrap">
+        <p class="muted" style="margin-bottom: 20px; font-size: 13px;">앱이 분석할 최대 사진 수</p>
+        <div class="form-row" style="margin-bottom: 24px;">
+          <label class="label" style="margin-bottom: 12px;">최대 분석 장수: <b style="color:var(--primary);" id="maxSamplesVal">100</b>장</label>
+          <div class="range-wrap" style="margin-top: 8px;">
             <div class="range-ticks">
               <span class="range-tick" data-pos="0"></span>
               <span class="range-tick" data-pos="33"></span>
@@ -1248,27 +1268,11 @@
       <div id="chartPreview" class="chart-preview"></div>
     </div>
 
-    <div class="expandable" id="qualitySection" style="margin-top: 16px;">
-      <div class="expandable-header" onclick="toggleExpand('qualitySection')">
-        <h3 style="margin: 0; flex: 1;">품질 분석</h3>
-        <span class="small" style="color: var(--text-3);">기술 상세</span>
-        <svg class="expand-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-      </div>
-      <div class="expandable-body">
-        <p class="small" style="margin-bottom: 10px;">사진별 품질 점수 분포</p>
-        <div id="qualityBreakdown"></div>
-      </div>
-    </div>
+    <!-- === 발견된 패턴 (구 인사이트 화면 통합) === -->
+    <h3 style="margin-top: 28px;">발견된 패턴</h3>
+    <p class="small" style="color: var(--text-3); margin-bottom: 12px;">계절·시간대·요일별 변화를 분석했어요</p>
 
-    <button class="btn btn-primary" style="margin-top: 20px;" onclick="showScreen('screen-insights')">발견된 패턴 보기 →</button>
-  </div>
-
-  <!-- SCREEN 6: 인사이트 -->
-  <div class="screen" id="screen-insights">
-    <h1>발견된 패턴</h1>
-    <p class="muted">계절·시간대·요일별 변화를 분석했어요</p>
-
-    <div class="tabs" style="margin-top: 16px;">
+    <div class="tabs">
       <div class="tab active" onclick="switchInsightTab(this, 'pattern')">종합</div>
       <div class="tab" onclick="switchInsightTab(this, 'parts')">부위별</div>
       <div class="tab" onclick="switchInsightTab(this, 'report')">월간</div>
@@ -1312,13 +1316,25 @@
     </div>
 
     <div id="tab-report" style="display:none;">
-      <p class="muted" style="margin-bottom: 12px;">각 월의 평균 얼굴 나이를 최신순으로 보여드려요. 사진을 탭하면 원본을 볼 수 있어요.</p>
+      <p class="muted" style="margin-bottom: 12px; font-size: 13px;">각 월의 평균 얼굴 나이를 최신순으로 보여드려요</p>
       <div id="monthlyReportList"></div>
-
       <p class="small" style="text-align: center; margin-top: 16px;">매월 1일 자동 생성 알림 예정 (Phase 2)</p>
     </div>
 
-    <button class="btn btn-ghost" style="margin-top: 16px;" onclick="resetApp()">처음부터 다시 시작</button>
+    <!-- 품질 분석 - 맨 아래 -->
+    <div class="expandable" id="qualitySection" style="margin-top: 28px;">
+      <div class="expandable-header" onclick="toggleExpand('qualitySection')">
+        <h3 style="margin: 0; flex: 1;">품질 분석</h3>
+        <span class="small" style="color: var(--text-3);">기술 상세</span>
+        <svg class="expand-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </div>
+      <div class="expandable-body">
+        <p class="small" style="margin-bottom: 10px;">사진별 품질 점수 분포</p>
+        <div id="qualityBreakdown"></div>
+      </div>
+    </div>
+
+    <button class="btn btn-ghost" style="margin-top: 20px;" onclick="resetApp()">처음부터 다시 시작</button>
   </div>
 
 </div>
@@ -1673,7 +1689,7 @@ let allFilesWithTime = []; // 전체 파일 시간 정보 (fallback용)
 let fallbackStats = { attempted: 0, recovered: 0 }; // fallback 성공 통계
 
 // ===== 화면 전환 (History API 통합) =====
-const SCREEN_FLOW = ['screen-onboard', 'screen-loading', 'screen-pick', 'screen-sampling', 'screen-analyze', 'screen-result', 'screen-insights'];
+const SCREEN_FLOW = ['screen-onboard', 'screen-loading', 'screen-pick', 'screen-sampling', 'screen-analyze', 'screen-result'];
 let isPoppingState = false; // popstate로 인한 호출인지 구분
 
 function showScreen(id, options = {}) {
@@ -2554,7 +2570,105 @@ async function sampleEvenly(filesWithTime, maxSamples, onProgress) {
     return result;
   }
 
-  // 최적화: 이진 탐색으로 각 타겟 시간에 가장 가까운 사진
+  // === 월 기반 균등 샘플링 (빈 달 최소화) ===
+  // Step A: 사진을 월(YYYY-MM)로 그룹화
+  const monthGroups = new Map(); // 'YYYY-MM' -> [files...]
+  for (const f of uniqueDayFiles) {
+    const d = f.timestamp;
+    const monthKey = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    if (!monthGroups.has(monthKey)) monthGroups.set(monthKey, []);
+    monthGroups.get(monthKey).push(f);
+  }
+
+  const monthsWithPhotos = monthGroups.size;
+  console.log(`📅 사진 있는 달: ${monthsWithPhotos}개월, 목표: ${maxSamples}장`);
+
+  // Step B: 사진 있는 달 수가 maxSamples 이하면 → 각 달에서 균등 분배
+  // 그렇지 않으면 (사진 있는 달 수 > maxSamples) → 시간 균등 샘플링 (기존 로직)
+  if (monthsWithPhotos <= maxSamples) {
+    // 각 달에 최소 1장씩 보장 + 남는 슬롯을 사진 많은 달에 비례 분배
+    const sortedMonths = Array.from(monthGroups.keys()).sort();
+    // 각 달의 비례 슬롯 계산 (사진 수에 비례)
+    const totalPhotos = uniqueDayFiles.length;
+    const monthSlots = new Map();
+    let assignedSlots = 0;
+
+    // 1차: 각 달에 최소 1장 보장
+    for (const m of sortedMonths) {
+      monthSlots.set(m, 1);
+      assignedSlots++;
+    }
+
+    // 2차: 남는 슬롯을 사진 많은 달에 비례 분배
+    const remainingSlots = maxSamples - assignedSlots;
+    if (remainingSlots > 0) {
+      // 각 달의 추가 슬롯 (소수점 포함)
+      const extras = sortedMonths.map(m => {
+        const photos = monthGroups.get(m).length;
+        // 이 달의 사진 비율로 추가 슬롯 계산 (이미 1개는 받았으므로)
+        const fairShare = (photos / totalPhotos) * maxSamples;
+        return { month: m, extra: Math.max(0, fairShare - 1) };
+      });
+      // 추가 슬롯 내림 + 소수점 보정
+      const extrasInt = extras.map(e => ({ ...e, intExtra: Math.floor(e.extra), frac: e.extra - Math.floor(e.extra) }));
+      let assigned = extrasInt.reduce((a, e) => a + e.intExtra, 0);
+      // 부족분은 소수점 큰 달부터 +1
+      extrasInt.sort((a, b) => b.frac - a.frac);
+      let i = 0;
+      while (assigned < remainingSlots && i < extrasInt.length) {
+        extrasInt[i].intExtra++;
+        assigned++;
+        i++;
+      }
+      // monthSlots 업데이트
+      for (const e of extrasInt) {
+        monthSlots.set(e.month, 1 + e.intExtra);
+      }
+    }
+
+    // 각 달에서 균등하게 슬롯 수만큼 뽑기
+    const picked = [];
+    for (const m of sortedMonths) {
+      const slots = Math.min(monthSlots.get(m), monthGroups.get(m).length);
+      const photos = monthGroups.get(m);
+      photos.sort((a, b) => a.timestamp - b.timestamp);
+
+      const monthPicked = []; // 이 달에서 뽑힌 사진들 (시블링 메타용)
+
+      if (slots === 1) {
+        // 1장이면 중간 사진
+        monthPicked.push(photos[Math.floor(photos.length / 2)]);
+      } else if (slots >= photos.length) {
+        // 슬롯이 사진 수 이상이면 다 사용
+        for (const p of photos) monthPicked.push(p);
+      } else {
+        // 균등 분할
+        const step = (photos.length - 1) / (slots - 1);
+        for (let i = 0; i < slots; i++) {
+          monthPicked.push(photos[Math.round(i * step)]);
+        }
+      }
+
+      // 이 달에서 뽑히지 않은 다른 사진들 → fallback 후보로 메타에 저장
+      const pickedSet = new Set(monthPicked.map(p => p.file.name));
+      const siblings = photos.filter(p => !pickedSet.has(p.file.name));
+
+      // 각 picked 항목에 같은 달 시블링 메타 추가 (fallback용)
+      for (const p of monthPicked) {
+        p.monthKey = m;
+        p.monthSiblings = siblings; // 분석 실패 시 같은 달에서 fallback
+        picked.push(p);
+      }
+    }
+    // 시간순 정렬
+    picked.sort((a, b) => a.timestamp - b.timestamp);
+    if (onProgress) await onProgress(100);
+    console.log(`✅ 월 기반 샘플링: ${picked.length}장 (${sortedMonths.length}개월)`);
+    return picked;
+  }
+
+  // === 기존 로직: 사진 있는 달이 maxSamples 초과 (드문 경우) ===
+  // 이진 탐색으로 각 타겟 시간에 가장 가까운 사진
   const picked = [];
   const usedIndices = new Set();
 
@@ -2576,7 +2690,6 @@ async function sampleEvenly(filesWithTime, maxSamples, onProgress) {
       const dist = Math.abs(uniqueDayFiles[j].timestamp.getTime() - targetTime);
       if (dist < bestDist) { bestDist = dist; bestIdx = j; }
     }
-    // 만약 ±20 범위에 사용 안 된 게 없으면 전체 스캔 (드문 경우)
     if (bestIdx === -1) {
       for (let j = 0; j < uniqueDayFiles.length; j++) {
         if (usedIndices.has(j)) continue;
@@ -3023,7 +3136,40 @@ async function tryAdjacentFallback(rejectedFile, rejectedTimestamp, sampleIdx) {
   }
   const triedNames = new Set([rejectedFile.name]);
 
-  // 거부된 파일이 전체 목록의 어느 인덱스인지 찾기
+  // === 1순위: 같은 달의 다른 사진 (월별 샘플링 시 빈 달 방지) ===
+  // sampleIdx로 sampledFiles의 해당 항목을 찾고 monthSiblings 확인
+  const rejectedSample = sampledFiles[sampleIdx];
+  if (rejectedSample && rejectedSample.monthSiblings && rejectedSample.monthSiblings.length > 0) {
+    const siblings = rejectedSample.monthSiblings;
+    // 날짜순 정렬: 거부된 사진과 시간상 가까운 것부터 시도
+    const rejectedTime = rejectedTimestamp.getTime();
+    const sortedSiblings = [...siblings].sort((a, b) => {
+      const da = Math.abs(a.timestamp.getTime() - rejectedTime);
+      const db = Math.abs(b.timestamp.getTime() - rejectedTime);
+      return da - db;
+    });
+
+    let siblingTried = 0;
+    for (const cand of sortedSiblings) {
+      if (siblingTried >= 3) break; // 같은 달에서 최대 3장 시도
+      if (sampledNames.has(cand.file.name) || triedNames.has(cand.file.name)) continue;
+      triedNames.add(cand.file.name);
+      siblingTried++;
+
+      try {
+        const altResult = await analyzePhoto(cand.file, cand.timestamp);
+        if (altResult.passed) {
+          altResult.isFallback = true;
+          console.log(`✅ 같은 달(${rejectedSample.monthKey}) 시블링으로 fallback 성공`);
+          return altResult;
+        }
+      } catch (e) {
+        // 실패해도 계속 시도
+      }
+    }
+  }
+
+  // === 2순위: 거부된 파일의 인접 사진 (전체 목록 기준) ===
   let centerIdx = -1;
   for (let i = 0; i < allFilesWithTime.length; i++) {
     if (allFilesWithTime[i].file.name === rejectedFile.name) {
@@ -3560,7 +3706,7 @@ function showResults() {
   const recentAvg = recent.reduce((a, r) => a + r.estimatedAge, 0) / recent.length;
 
   document.getElementById('avgFaceAge').textContent = recentAvg.toFixed(1);
-  document.getElementById('realAgeText').textContent = realAge.toFixed(0);
+  document.getElementById('realAgeText').textContent = Math.floor(realAge);
 
   const delta = recentAvg - realAge;
   const deltaEl = document.getElementById('ageDelta');
@@ -3628,13 +3774,13 @@ function drawChart(passed, birthDate) {
     y: parseFloat((calculateAge(birthDate, r.timestamp)).toFixed(1)),
   }));
 
-  // 포인트별 색 분기: 어려보임(초록) / 비슷(회색) / 들어보임(빨강)
+  // 포인트별 색 분기: 어려보임(민트) / 비슷(회색) / 들어보임(코랄)
   const pointColors = sorted.map(r => {
     const realAge = calculateAge(birthDate, r.timestamp);
     const diff = r.estimatedAge - realAge;
-    if (diff < -0.7) return '#4ADE80'; // 어려 보임 (초록)
-    if (diff > 0.7) return '#F87171';  // 들어 보임 (빨강)
-    return 'rgba(255,255,255,0.55)';    // 비슷 (회색)
+    if (diff < -0.7) return '#00C896'; // 어려 보임 (민트)
+    if (diff > 0.7) return '#FF7B5C';  // 들어 보임 (코랄)
+    return '#8B95A1';                   // 비슷 (회색)
   });
 
   // Y축 범위: 데이터에 맞춰 동적으로
@@ -3647,18 +3793,20 @@ function drawChart(passed, birthDate) {
   const xAxisConfig = useTimeAxis ? {
     type: 'time',
     time: { unit: 'month', tooltipFormat: 'yyyy.MM', displayFormats: { month: 'yy.MM' } },
-    ticks: { color: 'rgba(255,255,255,0.5)', font: { size: 10 }, maxTicksLimit: 5 },
+    ticks: { color: '#8B95A1', font: { size: 11, weight: '500' }, maxTicksLimit: 5 },
     grid: { display: false },
+    border: { color: '#E5E8EB' },
   } : {
     type: 'linear',
     ticks: {
-      color: 'rgba(255,255,255,0.5)', font: { size: 10 }, maxTicksLimit: 5,
+      color: '#8B95A1', font: { size: 11, weight: '500' }, maxTicksLimit: 5,
       callback: (v) => {
         const d = new Date(v);
         return d.getFullYear().toString().slice(-2) + '.' + String(d.getMonth() + 1).padStart(2, '0');
       }
     },
     grid: { display: false },
+    border: { color: '#E5E8EB' },
   };
 
   chartInstance = new Chart(ctx, {
@@ -3667,17 +3815,17 @@ function drawChart(passed, birthDate) {
       datasets: [
         {
           label: '얼굴 나이', data: faceData,
-          borderColor: '#3182F6', backgroundColor: 'rgba(199,178,255,0.12)',
+          borderColor: '#3182F6', backgroundColor: 'rgba(49,130,246,0.1)',
           borderWidth: 2.5, tension: 0.4,
           pointRadius: faceData.length === 1 ? 9 : 5,
           pointHoverRadius: faceData.length === 1 ? 12 : 8,
-          pointHitRadius: 20, // 모바일 터치 영역 충분히 크게
-          pointBackgroundColor: pointColors, pointBorderColor: '#0F0F12', pointBorderWidth: 1.5,
+          pointHitRadius: 20,
+          pointBackgroundColor: pointColors, pointBorderColor: '#fff', pointBorderWidth: 2,
           fill: true, spanGaps: true,
         },
         {
           label: '실제 나이', data: realData,
-          borderColor: 'rgba(255,255,255,0.5)', borderWidth: 1.5,
+          borderColor: '#B0B8C1', borderWidth: 1.5,
           borderDash: [5, 5], tension: 0.1, pointRadius: 0, pointHitRadius: 0, fill: false,
         }
       ]
@@ -3744,8 +3892,9 @@ function drawChart(passed, birthDate) {
         x: xAxisConfig,
         y: {
           min: minY, max: maxY,
-          ticks: { color: 'rgba(255,255,255,0.5)', font: { size: 10 }, callback: v => v + '세' },
-          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#8B95A1', font: { size: 11, weight: '500' }, callback: v => v + '세' },
+          grid: { color: '#F2F4F6' },
+          border: { color: '#E5E8EB' },
         }
       }
     }
@@ -4126,7 +4275,7 @@ function showInsightDetail(idx) {
     side.innerHTML = `
       <div class="side-label">${data.label}</div>
       <img src="${r.fullImageUrl || r.thumbUrl}" alt="">
-      <div class="side-age">${r.estimatedAge.toFixed(1)}세 <span style="color:rgba(255,255,255,0.55); font-weight:400; font-size:13px;">(실제 ${realAge.toFixed(0)}세)</span></div>
+      <div class="side-age">${r.estimatedAge.toFixed(1)}세 <span style="color:var(--text-3); font-weight:500; font-size:13px;">(실제 ${Math.floor(realAge)}세)</span></div>
       <div class="side-date">${dateStr}</div>
       <div class="side-hint">👆 탭하면 원본 사진</div>
     `;
@@ -4318,14 +4467,28 @@ function showThumbDetail(idx) {
   openModal('thumbModal');
 }
 
-// 백버튼 클릭 핸들러: 모달 열려 있으면 모달만 닫고, 아니면 화면 뒤로
+// 백버튼 클릭 핸들러: 모달 열려 있으면 모달만 닫고, 아니면 SCREEN_FLOW 이전 단계
 function handleBackButton() {
   const openModalEl = document.querySelector('.modal.show');
   if (openModalEl) {
     openModalEl.classList.remove('show');
     return;
   }
-  history.back();
+  // 현재 화면의 SCREEN_FLOW 인덱스 찾고 이전 단계로 이동
+  const currentScreen = document.querySelector('.screen.active');
+  if (!currentScreen) return;
+  const currentIdx = SCREEN_FLOW.indexOf(currentScreen.id);
+  if (currentIdx <= 0) {
+    // 첫 화면이면 동작 안 함
+    return;
+  }
+  // 분석 중간 단계는 모델 로딩 화면으로 가지 않고 사진 선택으로
+  let prevIdx = currentIdx - 1;
+  if (SCREEN_FLOW[prevIdx] === 'screen-loading') {
+    // 모델 로딩은 일회성이라 건너뛰기
+    prevIdx = Math.max(0, prevIdx - 1);
+  }
+  showScreen(SCREEN_FLOW[prevIdx]);
 }
 
 function openModal(id) {
@@ -4456,7 +4619,7 @@ function refreshAfterPhotoChange(specificIdx) {
       // idx 없는데 분석 중이면 카운터만
       recalcAnalysisCounters();
     }
-  } else if (currentScreen.id === 'screen-result' || currentScreen.id === 'screen-insights') {
+  } else if (currentScreen.id === 'screen-result') {
     setTimeout(() => { try { showResults(); } catch (e) { console.error(e); } }, 200);
   }
 }
@@ -4898,7 +5061,7 @@ function showChartPreview(pointIndex, sortedData) {
     <img src="${r.thumbUrl}" alt="">
     <div class="cp-info">
       <div class="cp-row"><span class="cp-label">얼굴</span><span class="cp-age" style="color:${ageColor};">${r.estimatedAge.toFixed(1)}세</span></div>
-      <div class="cp-row"><span class="cp-label">실제</span><span class="cp-real">${realAge.toFixed(0)}세</span></div>
+      <div class="cp-row"><span class="cp-label">실제</span><span class="cp-real">${Math.floor(realAge)}세</span></div>
       <div class="cp-date">${dateStr}</div>
     </div>
   `;
