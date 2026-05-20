@@ -477,6 +477,89 @@
       color: rgba(255,255,255,0.85);
       margin: 0;
     }
+
+    /* 생년월일 강조 카드 - 사용자 정확 입력 유도 + iOS 호환 */
+    .birth-card {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      background: linear-gradient(135deg, rgba(199,178,255,0.12), rgba(199,178,255,0.04));
+      border: 1px solid rgba(199,178,255,0.35);
+      border-radius: 16px;
+      padding: 16px;
+      margin-top: 18px;
+      margin-bottom: 12px;
+    }
+    .birth-card-header {
+      display: flex; gap: 12px; align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .birth-card-icon { font-size: 26px; flex-shrink: 0; line-height: 1.1; }
+    .birth-card-title {
+      color: #C7B2FF; font-weight: 700; font-size: 14px;
+      margin-bottom: 4px;
+    }
+    .birth-card-desc {
+      font-size: 12px; color: rgba(255,255,255,0.7); line-height: 1.5;
+    }
+    /* iOS Safari 호환: date input 오른쪽 잘림 방지 + zoom 방지 */
+    .birth-input {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      font-size: 16px;
+      padding: 14px 14px;
+      background: rgba(255,255,255,0.06);
+      border: 0.5px solid rgba(199,178,255,0.4);
+      border-radius: 10px;
+      color: #fff;
+      font-family: inherit;
+      display: block;
+    }
+    .birth-input:focus {
+      outline: none;
+      border-color: #C7B2FF;
+      background: rgba(199,178,255,0.08);
+    }
+    .birth-input::-webkit-date-and-time-value {
+      text-align: left;
+    }
+    .birth-warn {
+      font-size: 11px;
+      color: #FBBF24;
+      margin: 8px 0 0;
+      line-height: 1.45;
+    }
+
+    /* 수동 추가 안내 카드 (분석 화면) */
+    .manual-hint-card {
+      display: flex; gap: 12px; align-items: flex-start;
+      background: linear-gradient(135deg, rgba(199,178,255,0.12), rgba(199,178,255,0.04));
+      border: 1px solid rgba(199,178,255,0.3);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin: 8px 0 12px;
+    }
+    .manual-hint-icon {
+      font-size: 22px; flex-shrink: 0;
+      line-height: 1.1;
+      background: rgba(199,178,255,0.2);
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .manual-hint-content { flex: 1; min-width: 0; }
+    .manual-hint-title {
+      color: #C7B2FF; font-weight: 700; font-size: 13px;
+      margin-bottom: 4px;
+    }
+    .manual-hint-body {
+      font-size: 11.5px; color: rgba(255,255,255,0.8);
+      line-height: 1.5; margin: 0;
+    }
     .month-card-left { flex: 1; min-width: 0; }
     .month-card-date { font-size: 11px; color: rgba(255,255,255,0.5); margin-bottom: 4px; letter-spacing: 0.5px; }
     .month-card-age { font-size: 22px; font-weight: 700; color: #fff; line-height: 1.1; margin-bottom: 4px; }
@@ -627,7 +710,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo" onclick="resetApp()" style="cursor:pointer;">Face<span class="accent">AGE</span></div>
-    <div class="badge" id="topBadge">POC v4.0</div>
+    <div class="badge" id="topBadge">POC v4.4</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -658,9 +741,17 @@
       </div>
     </div>
 
-    <div class="form-row">
-      <label class="label">생년월일 (분석 정확도에 사용)</label>
-      <input type="date" class="input" id="birthDate" value="1979-09-17">
+    <!-- 생년월일 입력 - 강조 (사용자가 자주 잊는 부분) -->
+    <div class="birth-card">
+      <div class="birth-card-header">
+        <span class="birth-card-icon">🎂</span>
+        <div>
+          <div class="birth-card-title">생년월일을 정확히 입력해주세요</div>
+          <div class="birth-card-desc">실제 나이와 얼굴 나이를 비교하는 기준이 됩니다</div>
+        </div>
+      </div>
+      <input type="date" class="input birth-input" id="birthDate" value="1990-01-01" required>
+      <p class="birth-warn" id="birthWarn" style="display:none;">⚠️ 기본값(1990-01-01)이 본인 생년월일이 맞나요? 다르면 꼭 변경해주세요.</p>
     </div>
 
     <div class="privacy-card">
@@ -716,7 +807,7 @@
       <p class="muted" style="margin-bottom: 8px;" id="galleryPickDesc">폴더 외에 특정 사진을 더 추가하고 싶을 때</p>
       <div class="file-input-wrap" style="margin-top: 12px;">
         <button class="btn btn-secondary" style="margin-top: 0;" id="galleryBtn">갤러리에서 사진 선택</button>
-        <input type="file" id="filePicker" accept="image/*" multiple>
+        <input type="file" id="filePicker" accept="image/*" multiple onclick="showGalleryProcessing()">
       </div>
       <p id="selectedCount" class="small" style="text-align: center; margin-top: 8px; color: #C7B2FF; font-weight: 500; display: none;"></p>
     </div>
@@ -725,7 +816,7 @@
     <div class="card" id="iosHintCard" style="margin-top: 12px; display:none; background: rgba(199,178,255,0.06); border-color: rgba(199,178,255,0.2);">
       <p style="font-size: 13px; line-height: 1.55; margin: 0;">
         💡 <b>iOS 사용자 팁:</b> 사진 앱에서 "셀카" 앨범에 들어간 뒤, 우상단 <b>선택</b> 버튼을 누르고
-        <b>두 손가락으로 빠르게 드래그</b>하면 한 번에 수십 장 선택할 수 있습니다.
+        첫 사진을 <b>꾹 누른 채 손가락으로 쓸어내리면</b> 한 번에 수십 장 선택할 수 있습니다.
         <a onclick="showPhotoHelp()" style="color:#C7B2FF; text-decoration:underline; cursor:pointer; font-weight:600;">자세히 보기 →</a>
       </p>
     </div>
@@ -833,6 +924,19 @@
 
     <h3 style="margin-top: 16px; margin-bottom: 4px;">처리된 사진</h3>
     <p class="small" style="margin-bottom: 8px;">Q = 품질점수 · 🕶️/😷 = 가려짐 · 빨간 라벨 = 사람 얼굴 아님 · ✕ = 품질 미달</p>
+
+    <!-- 수동 추가 안내 카드 (사용자가 자주 놓침) -->
+    <div class="manual-hint-card">
+      <div class="manual-hint-icon">✋</div>
+      <div class="manual-hint-content">
+        <div class="manual-hint-title">품질 미달 사진도 수동으로 추가할 수 있어요</div>
+        <p class="manual-hint-body">
+          빨간 라벨의 거부된 사진을 탭하면 <b>얼굴 영역을 직접 지정해서 분석</b>할 수 있습니다.
+          중요한 사진이 포함되지 않았다면 이 방법으로 추가하세요.
+        </p>
+      </div>
+    </div>
+
     <div class="thumb-grid" id="thumbGrid"></div>
   </div>
 
@@ -1032,8 +1136,8 @@
       <div class="help-step">
         <div class="help-step-num">3</div>
         <div class="help-step-body">
-          <div class="help-step-title">"선택" + 두 손가락 드래그 (핵심!)</div>
-          <div class="help-step-desc">우상단 <b>선택</b> 버튼을 누른 뒤, <b>두 손가락으로 빠르게 위아래로 드래그</b>하면 한 번에 수십 장 선택돼요. 일일이 탭할 필요 없어요.</div>
+          <div class="help-step-title">"선택" + 손가락 쓸어 드래그 (핵심!)</div>
+          <div class="help-step-desc">우상단 <b>선택</b> 버튼을 누른 뒤, 첫 사진을 <b>꾹 누른 채 손가락으로 쓸어내리면</b> 한 번에 수십 장 선택돼요. 일일이 탭할 필요 없어요.</div>
           <svg class="help-step-img" viewBox="0 0 240 130" xmlns="http://www.w3.org/2000/svg">
             <rect x="60" y="10" width="120" height="110" rx="12" fill="#1a1a24" stroke="#444" stroke-width="1"/>
             <!-- 상단 -->
@@ -1061,16 +1165,17 @@
               <rect x="118" y="65" width="22" height="22" rx="2" fill="#2a2a38"/>
               <rect x="143" y="65" width="22" height="22" rx="2" fill="#2a2a38"/>
             </g>
-            <!-- 두 손가락 표시 -->
-            <circle cx="105" cy="100" r="6" fill="#FBBF24" opacity="0.85"/>
-            <circle cx="125" cy="100" r="6" fill="#FBBF24" opacity="0.85"/>
-            <path d="M 115 95 Q 115 80, 115 55" stroke="#FBBF24" stroke-width="1.5" stroke-dasharray="2 2" fill="none" marker-end="url(#arrow2)"/>
-            <defs>
-              <marker id="arrow2" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto">
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="#FBBF24"/>
-              </marker>
-            </defs>
-            <text x="120" y="118" text-anchor="middle" fill="#FBBF24" font-size="7" font-weight="600">두 손가락 드래그</text>
+            <!-- 한 손가락 표시 + 드래그 경로 -->
+            <!-- 드래그 시작점 (첫 사진) -->
+            <circle cx="79" cy="51" r="3" fill="#FBBF24"/>
+            <!-- 드래그 경로 (오른쪽으로 쓸고 다음 행으로 내려가는 zigzag) -->
+            <path d="M 79 51 L 130 51 L 130 76 L 105 76 L 110 100"
+                  stroke="#FBBF24" stroke-width="2" stroke-dasharray="3 2"
+                  fill="none" stroke-linecap="round"/>
+            <!-- 한 손가락 현재 위치 -->
+            <circle cx="110" cy="100" r="6" fill="#FBBF24" opacity="0.9"/>
+            <circle cx="110" cy="100" r="9" fill="#FBBF24" opacity="0.25"/>
+            <text x="120" y="118" text-anchor="middle" fill="#FBBF24" font-size="7" font-weight="600">손가락 한 번에 쓸어내리기</text>
           </svg>
         </div>
       </div>
@@ -1382,6 +1487,31 @@ window.addEventListener('popstate', (e) => {
 window.addEventListener('load', () => {
   // history 스택을 깨끗하게 시작
   history.replaceState({ screen: 'screen-onboard' }, '', '#screen-onboard');
+
+  // 생년월일 디폴트 경고 - 사용자가 안 바꿨을 때 경고 표시
+  const birthInput = document.getElementById('birthDate');
+  const birthWarn = document.getElementById('birthWarn');
+  if (birthInput && birthWarn) {
+    const DEFAULT_BIRTH = '1990-01-01';
+    // 초기에 디폴트값이면 경고 표시
+    if (birthInput.value === DEFAULT_BIRTH) {
+      birthWarn.style.display = 'block';
+    }
+    // 사용자가 변경하면 경고 숨김
+    birthInput.addEventListener('change', () => {
+      if (birthInput.value !== DEFAULT_BIRTH && birthInput.value) {
+        birthWarn.style.display = 'none';
+      } else {
+        birthWarn.style.display = 'block';
+      }
+    });
+    // 시작하기 버튼 누르기 직전에도 한 번 더 확인 (input 이벤트)
+    birthInput.addEventListener('input', () => {
+      if (birthInput.value !== DEFAULT_BIRTH && birthInput.value) {
+        birthWarn.style.display = 'none';
+      }
+    });
+  }
 });
 
 function showToast(msg, duration = 2200) {
@@ -1393,6 +1523,22 @@ function showToast(msg, duration = 2200) {
 
 // ===== 모델 로딩 =====
 async function startLoading() {
+  // 생년월일이 디폴트값이면 한 번 더 확인
+  const birthInput = document.getElementById('birthDate');
+  if (birthInput && birthInput.value === '1990-01-01') {
+    const ok = confirm(
+      '생년월일이 기본값(1990-01-01)인 채로 진행됩니다.\n\n' +
+      '본인 생년월일이 1990-01-01이 맞나요?\n\n' +
+      '"확인"을 누르면 그대로 진행하고, "취소"를 누르면 생년월일을 수정할 수 있습니다.'
+    );
+    if (!ok) {
+      // 입력 필드에 포커스
+      birthInput.focus();
+      try { birthInput.showPicker && birthInput.showPicker(); } catch (e) {}
+      return;
+    }
+  }
+
   showScreen('screen-loading');
   updateLoading('TinyFaceDetector 로딩 중...', 0, '얼굴 검출 모델');
 
@@ -1500,6 +1646,48 @@ function showFolderProcessing() {
   }, 100);
 }
 
+// 갤러리 다이얼로그 클릭 시 - iOS 다이얼로그 닫힐 때 공백 메우기
+// 시스템 다이얼로그가 모달이라 click 이벤트 후 다이얼로그 닫힐 때까지 JS 실행 안 됨
+// → click 시점에 미리 UI 변경 예약, 다이얼로그 닫히면 즉시 표시됨
+function showGalleryProcessing() {
+  // 약간의 지연으로 다이얼로그 닫힌 직후 표시
+  setTimeout(() => {
+    const countEl = document.getElementById('selectedCount');
+    const btn = document.getElementById('galleryBtn');
+    if (!countEl) return;
+    // 이미 결과 표시 중(✓ 시작)이면 건드리지 않음
+    if (countEl.classList.contains('dots-static')) return;
+    // 사용자가 취소(파일 0개)했는지는 모르므로, 잠시 후 change 이벤트가 안 오면 자동 숨김
+    countEl.style.display = 'block';
+    countEl.textContent = '📷 사진 추가 중';
+    countEl.classList.remove('dots-static');
+    countEl.classList.add('dots-animate');
+    if (btn) {
+      btn.disabled = true;
+      btn.classList.add('dots-animate');
+      btn.textContent = '사진 추가 중';
+    }
+    // 사용자가 취소했을 경우 대비 - 1.5초 후 change 이벤트가 안 왔으면 원복
+    if (window._galleryProcessingTimer) clearTimeout(window._galleryProcessingTimer);
+    window._galleryProcessingTimer = setTimeout(() => {
+      const stillProcessing = btn && btn.classList.contains('dots-animate') && !countEl.classList.contains('dots-static');
+      if (stillProcessing) {
+        // change 이벤트가 안 옴 → 사용자가 취소했을 가능성. 단, iOS는 5초 이상 걸릴 수 있으니 5초까지 더 기다림.
+        window._galleryProcessingTimer = setTimeout(() => {
+          if (btn && btn.classList.contains('dots-animate') && !countEl.classList.contains('dots-static')) {
+            // 그래도 안 왔으면 취소로 간주
+            btn.disabled = false;
+            btn.classList.remove('dots-animate');
+            btn.textContent = '갤러리에서 사진 선택';
+            countEl.style.display = 'none';
+            countEl.classList.remove('dots-animate');
+          }
+        }, 8000);
+      }
+    }, 1500);
+  }, 100);
+}
+
 function updateCollectedDisplay() {
   const total = collectedFiles.length;
   const proceedBtn = document.getElementById('proceedBtn');
@@ -1519,25 +1707,49 @@ function updateCollectedDisplay() {
 }
 
 document.getElementById('filePicker').addEventListener('change', async (e) => {
+  // showGalleryProcessing의 자동 취소 타이머 무력화 (change 이벤트가 왔음)
+  if (window._galleryProcessingTimer) {
+    clearTimeout(window._galleryProcessingTimer);
+    window._galleryProcessingTimer = null;
+  }
+
   const files = Array.from(e.target.files);
   console.log(`[filePicker] ${files.length}개 파일 선택됨`);
-  if (files.length === 0) return;
 
   const countEl = document.getElementById('selectedCount');
   const btn = document.getElementById('galleryBtn');
 
-  try {
-    // 많은 사진 선택 시 진행 표시
-    if (files.length > 100) {
-      countEl.style.display = 'block';
-      countEl.textContent = `📷 사진 추가 중... 0/${files.length.toLocaleString()}`;
-      btn.disabled = true;
+  // 사용자가 다이얼로그에서 취소(파일 0개)한 경우
+  if (files.length === 0) {
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.remove('dots-animate');
+      btn.textContent = '갤러리에서 사진 선택';
     }
+    if (countEl) {
+      countEl.style.display = 'none';
+      countEl.classList.remove('dots-animate');
+    }
+    return;
+  }
+
+  try {
+    // 모든 장수에 진행 표시 (iOS에서 사진 객체 만드는 데 시간 걸림)
+    countEl.style.display = 'block';
+    countEl.classList.remove('dots-static');
+    countEl.classList.add('dots-animate');
+    countEl.textContent = `📷 ${files.length}장 처리 중`;
+    btn.disabled = true;
+    btn.classList.add('dots-animate');
+    btn.textContent = '사진 추가 중';
+
+    // 다음 프레임 양보 (UI 즉시 반영)
+    await new Promise(r => setTimeout(r, 30));
 
     // 중복 제거 (청크 단위)
     const existingKeys = new Set(collectedFiles.map(f => `${f.name}_${f.size}`));
     let added = 0;
-    const CHUNK = 100;
+    const CHUNK = 20; // iOS 안전하게 작게
 
     for (let i = 0; i < files.length; i += CHUNK) {
       const end = Math.min(i + CHUNK, files.length);
@@ -1550,12 +1762,13 @@ document.getElementById('filePicker').addEventListener('change', async (e) => {
           added++;
         }
       }
-      if (files.length > 100) {
-        countEl.textContent = `📷 사진 추가 중... ${end.toLocaleString()}/${files.length.toLocaleString()}`;
-        await new Promise(r => setTimeout(r, 0));
-      }
+      // 진행률 갱신 (모든 장수에)
+      countEl.textContent = `📷 ${end}/${files.length}장 처리 중`;
+      await new Promise(r => setTimeout(r, 0));
     }
 
+    countEl.classList.remove('dots-animate');
+    countEl.classList.add('dots-static');
     countEl.textContent = added === files.length
       ? `✓ ${files.length.toLocaleString()}장 추가됨`
       : `✓ ${added.toLocaleString()}장 추가됨 (중복 ${(files.length - added).toLocaleString()}장 제외)`;
@@ -1568,6 +1781,7 @@ document.getElementById('filePicker').addEventListener('change', async (e) => {
     showToast('사진 추가 중 오류: ' + err.message);
   } finally {
     btn.disabled = false; // 항상 버튼 복원
+    btn.classList.remove('dots-animate');
     updateCollectedDisplay();
   }
 });
@@ -1917,10 +2131,12 @@ async function sampleEvenly(filesWithTime, maxSamples, onProgress) {
     return [];
   }
 
-  // ===== 0단계: 시간상 너무 가까운 사진 제거 (적응형) =====
-  // 전체 50장 이상이면: 같은 날짜에 찍은 사진은 1장만 (시계열 분석 정확)
-  // 전체 50장 미만이면: 같은 날짜 허용, 단 3시간 이내 사진은 제외 (적은 장수 보호)
-  const TOTAL_THRESHOLD = 50;
+  // ===== 0단계: 시간상 너무 가까운 사진 제거 (3단계 적응형) =====
+  // 20장 이하: 필터링 없음 (재미를 위해 모두 분석 시도)
+  // 20~49장: 3시간 간격 적용 (적당히 솎아냄)
+  // 50장 이상: 같은 날짜 1장만 (정확도 우선)
+  const HEAVY_FILTER_THRESHOLD = 50;
+  const LIGHT_FILTER_THRESHOLD = 20;
   const MIN_GAP_HOURS = 3;
   const MIN_GAP_MS = MIN_GAP_HOURS * 3600 * 1000;
 
@@ -1928,8 +2144,8 @@ async function sampleEvenly(filesWithTime, maxSamples, onProgress) {
   const sortedFiles = [...filesWithTime].sort((a, b) => a.timestamp - b.timestamp);
   let uniqueDayFiles = [];
 
-  if (sortedFiles.length >= TOTAL_THRESHOLD) {
-    // 충분히 많음 → 같은 날짜 1장만
+  if (sortedFiles.length >= HEAVY_FILTER_THRESHOLD) {
+    // 50장 이상: 같은 날짜 1장만
     const dateGroups = new Map();
     for (const f of sortedFiles) {
       const d = f.timestamp;
@@ -1943,16 +2159,14 @@ async function sampleEvenly(filesWithTime, maxSamples, onProgress) {
       if (group.length === 1) {
         uniqueDayFiles.push(group[0]);
       } else {
-        // 시간순 정렬 후 중간 사진
         group.sort((a, b) => a.timestamp - b.timestamp);
         uniqueDayFiles.push(group[Math.floor(group.length / 2)]);
       }
     }
     uniqueDayFiles.sort((a, b) => a.timestamp - b.timestamp);
-    console.log(`📅 [50장 이상] 날짜별 중복 제거: ${sortedFiles.length}장 → 고유 날짜 ${uniqueDayFiles.length}일`);
-  } else {
-    // 적은 장수 → 3시간 간격 보호
-    // greedy 알고리즘: 시간순으로 순회하며 직전 선택과 3시간 이내면 스킵
+    console.log(`📅 [50장+] 날짜별 중복 제거: ${sortedFiles.length}장 → ${uniqueDayFiles.length}장`);
+  } else if (sortedFiles.length >= LIGHT_FILTER_THRESHOLD) {
+    // 20~49장: 3시간 간격
     let lastSelectedTime = -Infinity;
     let removedCount = 0;
     for (const f of sortedFiles) {
@@ -1964,7 +2178,11 @@ async function sampleEvenly(filesWithTime, maxSamples, onProgress) {
         removedCount++;
       }
     }
-    console.log(`⏱️ [50장 미만] 3시간 간격 제거: ${sortedFiles.length}장 → ${uniqueDayFiles.length}장 (제외 ${removedCount}장)`);
+    console.log(`⏱️ [20~49장] 3시간 간격 제거: ${sortedFiles.length}장 → ${uniqueDayFiles.length}장 (제외 ${removedCount}장)`);
+  } else {
+    // 20장 미만: 필터링 없음, 모든 사진 시도 (재미 위해)
+    uniqueDayFiles = sortedFiles;
+    console.log(`🎯 [20장 미만] 필터링 없이 모두 분석: ${sortedFiles.length}장`);
   }
 
   // ===== 1단계: 고유 날짜 사진들 중에서 균등 샘플링 =====
@@ -2418,7 +2636,9 @@ async function tryAdjacentFallback(rejectedFile, rejectedTimestamp, sampleIdx) {
   if (!allFilesWithTime || allFilesWithTime.length === 0) return null;
 
   // 적응형 설정 (sampleEvenly와 동일 기준)
-  const isSmallSet = allFilesWithTime.length < 50;
+  const totalLen = allFilesWithTime.length;
+  const isTinySet = totalLen < 20;     // 회피 없음
+  const isSmallSet = totalLen < 50;    // 3시간 간격 회피
   const MIN_GAP_MS = 3 * 3600 * 1000;
 
   const sampledNames = new Set(sampledFiles.map(s => s.file.name));
@@ -2426,18 +2646,19 @@ async function tryAdjacentFallback(rejectedFile, rejectedTimestamp, sampleIdx) {
     String(d.getMonth() + 1).padStart(2, '0') + '-' +
     String(d.getDate()).padStart(2, '0');
 
-  // 50장 이상: 날짜 단위로 회피 / 50장 미만: 시간 단위로 회피 (3시간)
+  // 50장 이상: 날짜 회피 / 20~49장: 3시간 회피 / 20장 미만: 회피 없음 (재미 위해)
   const sampledDates = new Set();
   const sampledTimes = [];
-  for (const s of sampledFiles) {
-    if (isSmallSet) sampledTimes.push(s.timestamp.getTime());
-    else sampledDates.add(dayKey(s.timestamp));
-  }
-  // 이미 분석 결과에 포함된(passed) 사진도 회피
-  for (const r of analysisResults) {
-    if (r.passed && r.timestamp) {
-      if (isSmallSet) sampledTimes.push(r.timestamp.getTime());
-      else sampledDates.add(dayKey(r.timestamp));
+  if (!isTinySet) {
+    for (const s of sampledFiles) {
+      if (isSmallSet) sampledTimes.push(s.timestamp.getTime());
+      else sampledDates.add(dayKey(s.timestamp));
+    }
+    for (const r of analysisResults) {
+      if (r.passed && r.timestamp) {
+        if (isSmallSet) sampledTimes.push(r.timestamp.getTime());
+        else sampledDates.add(dayKey(r.timestamp));
+      }
     }
   }
   const triedNames = new Set([rejectedFile.name]);
@@ -2452,7 +2673,7 @@ async function tryAdjacentFallback(rejectedFile, rejectedTimestamp, sampleIdx) {
   }
   if (centerIdx === -1) return null;
 
-  // 양쪽으로 최대 ±5장 탐색 (가까운 것부터 번갈아)
+  // 양쪽으로 최대 ±5장 탐색
   const candidates = [];
   for (let offset = 1; offset <= 5; offset++) {
     if (centerIdx - offset >= 0) candidates.push(allFilesWithTime[centerIdx - offset]);
@@ -2466,14 +2687,14 @@ async function tryAdjacentFallback(rejectedFile, rejectedTimestamp, sampleIdx) {
     if (sampledNames.has(cand.file.name) || triedNames.has(cand.file.name)) continue;
 
     // 적응형 회피
-    const candTime = cand.timestamp.getTime();
-    if (isSmallSet) {
-      // 3시간 이내 사진 회피
-      const tooClose = sampledTimes.some(t => Math.abs(t - candTime) < MIN_GAP_MS);
-      if (tooClose) continue;
-    } else {
-      // 같은 날짜 회피
-      if (sampledDates.has(dayKey(cand.timestamp))) continue;
+    if (!isTinySet) {
+      const candTime = cand.timestamp.getTime();
+      if (isSmallSet) {
+        const tooClose = sampledTimes.some(t => Math.abs(t - candTime) < MIN_GAP_MS);
+        if (tooClose) continue;
+      } else {
+        if (sampledDates.has(dayKey(cand.timestamp))) continue;
+      }
     }
 
     triedNames.add(cand.file.name);
@@ -3079,14 +3300,17 @@ function drawChart(passed, birthDate) {
         {
           label: '얼굴 나이', data: faceData,
           borderColor: '#C7B2FF', backgroundColor: 'rgba(199,178,255,0.12)',
-          borderWidth: 2.5, tension: 0.4, pointRadius: 5, pointHoverRadius: 8,
+          borderWidth: 2.5, tension: 0.4,
+          pointRadius: faceData.length === 1 ? 9 : 5,
+          pointHoverRadius: faceData.length === 1 ? 12 : 8,
+          pointHitRadius: 20, // 모바일 터치 영역 충분히 크게
           pointBackgroundColor: pointColors, pointBorderColor: '#0F0F12', pointBorderWidth: 1.5,
           fill: true, spanGaps: true,
         },
         {
           label: '실제 나이', data: realData,
           borderColor: 'rgba(255,255,255,0.5)', borderWidth: 1.5,
-          borderDash: [5, 5], tension: 0.1, pointRadius: 0, fill: false,
+          borderDash: [5, 5], tension: 0.1, pointRadius: 0, pointHitRadius: 0, fill: false,
         }
       ]
     },
@@ -3101,13 +3325,47 @@ function drawChart(passed, birthDate) {
           }
         }
       },
-      // 차트 점 클릭은 미리보기 표시만, 모달은 카드 직접 클릭 시
+      // 점 탭 시 미리보기 표시 - iOS 호환 강화
       onClick: (event, elements) => {
+        console.log('[chart onClick] elements:', elements && elements.length, 'sorted.length:', sorted.length);
+        // 1차: elements가 잡혔으면 그 인덱스 사용
         if (elements && elements.length > 0) {
           const point = elements.find(e => e.datasetIndex === 0);
           if (point) {
+            // 중복 호출 방지 무효화 (같은 인덱스 재탭 허용)
+            lastPreviewIndex = -1;
             showChartPreview(point.index, sorted);
+            return;
           }
+        }
+        // 2차 fallback: 차트 영역 어디든 탭하면 가장 가까운 점으로
+        try {
+          const chart = chartInstance;
+          if (!chart || !faceData.length) return;
+          // 점이 1개뿐이면 그 점으로 무조건 표시
+          if (faceData.length === 1) {
+            lastPreviewIndex = -1;
+            showChartPreview(0, sorted);
+            return;
+          }
+          const canvasRect = chart.canvas.getBoundingClientRect();
+          const native = event.native || event;
+          const clickX = (native.clientX !== undefined ? native.clientX :
+                         (native.touches && native.touches[0] ? native.touches[0].clientX :
+                         (native.changedTouches && native.changedTouches[0] ? native.changedTouches[0].clientX : null)));
+          if (clickX === null) return;
+          const xInChart = clickX - canvasRect.left;
+          const xScale = chart.scales.x;
+          let bestIdx = 0, bestDist = Infinity;
+          for (let i = 0; i < faceData.length; i++) {
+            const pxX = xScale.getPixelForValue(faceData[i].x);
+            const dist = Math.abs(pxX - xInChart);
+            if (dist < bestDist) { bestDist = dist; bestIdx = i; }
+          }
+          lastPreviewIndex = -1;
+          showChartPreview(bestIdx, sorted);
+        } catch (e) {
+          console.warn('Chart click fallback failed', e);
         }
       },
       plugins: {
@@ -3129,6 +3387,53 @@ function drawChart(passed, birthDate) {
   setTimeout(() => {
     document.addEventListener('click', hideChartPreviewOnOutside, { once: false });
   }, 100);
+
+  // === iOS 호환: 차트 캔버스에 직접 touch/click 리스너 부착 ===
+  // Chart.js의 onClick이 iOS Safari에서 가끔 발화 안 되거나 elements가 비는 케이스 우회
+  const chartCanvas = document.getElementById('ageChart');
+  if (chartCanvas) {
+    const handleCanvasTap = (clientX, clientY) => {
+      try {
+        if (!chartInstance || !faceData.length) return;
+        // 점이 1개면 무조건 그 점 표시
+        if (faceData.length === 1) {
+          lastPreviewIndex = -1;
+          showChartPreview(0, sorted);
+          return;
+        }
+        // 여러 점이면 가장 가까운 점 찾기
+        const rect = chartCanvas.getBoundingClientRect();
+        const xInChart = clientX - rect.left;
+        const xScale = chartInstance.scales.x;
+        let bestIdx = 0, bestDist = Infinity;
+        for (let i = 0; i < faceData.length; i++) {
+          const pxX = xScale.getPixelForValue(faceData[i].x);
+          const dist = Math.abs(pxX - xInChart);
+          if (dist < bestDist) { bestDist = dist; bestIdx = i; }
+        }
+        lastPreviewIndex = -1;
+        showChartPreview(bestIdx, sorted);
+      } catch (e) {
+        console.warn('Canvas tap handler failed', e);
+      }
+    };
+
+    // 기존 리스너 제거 (재초기화 시 중복 방지)
+    if (chartCanvas._tapHandlers) {
+      chartCanvas.removeEventListener('touchend', chartCanvas._tapHandlers.touch);
+      chartCanvas.removeEventListener('click', chartCanvas._tapHandlers.click);
+    }
+    const touchHandler = (e) => {
+      const t = e.changedTouches && e.changedTouches[0];
+      if (t) handleCanvasTap(t.clientX, t.clientY);
+    };
+    const clickHandler = (e) => {
+      handleCanvasTap(e.clientX, e.clientY);
+    };
+    chartCanvas.addEventListener('touchend', touchHandler, { passive: true });
+    chartCanvas.addEventListener('click', clickHandler);
+    chartCanvas._tapHandlers = { touch: touchHandler, click: clickHandler };
+  }
 }
 
 function renderQualityBreakdown() {
