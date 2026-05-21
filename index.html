@@ -962,6 +962,86 @@
       background: rgba(255,255,255,0.12);
     }
     .face-anim-btn-secondary:active { background: rgba(255,255,255,0.2); }
+    .face-anim-btn-tertiary {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.18);
+    }
+    .face-anim-btn-tertiary:active { background: rgba(255,255,255,0.15); }
+    .face-anim-btn-tertiary:disabled {
+      opacity: 0.5; cursor: wait;
+    }
+
+    /* v5.3.3 영상 하단 비교 영역 */
+    .face-anim-compare {
+      padding: 14px 20px 0;
+      flex-shrink: 0;
+    }
+    .face-anim-compare-row {
+      display: flex; justify-content: space-between; align-items: baseline;
+      padding: 4px 0;
+      font-size: 14px;
+    }
+    .face-anim-compare-label {
+      color: rgba(255,255,255,0.65);
+      font-weight: 500;
+    }
+    .face-anim-compare-value {
+      color: #fff; font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      font-size: 16px;
+    }
+    .face-anim-diff-bar {
+      position: relative;
+      height: 28px;
+      margin: 14px 0 4px;
+    }
+    .face-anim-diff-line {
+      position: absolute;
+      left: 0; right: 0; top: 50%;
+      height: 4px;
+      background: linear-gradient(to right,
+        var(--younger) 0%,
+        rgba(255,255,255,0.2) 50%,
+        var(--older) 100%);
+      border-radius: 2px;
+      transform: translateY(-50%);
+    }
+    .face-anim-diff-bar::before {
+      content: ''; position: absolute;
+      left: 50%; top: 50%;
+      width: 2px; height: 12px;
+      background: #fff;
+      transform: translate(-50%, -50%);
+      border-radius: 1px;
+      z-index: 1;
+    }
+    .face-anim-diff-marker {
+      position: absolute;
+      top: 50%;
+      width: 22px; height: 22px;
+      background: var(--primary);
+      border: 3px solid #fff;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.45s cubic-bezier(0.4, 0, 0.2, 1), background 0.4s;
+      z-index: 2;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      left: 50%;
+    }
+    .face-anim-diff-text {
+      text-align: center;
+      font-size: 13px;
+      color: rgba(255,255,255,0.85);
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.2px;
+      margin-top: 2px;
+    }
+    .face-anim-diff-text .delta-num {
+      font-size: 15px; font-weight: 800;
+      padding: 1px 8px; border-radius: 999px;
+      margin-left: 4px;
+    }
 
     /* Modal */
     .modal {
@@ -1092,7 +1172,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo" onclick="resetApp()" style="cursor:pointer;">Face<span class="accent">AGE</span></div>
-    <div class="badge" id="topBadge">POC v5.4</div>
+    <div class="badge" id="topBadge">POC v5.5</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -1600,6 +1680,22 @@
       <p>사진을 준비하는 중이에요</p>
     </div>
   </div>
+  <!-- v5.3.3: 하단 얼굴나이 vs 실제나이 비교 영역 -->
+  <div class="face-anim-compare" id="faceAnimCompare">
+    <div class="face-anim-compare-row">
+      <span class="face-anim-compare-label">얼굴 나이</span>
+      <span class="face-anim-compare-value" id="faceAnimEstAge">—</span>
+    </div>
+    <div class="face-anim-compare-row">
+      <span class="face-anim-compare-label">실제 나이</span>
+      <span class="face-anim-compare-value" id="faceAnimRealAge">—</span>
+    </div>
+    <div class="face-anim-diff-bar">
+      <div class="face-anim-diff-line"></div>
+      <div class="face-anim-diff-marker" id="faceAnimDiffMarker"></div>
+    </div>
+    <div class="face-anim-diff-text" id="faceAnimDiffText">—</div>
+  </div>
   <div class="face-anim-controls">
     <div class="face-anim-progress">
       <div class="face-anim-progress-fill" id="faceAnimProgressFill"></div>
@@ -1607,6 +1703,11 @@
     <div class="face-anim-btns">
       <button class="face-anim-btn" id="faceAnimPlayBtn" onclick="toggleFaceAnimation()">⏸ 일시정지</button>
       <button class="face-anim-btn face-anim-btn-secondary" onclick="restartFaceAnimation()">⟲ 처음부터</button>
+    </div>
+    <div class="face-anim-btns" style="margin-top: 10px;">
+      <button class="face-anim-btn face-anim-btn-tertiary" id="faceAnimShareBtn" onclick="shareOrDownloadAnimation()">
+        <span id="faceAnimShareLabel">⬇ 영상 저장</span>
+      </button>
     </div>
   </div>
 </div>
@@ -2125,6 +2226,14 @@ function showScreen(id, options = {}) {
     resetPickScreen();
   }
 
+  // v5.3.3: 온보드 복귀 시 Resume 카드 다시 체크 (버튼 상태 복원 + 카운트 갱신)
+  if (id === 'screen-onboard') {
+    const resumeBtn = document.getElementById('resumeBtn');
+    if (resumeBtn) { resumeBtn.disabled = false; resumeBtn.textContent = '이어보기'; }
+    // 카드 다시 그리기 (메모리 변경되었을 가능성)
+    setTimeout(checkAndShowResumeCard, 30);
+  }
+
   // History 기록: popstate 호출이 아니고, replace 옵션이 없을 때만 push
   if (!isPoppingState && !options.replace) {
     history.pushState({ screen: id }, '', '#' + id);
@@ -2269,7 +2378,6 @@ async function resumeFromStorage() {
     const data = await loadSession();
     if (!data || !data.results || data.results.length === 0) {
       showToast('이전 분석을 찾을 수 없습니다');
-      if (btn) { btn.disabled = false; btn.textContent = '이어보기'; }
       return;
     }
     // 생년월일 적용
@@ -2296,6 +2404,9 @@ async function resumeFromStorage() {
   } catch (e) {
     console.error('[resume] 실패:', e);
     showToast('이어보기 실패: ' + e.message);
+  } finally {
+    // v5.3.3 버그 수정: 성공/실패 무관하게 항상 버튼 복원
+    // (성공 후에도 백버튼으로 돌아오면 같은 카드를 다시 누를 수 있어야 함)
     if (btn) { btn.disabled = false; btn.textContent = '이어보기'; }
   }
 }
@@ -3454,7 +3565,12 @@ async function startAnalysis() {
   }
 
   isDemoMode = false; // 실제 분석
-  referenceDescriptor = null; // 본인 식별 초기화
+  // v5.3.3: 머지할 이전 결과가 있으면 referenceDescriptor도 보존 (같은 사람 식별)
+  // 단, 메모리에 없고 IndexedDB에서 곧 가져올 수 있으므로 아래에서 조건부 처리
+  const willMergePrev = analysisResults.length > 0 || isResumedSession;
+  if (!willMergePrev) {
+    referenceDescriptor = null; // 새 분석은 초기화
+  }
   fallbackStats = { attempted: 0, recovered: 0 }; // fallback 통계 초기화
   analysisInProgress = true; // 분석 시작 플래그
 
@@ -3471,9 +3587,25 @@ async function startAnalysis() {
   document.getElementById('analyzeStatus').classList.remove('err');
 
   analysisCancelled = false;
-  // v5.3: resume된 세션에서 사진 추가 → 기존 결과 보존
-  // analysisResults가 비어있지 않고 _fromStorage 결과가 있으면, 백업해두고 분석 후 머지
-  const prevResults = analysisResults.filter(r => r._fromStorage || r.passed);
+
+  // v5.3.3 결정적 수정: 머지 백업을 메모리 + IndexedDB 둘 다에서 가져옴
+  // 어떤 경로로 진입했든 (resetApp 직후 / 백버튼 후 / 새로고침 후) 이전 결과가 누락되지 않음
+  // 원칙: 사용자가 명시적으로 "분석에서 빼기" 또는 "전체 데이터 삭제"하지 않는 한 절대 사라지지 않음
+  let prevResults = analysisResults.filter(r => (r._fromStorage || r.passed) && r.hasFace);
+
+  // 메모리에 없으면 IndexedDB에서 가져오기 시도
+  if (prevResults.length === 0) {
+    try {
+      const stored = await loadSession();
+      if (stored && Array.isArray(stored.results) && stored.results.length > 0) {
+        prevResults = deserializeAnalysisResults(stored.results);
+        console.log(`[merge] 메모리 비어있어서 IndexedDB에서 ${prevResults.length}장 복원`);
+      }
+    } catch (e) {
+      console.warn('[merge] IndexedDB 복원 실패:', e);
+    }
+  }
+
   const hasPrev = prevResults.length > 0;
   analysisResults = [];
   if (hasPrev) {
@@ -4497,7 +4629,18 @@ async function prepareAnimFrame(r) {
   const ts = r.timestamp instanceof Date ? r.timestamp : new Date(r.timestamp);
   const dateStr = `${ts.getFullYear()}.${String(ts.getMonth()+1).padStart(2,'0')}.${String(ts.getDate()).padStart(2,'0')}`;
 
-  return { img, bx, by, bw, bh, ageStr, dateStr };
+  // v5.3.3: 실제 나이 + 차이 계산
+  const birthInput = document.getElementById('birthDate');
+  const birthDate = birthInput ? new Date(birthInput.value) : null;
+  let realAge = null, diff = null;
+  if (birthDate && !isNaN(birthDate.getTime())) {
+    realAge = calculateAge(birthDate, ts);
+    if (r.estimatedAge != null) {
+      diff = r.estimatedAge - realAge;
+    }
+  }
+
+  return { img, bx, by, bw, bh, ageStr, dateStr, estAge: r.estimatedAge, realAge, diff };
 }
 
 function loadImageFromUrl(url) {
@@ -4589,6 +4732,39 @@ function faceAnimTick() {
 function updateAnimMeta(frame) {
   document.getElementById('faceAnimDate').textContent = frame.dateStr;
   document.getElementById('faceAnimAge').textContent = frame.ageStr;
+
+  // v5.3.3: 하단 비교 영역 업데이트
+  const estEl = document.getElementById('faceAnimEstAge');
+  const realEl = document.getElementById('faceAnimRealAge');
+  const diffTextEl = document.getElementById('faceAnimDiffText');
+  const markerEl = document.getElementById('faceAnimDiffMarker');
+
+  if (estEl) estEl.textContent = frame.estAge != null ? frame.estAge.toFixed(1) + '세' : '—';
+  if (realEl) realEl.textContent = frame.realAge != null ? frame.realAge.toFixed(1) + '세' : '—';
+
+  if (frame.diff == null || markerEl == null) return;
+  // diff를 -8 ~ +8 범위로 매핑 (대부분 그 사이)
+  const clampedDiff = Math.max(-8, Math.min(8, frame.diff));
+  const pct = 50 + (clampedDiff / 8) * 50; // 0~100%
+  markerEl.style.left = pct + '%';
+
+  // 색상 - 토스 톤
+  if (frame.diff < -0.5) {
+    markerEl.style.background = 'var(--younger)';
+  } else if (frame.diff > 0.5) {
+    markerEl.style.background = 'var(--older)';
+  } else {
+    markerEl.style.background = 'var(--equal)';
+  }
+
+  // 차이 텍스트
+  if (diffTextEl) {
+    const sign = frame.diff >= 0 ? '+' : '';
+    const numStr = sign + frame.diff.toFixed(1) + '세';
+    const colorClass = frame.diff < -0.5 ? 'delta-younger' : (frame.diff > 0.5 ? 'delta-older' : 'delta-neutral');
+    const label = frame.diff < -0.5 ? '어려보임' : (frame.diff > 0.5 ? '들어보임' : '비슷');
+    diffTextEl.innerHTML = `${label} <span class="delta-num ${colorClass}">${numStr}</span>`;
+  }
 }
 function updateAnimProgress(ratio) {
   const fill = document.getElementById('faceAnimProgressFill');
@@ -4632,6 +4808,181 @@ function closeFaceAnimation() {
   document.getElementById('faceAnimOverlay').classList.remove('show');
   // 프레임 데이터 해제 (이미지 객체)
   FACE_ANIM.frames = [];
+}
+
+// ============================================
+// v5.3.3 영상 녹화/공유
+// ============================================
+// 1) canvas.captureStream + MediaRecorder로 webm/mp4 녹화
+// 2) MediaRecorder 미지원 시 콜라주 PNG로 폴백
+// 3) Web Share API 있으면 공유, 없으면 다운로드 링크
+
+async function shareOrDownloadAnimation() {
+  const btn = document.getElementById('faceAnimShareBtn');
+  const label = document.getElementById('faceAnimShareLabel');
+  if (!btn || FACE_ANIM.frames.length === 0) return;
+
+  btn.disabled = true;
+  if (label) label.textContent = '📹 영상 만드는 중... 0%';
+
+  try {
+    // MediaRecorder 지원 확인
+    const canvas = document.getElementById('faceAnimCanvas');
+    const supportsRecording =
+      typeof MediaRecorder !== 'undefined' &&
+      typeof canvas.captureStream === 'function';
+
+    if (supportsRecording) {
+      const blob = await recordAnimationToVideo(canvas, label);
+      if (blob) {
+        await shareOrDownloadBlob(blob, 'faceage.webm', 'FaceAge 영상');
+      } else {
+        throw new Error('녹화 실패');
+      }
+    } else {
+      // 폴백: 콜라주 PNG
+      if (label) label.textContent = '🖼️ 콜라주 만드는 중...';
+      const blob = await makeCollagePNG();
+      if (blob) {
+        await shareOrDownloadBlob(blob, 'faceage_collage.png', 'FaceAge 콜라주');
+        showToast('이 기기는 영상 녹화를 지원하지 않아 콜라주 이미지로 저장했어요', 3500);
+      } else {
+        throw new Error('콜라주 생성 실패');
+      }
+    }
+  } catch (e) {
+    console.error('[anim share]', e);
+    showToast('저장 실패: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    if (label) label.textContent = '⬇ 영상 저장';
+  }
+}
+
+// 캔버스를 처음부터 끝까지 재생하면서 녹화
+async function recordAnimationToVideo(canvas, labelEl) {
+  return new Promise((resolve, reject) => {
+    try {
+      const stream = canvas.captureStream(30); // 30 fps
+      // 가능하면 webm vp9, 아니면 vp8, 그것도 안되면 기본
+      let mimeType = '';
+      const candidates = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'];
+      for (const c of candidates) {
+        if (MediaRecorder.isTypeSupported(c)) { mimeType = c; break; }
+      }
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType, videoBitsPerSecond: 2_500_000 } : undefined);
+      const chunks = [];
+      recorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: mimeType || 'video/webm' });
+        resolve(blob);
+      };
+      recorder.onerror = (e) => reject(e.error || new Error('녹화 에러'));
+
+      recorder.start();
+
+      // 처음부터 재생
+      FACE_ANIM.playing = true;
+      FACE_ANIM.startTime = performance.now();
+      document.getElementById('faceAnimPlayBtn').textContent = '⏸ 일시정지';
+      cancelAnimationFrame(FACE_ANIM.rafId);
+
+      // 첫 프레임 즉시 그려서 녹화 시작 직후 검정 배경 회피
+      clearAnimCanvas();
+      if (FACE_ANIM.frames[0]) {
+        drawAnimFrame(canvas, FACE_ANIM.frames[0], 1);
+        updateAnimMeta(FACE_ANIM.frames[0]);
+      }
+
+      const totalDur = FACE_ANIM.frames.length * FACE_ANIM.durationPerFrame;
+
+      // 진행률 표시
+      const progressTimer = setInterval(() => {
+        const elapsed = performance.now() - FACE_ANIM.startTime;
+        const pct = Math.min(100, Math.round((elapsed / totalDur) * 100));
+        if (labelEl) labelEl.textContent = `📹 영상 만드는 중... ${pct}%`;
+      }, 200);
+
+      faceAnimTick();
+
+      // 정확한 길이 + 약간의 여유로 녹화 종료
+      setTimeout(() => {
+        clearInterval(progressTimer);
+        try { recorder.stop(); } catch {}
+      }, totalDur + 300);
+    } catch (e) { reject(e); }
+  });
+}
+
+// 폴백: 콜라주 PNG (최대 12장 그리드)
+async function makeCollagePNG() {
+  const frames = FACE_ANIM.frames.slice(0, 12);
+  if (frames.length === 0) return null;
+  const cols = frames.length <= 4 ? frames.length : (frames.length <= 6 ? 3 : 4);
+  const rows = Math.ceil(frames.length / cols);
+  const cellSize = 300;
+  const padding = 8;
+  const W = cols * cellSize + (cols + 1) * padding;
+  const H = rows * cellSize + (rows + 1) * padding + 50; // 50: 하단 라벨 영역
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#0F0F18'; ctx.fillRect(0, 0, W, H);
+
+  for (let i = 0; i < frames.length; i++) {
+    const r = Math.floor(i / cols), c = i % cols;
+    const x = padding + c * (cellSize + padding);
+    const y = padding + r * (cellSize + padding);
+    const f = frames[i];
+    const cx = f.bx + f.bw/2, cy = f.by + f.bh/2;
+    const cropSize = Math.max(f.bw, f.bh) * 1.7;
+    const sx = cx - cropSize/2, sy = cy - cropSize/2;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, y, cellSize, cellSize);
+    ctx.clip();
+    ctx.drawImage(f.img, sx, sy, cropSize, cropSize, x, y, cellSize, cellSize);
+    ctx.restore();
+    // 라벨
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(x, y + cellSize - 28, cellSize, 28);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 14px -apple-system, sans-serif';
+    ctx.fillText(f.dateStr.slice(2) + '  ' + f.ageStr, x + 8, y + cellSize - 9);
+  }
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 18px -apple-system, sans-serif';
+  ctx.fillText('FaceAge', padding, H - 18);
+
+  return new Promise(resolve => canvas.toBlob(resolve, 'image/png', 0.9));
+}
+
+// Blob을 공유 또는 다운로드
+async function shareOrDownloadBlob(blob, filename, title) {
+  // Web Share API (모바일에서 우선)
+  if (navigator.share && navigator.canShare) {
+    try {
+      const file = new File([blob], filename, { type: blob.type });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: title });
+        return;
+      }
+    } catch (e) {
+      // 사용자가 공유 취소했거나 미지원 — 다운로드로 폴백
+      if (e.name === 'AbortError') return;
+      console.warn('[share] Web Share API 실패, 다운로드로 폴백:', e);
+    }
+  }
+  // 다운로드
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  showToast('저장되었어요 · 다운로드 폴더를 확인하세요', 2800);
 }
 
 // ===== 결과 화면 =====
