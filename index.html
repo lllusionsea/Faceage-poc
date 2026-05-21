@@ -532,6 +532,46 @@
       100% { width: 0; }
     }
     .dots-animate.dots-static::after { content: none; }
+    /* v5.3 Resume 카드 (이전 분석 이어보기) */
+    .resume-card {
+      display: flex; gap: 14px; align-items: flex-start;
+      background: var(--primary-soft);
+      border: 1px solid rgba(49,130,246,0.25);
+      border-radius: 16px;
+      padding: 18px;
+      margin: 4px 0 20px;
+      box-shadow: 0 4px 16px rgba(49,130,246,0.08);
+      animation: resume-card-in 0.4s ease;
+    }
+    @keyframes resume-card-in {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .resume-card-icon {
+      font-size: 26px; flex-shrink: 0; line-height: 1.1;
+      width: 44px; height: 44px; border-radius: 12px;
+      background: #fff; display: flex; align-items: center; justify-content: center;
+    }
+    .resume-card-content { flex: 1; min-width: 0; }
+    .resume-card-title {
+      color: var(--primary); font-weight: 700; font-size: 16px;
+      margin-bottom: 6px; letter-spacing: -0.3px;
+    }
+    .resume-card-desc {
+      font-size: 13px; color: var(--text-2); line-height: 1.5;
+      margin-bottom: 14px;
+    }
+    .resume-card-actions {
+      display: flex; gap: 8px; margin-bottom: 10px;
+    }
+    .resume-card-actions .btn {
+      flex: 1; padding: 11px 14px; font-size: 14px; margin: 0;
+    }
+    .resume-card-note {
+      font-size: 11.5px; color: var(--text-3); line-height: 1.5;
+      margin: 0; padding-top: 2px;
+    }
+
     .privacy-card {
       display: flex; gap: 14px; align-items: flex-start;
       background: var(--younger-soft);
@@ -738,6 +778,10 @@
       display: none;
       align-items: center; justify-content: center;
       padding: 24px;
+      /* iOS Safari paint 강제: GPU 레이어로 올려서 다이얼로그 닫히자마자 그려지게 */
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+      will-change: opacity;
     }
     .fs-overlay.show { display: flex; }
     .fs-overlay-content {
@@ -751,7 +795,7 @@
     }
     .fs-spinner-ring {
       width: 60px; height: 60px;
-      border: 3px solid rgba(49,130,246,0.12);
+      border: 3px solid rgba(49,130,246,0.25);
       border-top-color: #3182F6;
       border-radius: 50%;
       animation: fs-spin 0.9s linear infinite;
@@ -759,18 +803,18 @@
     @keyframes fs-spin { to { transform: rotate(360deg); } }
     .fs-overlay-title {
       font-size: 20px; font-weight: 700;
-      color: var(--text-1); margin-bottom: 8px;
+      color: #fff; margin-bottom: 8px;
       letter-spacing: -0.3px;
     }
     .fs-overlay-msg {
-      font-size: 14px; color: var(--text-2);
+      font-size: 14px; color: rgba(255,255,255,0.85);
       line-height: 1.55; margin-bottom: 20px;
     }
     .fs-overlay-progress {
       margin-bottom: 16px;
     }
     .fs-overlay-bar {
-      height: 6px; background: var(--line);
+      height: 6px; background: rgba(255,255,255,0.15);
       border-radius: 3px; overflow: hidden;
       margin-bottom: 8px;
     }
@@ -782,10 +826,10 @@
       width: 0%;
     }
     .fs-overlay-count {
-      font-size: 13px; color: #3182F6; font-weight: 600;
+      font-size: 13px; color: #6BA6FF; font-weight: 600;
     }
     .fs-overlay-hint {
-      font-size: 12px; color: rgba(255,255,255,0.45);
+      font-size: 12px; color: rgba(255,255,255,0.55);
       line-height: 1.55; margin-top: 12px;
     }
 
@@ -918,11 +962,25 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo" onclick="resetApp()" style="cursor:pointer;">Face<span class="accent">AGE</span></div>
-    <div class="badge" id="topBadge">POC v5.2</div>
+    <div class="badge" id="topBadge">POC v5.3</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
   <div class="screen active" id="screen-onboard">
+
+    <!-- v5.3: Resume 카드 (저장된 세션 있을 때만 자동 표시) -->
+    <div class="resume-card" id="resumeCard" style="display:none;">
+      <div class="resume-card-icon">⏱️</div>
+      <div class="resume-card-content">
+        <div class="resume-card-title">이전 분석이 있어요</div>
+        <div class="resume-card-desc" id="resumeCardDesc">사진 — · 마지막 분석 —</div>
+        <div class="resume-card-actions">
+          <button class="btn btn-primary" id="resumeBtn" onclick="resumeFromStorage()">이어보기</button>
+          <button class="btn btn-ghost" onclick="discardResumeAndStartFresh()">새로 시작</button>
+        </div>
+        <p class="resume-card-note">분석 결과는 폰 안에만 저장돼 있어요. 외부로 나가지 않아요.</p>
+      </div>
+    </div>
 
     <!-- 메인 일러스트 + 헤드라인 -->
     <div class="onboard-hero">
@@ -1334,7 +1392,29 @@
       </div>
     </div>
 
-    <button class="btn btn-ghost" style="margin-top: 20px;" onclick="resetApp()">처음부터 다시 시작</button>
+    <!-- v5.3: 원본 사진 다시 매칭하기 (세션 내 자동 매칭용) -->
+    <div class="card" id="originLinkCard" style="margin-top: 24px; padding: 16px 18px;">
+      <div style="display:flex; gap:12px; align-items:flex-start;">
+        <div style="font-size:22px; line-height:1.1;">🖼️</div>
+        <div style="flex:1; min-width:0;">
+          <p style="font-weight:700; font-size:14px; margin-bottom:4px; color: var(--text-1);">원본 사진을 빠르게 보고 싶다면</p>
+          <p class="small" style="line-height:1.55; margin-bottom:10px;">
+            사진 폴더를 한 번 더 선택해두면, 상세 보기에서 원본을 바로 띄울 수 있어요.
+            (안 해도 OK — 상세 보기에서 그때그때 갤러리를 열어요)
+          </p>
+          <p id="originLinkStatus" class="small" style="color: var(--younger); font-weight:600; margin-bottom:10px; display:none;">
+            ✓ 매칭됨 — <span id="originLinkCount">0</span>장
+          </p>
+          <div class="file-input-wrap">
+            <button class="btn btn-secondary" style="margin:0; padding:11px 14px; font-size:13.5px;">📂 원본 폴더/사진 선택</button>
+            <input type="file" id="originPicker" accept="image/*" multiple>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-ghost" style="margin-top: 20px;" onclick="resetApp()">사진 추가해서 다시 분석하기</button>
+    <button class="btn btn-ghost" style="margin-top: 10px; color: var(--older); border-color: rgba(255,123,92,0.3);" onclick="confirmDeleteAllData()">저장된 데이터 삭제</button>
   </div>
 
 </div>
@@ -1688,6 +1768,146 @@ let referenceDescriptor = null; // 본인 식별 기준 descriptor
 let allFilesWithTime = []; // 전체 파일 시간 정보 (fallback용)
 let fallbackStats = { attempted: 0, recovered: 0 }; // fallback 성공 통계
 
+// === v5.3 영속화 + 원본 매핑 ===
+// 세션 동안만 유지되는 fileName→File 매핑 (페이지 새로고침 시 사라짐)
+// 사용자가 결과 화면에서 "원본 폴더 다시 선택"하면 여기 채워짐
+window._fileMap = window._fileMap || {};
+let isResumedSession = false; // resume으로 진입했는지 여부
+
+// ===== IndexedDB 영속화 헬퍼 (v5.3) =====
+// 폰 내부 저장. 외부 전송 없음.
+const FACEAGE_DB = 'FaceAgeDB_v1';
+const FACEAGE_STORE = 'session';
+const FACEAGE_KEY = 'current';
+
+function openFaceAgeDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(FACEAGE_DB, 1);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(FACEAGE_STORE)) {
+        db.createObjectStore(FACEAGE_STORE);
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function saveSession(data) {
+  try {
+    const db = await openFaceAgeDB();
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction(FACEAGE_STORE, 'readwrite');
+      tx.objectStore(FACEAGE_STORE).put(data, FACEAGE_KEY);
+      tx.oncomplete = () => { db.close(); resolve(true); };
+      tx.onerror = () => { db.close(); reject(tx.error); };
+    });
+  } catch (e) {
+    console.warn('[storage] saveSession 실패:', e);
+    return false;
+  }
+}
+
+async function loadSession() {
+  try {
+    const db = await openFaceAgeDB();
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction(FACEAGE_STORE, 'readonly');
+      const req = tx.objectStore(FACEAGE_STORE).get(FACEAGE_KEY);
+      req.onsuccess = () => { db.close(); resolve(req.result || null); };
+      req.onerror = () => { db.close(); reject(req.error); };
+    });
+  } catch (e) {
+    console.warn('[storage] loadSession 실패:', e);
+    return null;
+  }
+}
+
+async function clearSession() {
+  try {
+    const db = await openFaceAgeDB();
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction(FACEAGE_STORE, 'readwrite');
+      tx.objectStore(FACEAGE_STORE).delete(FACEAGE_KEY);
+      tx.oncomplete = () => { db.close(); resolve(true); };
+      tx.onerror = () => { db.close(); reject(tx.error); };
+    });
+  } catch (e) {
+    console.warn('[storage] clearSession 실패:', e);
+    return false;
+  }
+}
+
+// 분석 결과를 직렬화 가능한 형태로 변환 (passed만, fullImageUrl 제외, 썸네일만 보존)
+function serializeAnalysisResults(results) {
+  return results
+    .filter(r => r.passed) // 그래프에 포함된 것만
+    .map(r => ({
+      fileName: r.fileName,
+      fileSize: r.fileSize || null,
+      timestamp: r.timestamp instanceof Date ? r.timestamp.getTime() : r.timestamp,
+      hasFace: !!r.hasFace,
+      passed: !!r.passed,
+      estimatedAge: r.estimatedAge,
+      rawAge: r.rawAge,
+      qualityScore: r.qualityScore,
+      qualityBreakdown: r.qualityBreakdown || {},
+      thumbUrl: r.thumbUrl, // ← 썸네일만 보존 (data URL)
+      // fullImageUrl은 의도적으로 제외 (용량 절약 + 갤러리에서 다시 불러옴)
+      totalFacesInPhoto: r.totalFacesInPhoto,
+      rejectionReason: r.rejectionReason,
+    }));
+}
+
+function deserializeAnalysisResults(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr.map(r => ({
+    ...r,
+    timestamp: new Date(r.timestamp),
+    fullImageUrl: null, // 갤러리에서 다시 불러와야 함
+    _fromStorage: true, // resume 식별 마크
+  }));
+}
+
+// referenceDescriptor (Float32Array)를 일반 배열로 직렬화/역직렬화
+function serializeDescriptor(desc) {
+  if (!desc) return null;
+  return Array.from(desc);
+}
+function deserializeDescriptor(arr) {
+  if (!arr || !arr.length) return null;
+  return new Float32Array(arr);
+}
+
+// 현재 상태를 폰에 저장 (결과 화면 진입 시 호출)
+async function persistCurrentSession() {
+  if (isDemoMode) return; // 데모는 저장 안함
+  try {
+    const birthInput = document.getElementById('birthDate');
+    const data = {
+      version: 1,
+      savedAt: Date.now(),
+      birthDate: birthInput ? birthInput.value : null,
+      results: serializeAnalysisResults(analysisResults),
+      referenceDescriptor: serializeDescriptor(referenceDescriptor),
+    };
+    const ok = await saveSession(data);
+    if (ok) {
+      console.log(`[storage] 세션 저장: ${data.results.length}장, 생일 ${data.birthDate}`);
+    }
+  } catch (e) {
+    console.warn('[storage] persistCurrentSession 실패:', e);
+  }
+}
+
+// 화면 진입 시점에 저장된 세션 있는지 확인
+async function checkResumeAvailable() {
+  const data = await loadSession();
+  if (!data || !Array.isArray(data.results) || data.results.length === 0) return null;
+  return data;
+}
+
 // ===== 화면 전환 (History API 통합) =====
 const SCREEN_FLOW = ['screen-onboard', 'screen-loading', 'screen-pick', 'screen-sampling', 'screen-analyze', 'screen-result'];
 let isPoppingState = false; // popstate로 인한 호출인지 구분
@@ -1801,7 +2021,108 @@ window.addEventListener('load', () => {
       }
     });
   }
+
+  // === v5.3: 저장된 세션 자동 감지 ===
+  setTimeout(checkAndShowResumeCard, 50);
 });
+
+// 저장된 세션 확인하고 Resume 카드 표시
+async function checkAndShowResumeCard() {
+  try {
+    const data = await checkResumeAvailable();
+    const card = document.getElementById('resumeCard');
+    const desc = document.getElementById('resumeCardDesc');
+    if (!card) return;
+    if (!data) {
+      card.style.display = 'none';
+      return;
+    }
+    // 생년월일 input도 저장된 값으로 미리 채워줌 (편의)
+    const birthInput = document.getElementById('birthDate');
+    if (birthInput && data.birthDate) {
+      birthInput.value = data.birthDate;
+      const birthWarn = document.getElementById('birthWarn');
+      if (birthWarn && data.birthDate !== '1990-01-01') birthWarn.style.display = 'none';
+    }
+    // 설명 텍스트
+    const days = Math.floor((Date.now() - data.savedAt) / (24 * 3600 * 1000));
+    const dateText = days === 0 ? '오늘' : (days === 1 ? '어제' : `${days}일 전`);
+    if (desc) desc.textContent = `사진 ${data.results.length}장 · 마지막 분석 ${dateText}`;
+    card.style.display = 'flex';
+  } catch (e) {
+    console.warn('[resume] check 실패:', e);
+  }
+}
+
+// 이전 세션 불러와서 결과 화면으로 직진
+async function resumeFromStorage() {
+  const btn = document.getElementById('resumeBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '불러오는 중...'; }
+  try {
+    const data = await loadSession();
+    if (!data || !data.results || data.results.length === 0) {
+      showToast('이전 분석을 찾을 수 없습니다');
+      if (btn) { btn.disabled = false; btn.textContent = '이어보기'; }
+      return;
+    }
+    // 생년월일 적용
+    const birthInput = document.getElementById('birthDate');
+    if (birthInput && data.birthDate) birthInput.value = data.birthDate;
+    // 전역 상태 복원
+    analysisResults = deserializeAnalysisResults(data.results);
+    referenceDescriptor = deserializeDescriptor(data.referenceDescriptor);
+    sampledFiles = [];
+    collectedFiles = [];
+    isResumedSession = true;
+    isDemoMode = false;
+    // 모델 로딩이 필요한가? 결과만 보는 거라면 굳이 안 해도 됨.
+    // 다만 사진 추가나 수동 분석 시 필요 → 결과 화면 진입 후 백그라운드 로딩.
+    showResults();
+    // 결과 화면 진입 후 안내
+    setTimeout(() => {
+      showToast(`이전 분석 ${data.results.length}장을 불러왔어요`, 2800);
+    }, 500);
+    // 백그라운드로 모델 로딩 (사진 추가/재분석 대비)
+    if (!modelsLoaded) {
+      loadFaceModelsInBackground();
+    }
+  } catch (e) {
+    console.error('[resume] 실패:', e);
+    showToast('이어보기 실패: ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = '이어보기'; }
+  }
+}
+
+// 모델을 백그라운드에서 로딩 (사용자 인지 없음, 사진 추가/수동분석 대비)
+async function loadFaceModelsInBackground() {
+  try {
+    if (modelsLoaded) return;
+    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+    await faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+    modelsLoaded = true;
+    console.log('[resume] 모델 백그라운드 로딩 완료');
+  } catch (e) {
+    console.warn('[resume] 모델 백그라운드 로딩 실패:', e);
+  }
+}
+
+// "새로 시작" 클릭 시 — 저장된 데이터 보존, 카드만 숨기고 일반 흐름
+function discardResumeAndStartFresh() {
+  const ok = confirm(
+    '저장된 이전 분석을 삭제하고 새로 시작할까요?\n\n삭제하면 되돌릴 수 없어요.\n취소를 누르면 카드만 숨기고 데이터는 그대로 두어요.'
+  );
+  const card = document.getElementById('resumeCard');
+  if (ok) {
+    clearSession().then(() => {
+      if (card) card.style.display = 'none';
+      showToast('이전 분석을 삭제했어요');
+    });
+  } else {
+    if (card) card.style.display = 'none';
+  }
+}
 
 function showToast(msg, duration = 2200) {
   const t = document.getElementById('toast');
@@ -1980,20 +2301,39 @@ function showGalleryProcessing() {
 
   // iOS는 풀스크린 오버레이로 30초 freeze를 분명히 가림
   if (os.isIOS) {
-    // 약간의 지연 후 오버레이 표시 (다이얼로그가 실제로 열리고 나서)
-    // iOS는 다이얼로그가 즉시 안 닫혀서 이 시점에 오버레이가 떠도 보이진 않음 → 닫힐 때 보임
+    // 다이얼로그가 닫히는 순간 즉시 오버레이가 paint되어야 함.
+    // setTimeout(0)이 다이얼로그 dismiss 후 첫 task로 실행됨.
+    // 추가로 강제 reflow + rAF로 paint 보장 (v5.3 강화)
     setTimeout(() => {
-      showIOSOverlay('사진 앱에서 가져오는 중이에요');
-    }, 100);
+      const overlay = document.getElementById('iosPhotoOverlay');
+      const titleEl = document.querySelector('.fs-overlay-title');
+      const msgEl = document.getElementById('iosPhotoOverlayMsg');
+      const progEl = document.getElementById('iosPhotoOverlayProgress');
+      const hintEl = document.getElementById('iosPhotoOverlayHint');
+      if (!overlay) return;
+      if (titleEl) titleEl.textContent = '📷 사진 가져오는 중';
+      if (msgEl) msgEl.textContent = '사진 앱에서 가져오고 있어요';
+      if (progEl) progEl.style.display = 'none';
+      if (hintEl) {
+        hintEl.style.display = 'block';
+        hintEl.textContent = '사진이 많으면 최대 30초가 걸릴 수 있어요. 잠시만 기다려주세요.';
+      }
+      overlay.classList.add('show');
+      // 강제 reflow + paint
+      void overlay.offsetHeight;
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        // 두 번째 paint 사이클 보장 후 한 번 더 reflow
+        void overlay.offsetHeight;
+      }));
+    }, 0);
 
     // 사용자가 취소했을 경우 대비 (다이얼로그를 그냥 닫음 → change 이벤트 안 옴)
     // iOS는 30초 이상 걸릴 수도 있어서 충분히 대기 후 자동 숨김
     if (window._galleryProcessingTimer) clearTimeout(window._galleryProcessingTimer);
     window._galleryProcessingTimer = setTimeout(() => {
-      // 60초까지 안 오면 취소로 간주 (사용자가 다이얼로그 그냥 닫음)
-      // change 이벤트가 왔으면 이 타이머는 이미 clear됨
+      // 90초까지 안 오면 취소로 간주 (HEIC 대량 변환 대응)
       hideIOSOverlay();
-    }, 60000);
+    }, 90000);
 
     return;
   }
@@ -2063,6 +2403,34 @@ document.getElementById('filePicker').addEventListener('change', async (e) => {
   const btn = document.getElementById('galleryBtn');
   const os = typeof detectOS === 'function' ? detectOS() : { isIOS: false };
 
+  // === iOS freeze 핵심 수정 (v5.3) ===
+  // change 이벤트는 다이얼로그가 닫히고 JPEG 변환까지 완료된 후에 발생.
+  // 그 사이 사용자는 갤러리 화면이 그대로 보이거나 빈 웹뷰를 보게 됨.
+  // → change 첫 순간 즉시 오버레이를 동기적으로 표시 + 강제 reflow + 2프레임 대기로
+  //   브라우저가 다음 paint 사이클에 반드시 그리도록 보장
+  if (os.isIOS && files.length > 0) {
+    const overlay = document.getElementById('iosPhotoOverlay');
+    const msgEl = document.getElementById('iosPhotoOverlayMsg');
+    const titleEl = document.querySelector('.fs-overlay-title');
+    const hintEl = document.getElementById('iosPhotoOverlayHint');
+    const progEl = document.getElementById('iosPhotoOverlayProgress');
+    if (overlay) {
+      // 메시지를 "체크 후 돌아온" 시점에 맞게 명확하게
+      if (titleEl) titleEl.textContent = '📷 사진 가져오는 중';
+      if (msgEl) msgEl.textContent = `${files.length}장의 사진을 준비하고 있어요`;
+      if (hintEl) {
+        hintEl.style.display = 'block';
+        hintEl.textContent = '잠시만 기다려주세요. 정상적으로 진행 중입니다.';
+      }
+      if (progEl) progEl.style.display = 'none';
+      overlay.classList.add('show');
+      // 강제 reflow — display:flex를 즉시 paint queue에 올림
+      void overlay.offsetHeight;
+    }
+    // 두 번의 rAF로 실제 paint된 후 다음 코드 진행 (iOS Safari paint 보장)
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  }
+
   // 사용자가 다이얼로그에서 취소(파일 0개)한 경우
   if (files.length === 0) {
     if (os.isIOS) hideIOSOverlay();
@@ -2079,7 +2447,7 @@ document.getElementById('filePicker').addEventListener('change', async (e) => {
   }
 
   try {
-    // iOS는 풀스크린 오버레이로 진행률 표시
+    // iOS는 풀스크린 오버레이로 진행률 표시 (이미 위에서 떴음 — 여기서 progress만 켬)
     if (os.isIOS) {
       updateIOSOverlayProgress(0, files.length, `${files.length}장의 사진을 추가하고 있어요`);
     } else {
@@ -2093,8 +2461,8 @@ document.getElementById('filePicker').addEventListener('change', async (e) => {
       btn.textContent = '사진 추가 중';
     }
 
-    // 다음 프레임 양보 (UI 즉시 반영)
-    await new Promise(r => setTimeout(r, 30));
+    // 한 프레임 더 양보 (다음 paint 확실히)
+    await new Promise(r => requestAnimationFrame(r));
 
     // 중복 제거 (청크 단위)
     const existingKeys = new Set(collectedFiles.map(f => `${f.name}_${f.size}`));
@@ -2227,6 +2595,69 @@ document.getElementById('folderPicker').addEventListener('change', async (e) => 
 
   updateCollectedDisplay();
 });
+
+// === v5.3: 결과 화면의 "원본 폴더 다시 선택" 핸들러 ===
+// 사용자가 폴더/사진을 다시 선택하면 fileName→File 매핑 캐시 생성
+// 이후 모달에서 fullImageUrl이 없는 사진을 보면 이 캐시에서 즉시 찾아 표시
+function _setupOriginPickerHandler() {
+  const originPicker = document.getElementById('originPicker');
+  if (!originPicker || originPicker._handlerAttached) return;
+  originPicker._handlerAttached = true;
+  originPicker.addEventListener('change', async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    const status = document.getElementById('originLinkStatus');
+    const countEl = document.getElementById('originLinkCount');
+    // 매칭 대상: analysisResults의 fileName들
+    const targetNames = new Set(analysisResults.filter(r => r.passed).map(r => r.fileName));
+    let matched = 0;
+    for (const f of files) {
+      if (targetNames.has(f.name)) {
+        window._fileMap[f.name] = f;
+        matched++;
+      }
+    }
+    // 매칭이 없어도 모든 파일을 저장 (다른 이름 변형 가능성 대비)
+    for (const f of files) {
+      if (!window._fileMap[f.name]) window._fileMap[f.name] = f;
+    }
+    if (status && countEl) {
+      countEl.textContent = matched.toString();
+      status.style.display = 'block';
+    }
+    if (matched > 0) {
+      showToast(`✓ ${matched}장의 원본과 매칭됐어요`, 2500);
+    } else {
+      showToast('매칭되는 사진이 없어요. 분석에 쓴 폴더가 맞나요?', 3000);
+    }
+    // input 초기화 — 같은 폴더 다시 고를 수 있게
+    e.target.value = '';
+  });
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _setupOriginPickerHandler);
+} else {
+  _setupOriginPickerHandler();
+}
+
+// 저장된 데이터 전체 삭제 확인
+async function confirmDeleteAllData() {
+  const ok = confirm(
+    '저장된 모든 분석 데이터를 삭제할까요?\n\n' +
+    '· 그래프 · 사진 썸네일 · 발견된 패턴\n· 모두 폰에서 영구 삭제됩니다.\n\n' +
+    '되돌릴 수 없어요.'
+  );
+  if (!ok) return;
+  try {
+    await clearSession();
+    showToast('저장된 데이터를 삭제했어요', 2000);
+    setTimeout(() => {
+      resetApp();
+    }, 600);
+  } catch (e) {
+    showToast('삭제 실패: ' + e.message);
+  }
+}
 
 // 선택 완료 버튼 → 샘플링 화면으로
 async function proceedToSampling() {
@@ -2802,7 +3233,17 @@ async function startAnalysis() {
   document.getElementById('analyzeStatus').classList.remove('err');
 
   analysisCancelled = false;
+  // v5.3: resume된 세션에서 사진 추가 → 기존 결과 보존
+  // analysisResults가 비어있지 않고 _fromStorage 결과가 있으면, 백업해두고 분석 후 머지
+  const prevResults = analysisResults.filter(r => r._fromStorage || r.passed);
+  const hasPrev = prevResults.length > 0;
   analysisResults = [];
+  if (hasPrev) {
+    window._mergeWithPrev = prevResults;
+    console.log(`[merge] ${prevResults.length}장의 이전 결과 보존됨`);
+  } else {
+    window._mergeWithPrev = null;
+  }
   const thumbGrid = document.getElementById('thumbGrid');
   thumbGrid.innerHTML = '';
   let faceCount = 0, passCount = 0, failCount = 0;
@@ -3687,6 +4128,24 @@ function generateDemoThumb(c1, c2, idx) {
 
 // ===== 결과 화면 =====
 function showResults() {
+  // v5.3: 이전 세션 결과와 새 분석 결과 머지
+  if (window._mergeWithPrev && window._mergeWithPrev.length > 0) {
+    const newKeys = new Set(analysisResults.map(r => `${r.fileName}_${r.timestamp instanceof Date ? r.timestamp.getTime() : r.timestamp}`));
+    let mergedCount = 0;
+    for (const prev of window._mergeWithPrev) {
+      const key = `${prev.fileName}_${prev.timestamp instanceof Date ? prev.timestamp.getTime() : prev.timestamp}`;
+      if (!newKeys.has(key)) {
+        analysisResults.push(prev);
+        mergedCount++;
+      }
+    }
+    console.log(`[merge] ${mergedCount}장의 이전 결과를 새 분석에 합쳤어요`);
+    window._mergeWithPrev = null;
+    if (mergedCount > 0) {
+      setTimeout(() => showToast(`이전 ${mergedCount}장 + 새 분석을 합쳤어요`, 2800), 800);
+    }
+  }
+
   const passed = analysisResults.filter(r => r.passed);
   if (passed.length === 0) {
     showToast('품질 합격 사진이 없습니다. 분석 화면에서 거부된 사진의 "얼굴 영역 직접 지정"으로 추가하거나, 더 많은 사진을 골라주세요.', 4500);
@@ -3754,6 +4213,9 @@ function showResults() {
   renderMonthlyReport(passed, realAge);
 
   showScreen('screen-result');
+
+  // === v5.3: 결과 화면 진입 시 자동 저장 (폰 내부, 외부 전송 없음) ===
+  persistCurrentSession();
 }
 
 function drawChart(passed, birthDate) {
@@ -4423,6 +4885,44 @@ function showThumbDetail(idx) {
 
   infoHtml += `</div></div></div>`; // info-section, expandable-body, expandable 닫기
 
+  // === v5.3: 원본 사진 보기 영역 ===
+  // resume된 사진은 fullImageUrl이 없음. 썸네일만 보이고, 원본은 사용자가 갤러리에서 다시 골라야 함.
+  // window._fileMap에 매칭된 원본이 있으면 즉시 미리보기 가능.
+  const hasFullInMemory = !!r.fullImageUrl;
+  const cachedFile = window._fileMap && window._fileMap[r.fileName];
+  if (!hasFullInMemory) {
+    infoHtml += `<div style="margin-top: 16px; padding: 14px 16px; background: var(--bg-subtle); border-radius: 12px;">`;
+    infoHtml += `
+      <p class="small" style="margin-bottom: 10px; line-height: 1.55;">
+        🖼️ 위에 보이는 사진은 분석용 <b style="color:var(--text-1);">썸네일</b>이에요.
+        원본은 폰에만 있고 앱이 들고 있지 않아요.
+      </p>`;
+    if (cachedFile) {
+      infoHtml += `
+        <button class="btn btn-secondary" style="margin: 0; padding: 11px 14px; font-size: 13.5px;"
+                onclick="loadOriginalFromCache(${idx})">
+          🔍 원본 사진 보기
+        </button>
+        <p class="small" style="margin: 8px 0 0; font-size: 11.5px; color: var(--text-3);">
+          이전에 매칭한 폴더에서 바로 띄워요
+        </p>
+      `;
+    } else {
+      infoHtml += `
+        <div class="file-input-wrap" style="display:block;">
+          <button class="btn btn-secondary" style="margin: 0; padding: 11px 14px; font-size: 13.5px;">
+            🔍 갤러리에서 원본 사진 찾기
+          </button>
+          <input type="file" accept="image/*" onchange="loadOriginalFromPicker(${idx}, this)">
+        </div>
+        <p class="small" style="margin: 8px 0 0; font-size: 11.5px; color: var(--text-3);">
+          파일명: <code style="font-size:11px; color:var(--text-2);">${(r.fileName || '').slice(0,40)}</code>
+        </p>
+      `;
+    }
+    infoHtml += `</div>`;
+  }
+
   // === 액션 버튼 영역 ===
   const isExcluded = r.rejectionReason || (r.hasFace && !r.passed);
   const isIncluded = r.passed;
@@ -4465,6 +4965,61 @@ function showThumbDetail(idx) {
 
   document.getElementById('thumbModalInfo').innerHTML = infoHtml;
   openModal('thumbModal');
+}
+
+// === v5.3: 캐시된 원본 파일에서 모달 이미지 갱신 ===
+async function loadOriginalFromCache(idx) {
+  const r = analysisResults[idx];
+  if (!r || !window._fileMap) return;
+  const file = window._fileMap[r.fileName];
+  if (!file) {
+    showToast('원본을 찾을 수 없어요. 다시 매칭해주세요.');
+    return;
+  }
+  try {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const url = ev.target.result;
+      // 모달 이미지를 원본으로 교체
+      document.getElementById('thumbModalImg').src = url;
+      // 결과 객체에도 저장 (이번 세션 내 재방문 시 즉시)
+      r.fullImageUrl = url;
+      showToast('✓ 원본 사진을 불러왔어요', 1500);
+    };
+    reader.onerror = () => showToast('원본 불러오기 실패');
+    reader.readAsDataURL(file);
+  } catch (e) {
+    showToast('원본 불러오기 실패: ' + e.message);
+  }
+}
+
+// === v5.3: picker에서 사용자가 직접 고른 원본을 모달에 표시 ===
+async function loadOriginalFromPicker(idx, inputEl) {
+  const r = analysisResults[idx];
+  if (!r || !inputEl.files || inputEl.files.length === 0) return;
+  const file = inputEl.files[0];
+  // 이름이 다르면 경고 (하지만 그대로 표시)
+  if (file.name !== r.fileName) {
+    showToast(`파일명이 달라요 (선택: ${file.name.slice(0,20)}...)`, 2200);
+  }
+  // 캐시에 저장 (같은 세션 동안 재사용)
+  window._fileMap[r.fileName] = file;
+  try {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const url = ev.target.result;
+      document.getElementById('thumbModalImg').src = url;
+      r.fullImageUrl = url;
+      // 모달을 다시 렌더해서 캐시 상태 반영
+      setTimeout(() => showThumbDetail(idx), 100);
+    };
+    reader.onerror = () => showToast('원본 불러오기 실패');
+    reader.readAsDataURL(file);
+  } catch (e) {
+    showToast('원본 불러오기 실패: ' + e.message);
+  } finally {
+    inputEl.value = '';
+  }
 }
 
 // 백버튼 클릭 핸들러: 모달 열려 있으면 모달만 닫고, 아니면 SCREEN_FLOW 이전 단계
@@ -5599,9 +6154,13 @@ function switchInsightTab(el, key) {
 }
 
 function resetApp() {
+  // v5.3: "사진 추가해서 다시 분석하기" - 저장된 데이터는 그대로 두고 사진 선택만 다시
+  // 단, 결과 화면 상태와 collectedFiles는 비움
   analysisResults = [];
   sampledFiles = [];
   isDemoMode = false;
+  isResumedSession = false;
+  collectedFiles = [];
   document.getElementById('filePicker').value = '';
   const fp = document.getElementById('folderPicker');
   if (fp) fp.value = '';
@@ -5613,7 +6172,13 @@ function resetApp() {
   if (btn) btn.textContent = '갤러리에서 사진 선택';
   const folderBtn = document.getElementById('folderBtn');
   if (folderBtn) folderBtn.textContent = '셀카 폴더 선택';
-  showScreen('screen-onboard');
+  // 사진 선택 화면으로 직진 (온보딩 다시 안 보임)
+  // 단, 모델이 로딩 안됐으면 로딩 화면 거쳐야 함
+  if (modelsLoaded) {
+    showScreen('screen-pick');
+  } else {
+    showScreen('screen-onboard');
+  }
 }
 
 // 전역 에러 핸들러 — 화면 멈춤 방지
