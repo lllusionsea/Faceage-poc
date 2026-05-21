@@ -971,77 +971,44 @@
       opacity: 0.5; cursor: wait;
     }
 
-    /* v5.3.3 영상 하단 비교 영역 */
+    /* v5.5 영상 하단 미니 시계열 차트 */
     .face-anim-compare {
-      padding: 14px 20px 0;
+      padding: 12px 16px 0;
       flex-shrink: 0;
     }
-    .face-anim-compare-row {
-      display: flex; justify-content: space-between; align-items: baseline;
-      padding: 4px 0;
-      font-size: 14px;
-    }
-    .face-anim-compare-label {
-      color: rgba(255,255,255,0.65);
-      font-weight: 500;
-    }
-    .face-anim-compare-value {
-      color: #fff; font-weight: 700;
-      font-variant-numeric: tabular-nums;
-      font-size: 16px;
-    }
-    .face-anim-diff-bar {
+    .face-anim-mini-chart-wrap {
       position: relative;
-      height: 28px;
-      margin: 14px 0 4px;
+      width: 100%;
+      height: 120px;
     }
-    .face-anim-diff-line {
-      position: absolute;
-      left: 0; right: 0; top: 50%;
-      height: 4px;
-      background: linear-gradient(to right,
-        var(--younger) 0%,
-        rgba(255,255,255,0.2) 50%,
-        var(--older) 100%);
-      border-radius: 2px;
-      transform: translateY(-50%);
+    #faceAnimMiniChart {
+      width: 100%;
+      height: 100%;
+      display: block;
     }
-    .face-anim-diff-bar::before {
-      content: ''; position: absolute;
-      left: 50%; top: 50%;
-      width: 2px; height: 12px;
-      background: #fff;
-      transform: translate(-50%, -50%);
-      border-radius: 1px;
-      z-index: 1;
+    .face-anim-compare-legend {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 6px 14px;
+      margin-top: 6px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.7);
     }
-    .face-anim-diff-marker {
-      position: absolute;
-      top: 50%;
-      width: 22px; height: 22px;
-      background: var(--primary);
-      border: 3px solid #fff;
-      border-radius: 50%;
-      transform: translate(-50%, -50%);
-      transition: left 0.45s cubic-bezier(0.4, 0, 0.2, 1), background 0.4s;
-      z-index: 2;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-      left: 50%;
+    .face-anim-leg-item {
+      display: inline-flex; align-items: center; gap: 5px;
+      white-space: nowrap;
     }
-    .face-anim-diff-text {
-      text-align: center;
-      font-size: 13px;
-      color: rgba(255,255,255,0.85);
-      font-weight: 600;
-      font-variant-numeric: tabular-nums;
-      letter-spacing: -0.2px;
-      margin-top: 2px;
+    .face-anim-leg-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      display: inline-block;
     }
-    .face-anim-diff-text .delta-num {
-      font-size: 15px; font-weight: 800;
-      padding: 1px 8px; border-radius: 999px;
-      margin-left: 4px;
+    .face-anim-leg-block {
+      width: 14px; height: 8px; border-radius: 2px;
+      display: inline-block;
     }
+    .face-anim-leg-block.younger { background: rgba(0,200,150,0.55); }
+    .face-anim-leg-block.older { background: rgba(255,123,92,0.55); }
 
     /* Modal */
     .modal {
@@ -1172,7 +1139,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo" onclick="resetApp()" style="cursor:pointer;">Face<span class="accent">AGE</span></div>
-    <div class="badge" id="topBadge">POC v5.5</div>
+    <div class="badge" id="topBadge">POC v5.6</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -1608,33 +1575,30 @@
       </div>
     </div>
 
-    <!-- v5.3: 원본 사진 다시 매칭하기 (세션 내 자동 매칭용) -->
+    <!-- v5.5: 원본 사진 다시 매칭하기 (세션 내 자동 매칭용) -->
     <div class="card" id="originLinkCard" style="margin-top: 24px; padding: 16px 18px;">
       <div style="display:flex; gap:12px; align-items:flex-start;">
         <div style="font-size:22px; line-height:1.1;">🖼️</div>
         <div style="flex:1; min-width:0;">
           <p style="font-weight:700; font-size:14px; margin-bottom:4px; color: var(--text-1);">원본 사진을 빠르게 보고 싶다면</p>
           <p class="small" style="line-height:1.55; margin-bottom:10px;">
-            사진 폴더(또는 분석에 쓴 사진들)를 한 번 더 선택해두면, 상세 보기에서 원본을 바로 띄울 수 있어요.
-            (안 해도 OK — 상세 보기에서 그때그때 갤러리를 열어요)
+            <span id="originCardDescAndroid">사진이 들어있는 <b>폴더 하나</b>를 선택해두면, 상세 보기에서 원본을 바로 띄울 수 있어요.</span>
+            <span id="originCardDescIOS" style="display:none;">iPhone은 폴더 선택을 지원하지 않아서, 분석에 썼던 사진들을 <b>한 번에 여러 장</b> 선택하면 매칭돼요.</span>
+            <br><span style="color: var(--text-3);">안 해도 OK — 상세 보기에서 그때그때 다시 고를 수 있어요.</span>
           </p>
           <p id="originLinkStatus" class="small" style="color: var(--younger); font-weight:600; margin-bottom:10px; display:none;">
             ✓ 매칭됨 — <span id="originLinkCount">0</span>장
           </p>
-          <!-- v5.3.2: 폴더 버튼과 사진 버튼 분리 -->
-          <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <div class="file-input-wrap" id="originFolderWrap" style="flex:1; min-width:140px;">
-              <button class="btn btn-secondary" style="margin:0; padding:11px 12px; font-size:13px; width:100%;">📂 폴더에서 선택</button>
-              <input type="file" id="originFolderPicker" webkitdirectory directory multiple>
-            </div>
-            <div class="file-input-wrap" style="flex:1; min-width:140px;">
-              <button class="btn btn-secondary" style="margin:0; padding:11px 12px; font-size:13px; width:100%;">🖼️ 사진 다중 선택</button>
-              <input type="file" id="originPicker" accept="image/*" multiple>
-            </div>
+          <!-- v5.5: 단일 버튼 (OS별로 동작 분기) -->
+          <div class="file-input-wrap" id="originPickerWrap">
+            <button class="btn btn-secondary" style="margin:0; padding:12px 14px; font-size:14px; width:100%;" id="originPickerBtn">📂 사진 폴더 선택</button>
+            <input type="file" id="originFolderPicker" webkitdirectory directory multiple>
           </div>
-          <p id="originFolderHint" class="small" style="font-size:11.5px; color: var(--text-3); margin: 8px 0 0; display:none;">
-            iPhone은 폴더 선택을 지원하지 않아요. 오른쪽 "사진 다중 선택"을 써주세요.
-          </p>
+          <!-- iOS 전용 다중 선택 input (별도) -->
+          <div class="file-input-wrap" id="originIOSWrap" style="display:none;">
+            <button class="btn btn-secondary" style="margin:0; padding:12px 14px; font-size:14px; width:100%;">🖼️ 분석에 쓴 사진들 선택</button>
+            <input type="file" id="originPicker" accept="image/*" multiple>
+          </div>
         </div>
       </div>
     </div>
@@ -1680,21 +1644,29 @@
       <p>사진을 준비하는 중이에요</p>
     </div>
   </div>
-  <!-- v5.3.3: 하단 얼굴나이 vs 실제나이 비교 영역 -->
+  <!-- v5.5: 영상 하단 미니 시계열 그래프 (영상 안의 사진들만) -->
   <div class="face-anim-compare" id="faceAnimCompare">
-    <div class="face-anim-compare-row">
-      <span class="face-anim-compare-label">얼굴 나이</span>
-      <span class="face-anim-compare-value" id="faceAnimEstAge">—</span>
+    <div class="face-anim-mini-chart-wrap">
+      <canvas id="faceAnimMiniChart"></canvas>
     </div>
-    <div class="face-anim-compare-row">
-      <span class="face-anim-compare-label">실제 나이</span>
-      <span class="face-anim-compare-value" id="faceAnimRealAge">—</span>
+    <div class="face-anim-compare-legend">
+      <span class="face-anim-leg-item">
+        <span class="face-anim-leg-dot" style="background:rgba(255,255,255,0.55);"></span>
+        실제 나이
+      </span>
+      <span class="face-anim-leg-item">
+        <span class="face-anim-leg-dot" style="background: var(--primary);"></span>
+        얼굴 나이
+      </span>
+      <span class="face-anim-leg-item">
+        <span class="face-anim-leg-block younger"></span>
+        어려보임
+      </span>
+      <span class="face-anim-leg-item">
+        <span class="face-anim-leg-block older"></span>
+        들어보임
+      </span>
     </div>
-    <div class="face-anim-diff-bar">
-      <div class="face-anim-diff-line"></div>
-      <div class="face-anim-diff-marker" id="faceAnimDiffMarker"></div>
-    </div>
-    <div class="face-anim-diff-text" id="faceAnimDiffText">—</div>
   </div>
   <div class="face-anim-controls">
     <div class="face-anim-progress">
@@ -2974,13 +2946,22 @@ function _setupOriginPickerHandler() {
     folderPicker.addEventListener('change', sharedHandler(true));
   }
 
-  // iOS는 webkitdirectory 미지원 → 폴더 버튼 숨기고 사진 버튼만
+  // v5.5: OS별 단일 버튼 표시
   const os = typeof detectOS === 'function' ? detectOS() : { isIOS: false };
+  const folderWrap = document.getElementById('originPickerWrap');
+  const iosWrap = document.getElementById('originIOSWrap');
+  const descAndroid = document.getElementById('originCardDescAndroid');
+  const descIOS = document.getElementById('originCardDescIOS');
   if (os.isIOS) {
-    const folderWrap = document.getElementById('originFolderWrap');
-    const hint = document.getElementById('originFolderHint');
     if (folderWrap) folderWrap.style.display = 'none';
-    if (hint) hint.style.display = 'block';
+    if (iosWrap) iosWrap.style.display = 'block';
+    if (descAndroid) descAndroid.style.display = 'none';
+    if (descIOS) descIOS.style.display = 'inline';
+  } else {
+    if (folderWrap) folderWrap.style.display = 'block';
+    if (iosWrap) iosWrap.style.display = 'none';
+    if (descAndroid) descAndroid.style.display = 'inline';
+    if (descIOS) descIOS.style.display = 'none';
   }
 }
 if (document.readyState === 'loading') {
@@ -4554,11 +4535,15 @@ async function openFaceAnimation() {
   }
 
   loading.classList.add('hide');
-  FACE_ANIM.currentIdx = 0;
+  FACE_ANIM.currentIdx = -1; // 첫 tick에서 updateAnimMeta 강제 호출
   FACE_ANIM.startTime = performance.now();
   FACE_ANIM.playing = true;
   document.getElementById('faceAnimPlayBtn').textContent = '⏸ 일시정지';
-  faceAnimTick();
+  // v5.5: 차트가 한 번은 그려지게 (layout 보장 후)
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    if (FACE_ANIM.frames[0]) updateAnimMeta(FACE_ANIM.frames[0]);
+    faceAnimTick();
+  }));
 }
 
 // 시간순 균등 샘플링
@@ -4722,8 +4707,11 @@ function faceAnimTick() {
     drawAnimFrame(canvas, FACE_ANIM.frames[idxB], alphaB);
   }
 
-  FACE_ANIM.currentIdx = idxA;
-  updateAnimMeta(FACE_ANIM.frames[idxA]);
+  // v5.5: 인덱스가 바뀔 때만 메타/차트 갱신 (성능)
+  if (FACE_ANIM.currentIdx !== idxA) {
+    FACE_ANIM.currentIdx = idxA;
+    updateAnimMeta(FACE_ANIM.frames[idxA]);
+  }
   updateAnimProgress(elapsed / totalDur);
 
   FACE_ANIM.rafId = requestAnimationFrame(faceAnimTick);
@@ -4733,38 +4721,221 @@ function updateAnimMeta(frame) {
   document.getElementById('faceAnimDate').textContent = frame.dateStr;
   document.getElementById('faceAnimAge').textContent = frame.ageStr;
 
-  // v5.3.3: 하단 비교 영역 업데이트
-  const estEl = document.getElementById('faceAnimEstAge');
-  const realEl = document.getElementById('faceAnimRealAge');
-  const diffTextEl = document.getElementById('faceAnimDiffText');
-  const markerEl = document.getElementById('faceAnimDiffMarker');
+  // v5.5: 미니 시계열 차트 다시 그리기 (현재 인덱스 강조)
+  drawMiniChart();
+}
 
-  if (estEl) estEl.textContent = frame.estAge != null ? frame.estAge.toFixed(1) + '세' : '—';
-  if (realEl) realEl.textContent = frame.realAge != null ? frame.realAge.toFixed(1) + '세' : '—';
+// 영상에 쓰인 프레임들의 시계열을 영상 하단 캔버스에 그림
+// 실제 나이는 평탄한 라인, 얼굴 나이는 그 위 출렁임
+// 두 라인 사이를 어려보이면 녹색, 들어보이면 빨강으로 채움
+function drawMiniChart() {
+  const canvas = document.getElementById('faceAnimMiniChart');
+  if (!canvas) return;
+  const frames = FACE_ANIM.frames;
+  if (!frames || frames.length === 0) return;
 
-  if (frame.diff == null || markerEl == null) return;
-  // diff를 -8 ~ +8 범위로 매핑 (대부분 그 사이)
-  const clampedDiff = Math.max(-8, Math.min(8, frame.diff));
-  const pct = 50 + (clampedDiff / 8) * 50; // 0~100%
-  markerEl.style.left = pct + '%';
+  // 캔버스 픽셀 해상도 — DPR 보정
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  if (rect.width === 0) return; // 아직 레이아웃 안 됨
+  canvas.width = Math.round(rect.width * dpr);
+  canvas.height = Math.round(rect.height * dpr);
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // CSS 단위로 그림
 
-  // 색상 - 토스 톤
-  if (frame.diff < -0.5) {
-    markerEl.style.background = 'var(--younger)';
-  } else if (frame.diff > 0.5) {
-    markerEl.style.background = 'var(--older)';
-  } else {
-    markerEl.style.background = 'var(--equal)';
+  const W = rect.width, H = rect.height;
+  const padL = 6, padR = 6, padT = 10, padB = 14;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  ctx.clearRect(0, 0, W, H);
+
+  // 데이터 준비 — 실제나이/얼굴나이 둘 다 있는 프레임만
+  const valid = frames.filter(f => f.realAge != null && f.estAge != null);
+  if (valid.length < 2) {
+    // 데이터 부족 — 안내 텍스트
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '12px -apple-system, "Pretendard", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('생년월일을 입력하면 비교 그래프가 보여요', W/2, H/2);
+    return;
   }
 
-  // 차이 텍스트
-  if (diffTextEl) {
-    const sign = frame.diff >= 0 ? '+' : '';
-    const numStr = sign + frame.diff.toFixed(1) + '세';
-    const colorClass = frame.diff < -0.5 ? 'delta-younger' : (frame.diff > 0.5 ? 'delta-older' : 'delta-neutral');
-    const label = frame.diff < -0.5 ? '어려보임' : (frame.diff > 0.5 ? '들어보임' : '비슷');
-    diffTextEl.innerHTML = `${label} <span class="delta-num ${colorClass}">${numStr}</span>`;
+  // y 범위: 두 값의 min/max에 패딩
+  let minV = Infinity, maxV = -Infinity;
+  valid.forEach(f => {
+    minV = Math.min(minV, f.realAge, f.estAge);
+    maxV = Math.max(maxV, f.realAge, f.estAge);
+  });
+  const range = Math.max(2, maxV - minV);
+  minV -= range * 0.12;
+  maxV += range * 0.12;
+  const yRange = maxV - minV;
+
+  // x: 시간 기준 균등 (timestamp 비율) — 시간 간격 반영
+  const t0 = valid[0].img ? null : null; // not used directly
+  // 정확한 시간축 사용
+  const times = valid.map(f => {
+    // 프레임은 img/box만 갖고 있어서 ts는 dateStr/realAge에서 역산 어려움
+    // 대신 frame index 균등 분포 사용 (이미 시간순 정렬됨)
+    return null;
+  });
+  // 인덱스 균등 (시간순 정렬됐고, 시각적 가독성 우선)
+  const xs = valid.map((_, i) => padL + (i / Math.max(1, valid.length - 1)) * innerW);
+
+  // 좌표 변환
+  const toY = v => padT + (1 - (v - minV) / yRange) * innerH;
+  const realPts = valid.map((f, i) => ({ x: xs[i], y: toY(f.realAge) }));
+  const estPts  = valid.map((f, i) => ({ x: xs[i], y: toY(f.estAge) }));
+
+  // === 1) 두 라인 사이의 gap을 색으로 채우기 ===
+  // 어려보이는 구간(est<real): 녹색, 들어보이는 구간(est>real): 빨강
+  // 라인이 교차하는 지점에서 색이 바뀌게 세그먼트별로 처리
+  for (let i = 0; i < valid.length - 1; i++) {
+    const aReal = realPts[i], bReal = realPts[i+1];
+    const aEst  = estPts[i],  bEst  = estPts[i+1];
+
+    // 두 세그먼트가 교차하는지 확인
+    const aDiff = valid[i].estAge - valid[i].realAge;     // <0이면 어려보임
+    const bDiff = valid[i+1].estAge - valid[i+1].realAge;
+
+    if ((aDiff < 0 && bDiff < 0) || (aDiff > 0 && bDiff > 0) || aDiff === 0 || bDiff === 0) {
+      // 교차 없음 — 한 색으로 채움
+      const color = (aDiff + bDiff) / 2 < 0
+        ? 'rgba(0,200,150,0.42)'   // 어려보임 (younger 토스 민트)
+        : 'rgba(255,123,92,0.42)'; // 들어보임 (older 토스 코랄)
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(aReal.x, aReal.y);
+      ctx.lineTo(bReal.x, bReal.y);
+      ctx.lineTo(bEst.x, bEst.y);
+      ctx.lineTo(aEst.x, aEst.y);
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      // 교차 있음 — 교차점을 계산해서 두 색으로 분리
+      // 두 선분: real(직선 a→b), est(직선 a→b)이 만나는 t (0~1)
+      // y_real(t) = y_est(t) 이 되는 t
+      const dR = bReal.y - aReal.y;
+      const dE = bEst.y - aEst.y;
+      const num = aEst.y - aReal.y;
+      const den = dR - dE;
+      let t = den === 0 ? 0.5 : num / den;
+      t = Math.max(0, Math.min(1, t));
+      const crossX = aReal.x + t * (bReal.x - aReal.x);
+      const crossY = aReal.y + t * dR;
+
+      // 왼쪽 영역
+      ctx.fillStyle = aDiff < 0 ? 'rgba(0,200,150,0.42)' : 'rgba(255,123,92,0.42)';
+      ctx.beginPath();
+      ctx.moveTo(aReal.x, aReal.y);
+      ctx.lineTo(crossX, crossY);
+      ctx.lineTo(aEst.x, aEst.y);
+      ctx.closePath();
+      ctx.fill();
+
+      // 오른쪽 영역
+      ctx.fillStyle = bDiff < 0 ? 'rgba(0,200,150,0.42)' : 'rgba(255,123,92,0.42)';
+      ctx.beginPath();
+      ctx.moveTo(crossX, crossY);
+      ctx.lineTo(bReal.x, bReal.y);
+      ctx.lineTo(bEst.x, bEst.y);
+      ctx.closePath();
+      ctx.fill();
+    }
   }
+
+  // === 2) 실제 나이 라인 (그라데이션 안되게 점선 풍 흰색) ===
+  ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 3]);
+  ctx.beginPath();
+  realPts.forEach((p, i) => { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // === 3) 얼굴 나이 라인 (토스 블루 굵게) ===
+  ctx.strokeStyle = '#6BA6FF';
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  estPts.forEach((p, i) => { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+  ctx.stroke();
+
+  // === 4) 얼굴 나이 점들 (작게) ===
+  estPts.forEach((p, i) => {
+    const diff = valid[i].estAge - valid[i].realAge;
+    ctx.fillStyle = diff < -0.5 ? '#00C896' : (diff > 0.5 ? '#FF7B5C' : '#9CA3AF');
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // === 5) 현재 프레임 강조 ===
+  // FACE_ANIM.currentIdx는 frames 인덱스. valid 배열에서 매칭되는 위치 찾기
+  const currentFrame = frames[FACE_ANIM.currentIdx];
+  if (currentFrame) {
+    const validIdx = valid.indexOf(currentFrame);
+    if (validIdx >= 0) {
+      const cp = estPts[validIdx];
+      const cpReal = realPts[validIdx];
+      // 세로 가이드라인
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(cp.x, padT);
+      ctx.lineTo(cp.x, padT + innerH);
+      ctx.stroke();
+      // 현재 얼굴 나이 점 — 큰 동그라미
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(cp.x, cp.y, 5.5, 0, Math.PI * 2);
+      ctx.fill();
+      const diff = currentFrame.estAge - currentFrame.realAge;
+      ctx.fillStyle = diff < -0.5 ? '#00C896' : (diff > 0.5 ? '#FF7B5C' : '#3182F6');
+      ctx.beginPath();
+      ctx.arc(cp.x, cp.y, 3.8, 0, Math.PI * 2);
+      ctx.fill();
+      // 현재 실제 나이 점 (작게)
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      ctx.beginPath();
+      ctx.arc(cpReal.x, cpReal.y, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 현재 수치 라벨 — 점 위에
+      const labelText = `${currentFrame.estAge.toFixed(1)}세`;
+      const realText = `${currentFrame.realAge.toFixed(1)}세`;
+      ctx.font = 'bold 11px -apple-system, "Pretendard", sans-serif';
+      ctx.textAlign = 'center';
+      const labelY = Math.max(padT + 10, cp.y - 10);
+      // 배경
+      const labelW = ctx.measureText(labelText).width + 10;
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.beginPath();
+      const lx = Math.max(padL + labelW/2, Math.min(W - padR - labelW/2, cp.x));
+      ctx.roundRect ? ctx.roundRect(lx - labelW/2, labelY - 12, labelW, 16, 6) : ctx.rect(lx - labelW/2, labelY - 12, labelW, 16);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.fillText(labelText, lx, labelY);
+    }
+  }
+
+  // === 6) 누적 차이 요약 (오른쪽 상단) ===
+  // 그래프 전체 영역에서 어려보임 vs 들어보임 합계
+  let youngerSum = 0, olderSum = 0;
+  valid.forEach(f => {
+    const d = f.estAge - f.realAge;
+    if (d < 0) youngerSum += -d;
+    else if (d > 0) olderSum += d;
+  });
+  const netDiff = youngerSum - olderSum;
+  const summary = netDiff > 0
+    ? `평균 ${(netDiff / valid.length).toFixed(1)}세 어려보임`
+    : (netDiff < 0
+        ? `평균 ${(-netDiff / valid.length).toFixed(1)}세 들어보임`
+        : '평균 실제 나이와 비슷');
+  ctx.font = '600 10.5px -apple-system, "Pretendard", sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillStyle = netDiff > 0 ? '#00C896' : (netDiff < 0 ? '#FF7B5C' : 'rgba(255,255,255,0.7)');
+  ctx.fillText(summary, W - padR, H - 2);
 }
 function updateAnimProgress(ratio) {
   const fill = document.getElementById('faceAnimProgressFill');
@@ -5759,7 +5930,7 @@ function showThumbDetail(idx) {
       </p>`;
     if (cachedFile) {
       infoHtml += `
-        <button class="btn btn-secondary" style="margin: 0; padding: 11px 14px; font-size: 13.5px;"
+        <button class="btn btn-secondary" style="margin: 0; padding: 11px 14px; font-size: 13.5px; width:100%;"
                 onclick="loadOriginalFromCache(${idx})">
           🔍 원본 사진 보기
         </button>
@@ -5768,15 +5939,40 @@ function showThumbDetail(idx) {
         </p>
       `;
     } else {
+      // v5.5: 사진 한 장 고르라고 안 함. 폴더(또는 다중선택)로 일괄 매칭.
+      const _os = typeof detectOS === 'function' ? detectOS() : { isIOS: false };
+      if (_os.isIOS) {
+        // iOS: webkitdirectory 미지원 → 다중 사진 선택
+        infoHtml += `
+          <div class="file-input-wrap" style="display:block;">
+            <button class="btn btn-secondary" style="margin: 0; padding: 11px 14px; font-size: 13.5px; width:100%;">
+              🖼️ 사진 여러 장 선택해서 매칭하기
+            </button>
+            <input type="file" accept="image/*" multiple onchange="loadOriginalsFromMultiPicker(${idx}, this)">
+          </div>
+          <p class="small" style="margin: 8px 0 0; font-size: 11.5px; color: var(--text-3); line-height:1.55;">
+            분석에 썼던 사진들을 한꺼번에 선택하면 자동으로 매칭해서 원본을 띄워요.
+            다음 사진도 같은 매칭이 적용돼요.
+          </p>
+        `;
+      } else {
+        // Android/Desktop: 폴더 통째로
+        infoHtml += `
+          <div class="file-input-wrap" style="display:block;">
+            <button class="btn btn-secondary" style="margin: 0; padding: 11px 14px; font-size: 13.5px; width:100%;">
+              📂 사진 폴더 선택해서 매칭하기
+            </button>
+            <input type="file" webkitdirectory directory multiple onchange="loadOriginalsFromFolder(${idx}, this)">
+          </div>
+          <p class="small" style="margin: 8px 0 0; font-size: 11.5px; color: var(--text-3); line-height:1.55;">
+            사진이 들어있는 폴더를 선택하면 그 안에서 자동으로 찾아내요.
+            한 번만 선택하면 다음 사진도 매칭돼요.
+          </p>
+        `;
+      }
       infoHtml += `
-        <div class="file-input-wrap" style="display:block;">
-          <button class="btn btn-secondary" style="margin: 0; padding: 11px 14px; font-size: 13.5px;">
-            🔍 갤러리에서 원본 사진 찾기
-          </button>
-          <input type="file" accept="image/*" onchange="loadOriginalFromPicker(${idx}, this)">
-        </div>
-        <p class="small" style="margin: 8px 0 0; font-size: 11.5px; color: var(--text-3);">
-          파일명: <code style="font-size:11px; color:var(--text-2);">${(r.fileName || '').slice(0,40)}</code>
+        <p class="small" style="margin: 6px 0 0; font-size: 11px; color: var(--text-3);">
+          찾는 파일: <code style="font-size:11px; color:var(--text-2);">${(r.fileName || '').slice(0,40)}</code>
         </p>
       `;
     }
@@ -5853,33 +6049,90 @@ async function loadOriginalFromCache(idx) {
   }
 }
 
-// === v5.3: picker에서 사용자가 직접 고른 원본을 모달에 표시 ===
-async function loadOriginalFromPicker(idx, inputEl) {
+// === v5.5: 폴더에서 매칭 (Android/Desktop) ===
+async function loadOriginalsFromFolder(idx, inputEl) {
+  await _matchOriginalsFromFiles(idx, inputEl, true);
+}
+
+// === v5.5: 다중 사진에서 매칭 (iOS) ===
+async function loadOriginalsFromMultiPicker(idx, inputEl) {
+  await _matchOriginalsFromFiles(idx, inputEl, false);
+}
+
+// 공통 매칭 로직 — 들어온 파일들에서 fileName 매칭하고, 모달의 사진은 즉시 갱신
+async function _matchOriginalsFromFiles(idx, inputEl, isFolder) {
   const r = analysisResults[idx];
   if (!r || !inputEl.files || inputEl.files.length === 0) return;
-  const file = inputEl.files[0];
-  // 이름이 다르면 경고 (하지만 그대로 표시)
-  if (file.name !== r.fileName) {
-    showToast(`파일명이 달라요 (선택: ${file.name.slice(0,20)}...)`, 2200);
+
+  const allFiles = Array.from(inputEl.files);
+  // 폴더면 비-이미지 제외
+  const imageExts = /\.(jpe?g|png|webp|heic|heif|bmp)$/i;
+  const imageFiles = isFolder
+    ? allFiles.filter(f => (f.type && f.type.startsWith('image/')) || imageExts.test(f.name))
+    : allFiles;
+
+  if (imageFiles.length === 0) {
+    showToast('이미지 파일이 없어요');
+    inputEl.value = '';
+    return;
   }
-  // 캐시에 저장 (같은 세션 동안 재사용)
-  window._fileMap[r.fileName] = file;
-  try {
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const url = ev.target.result;
+
+  // 결과 화면에 있는 passed 사진들의 fileName 집합
+  const targetNames = new Set(analysisResults.filter(x => x.passed).map(x => x.fileName));
+
+  // _fileMap에 적재
+  let matched = 0;
+  for (const f of imageFiles) {
+    if (targetNames.has(f.name)) {
+      window._fileMap[f.name] = f;
+      matched++;
+    }
+  }
+  // 매칭 안 됐어도 일단 다 저장 (다른 사진 클릭 시 매칭 기회)
+  for (const f of imageFiles) {
+    if (!window._fileMap[f.name]) window._fileMap[f.name] = f;
+  }
+
+  // 결과 화면의 매칭 표시 갱신
+  const status = document.getElementById('originLinkStatus');
+  const countEl = document.getElementById('originLinkCount');
+  if (status && countEl) {
+    countEl.textContent = matched.toString();
+    status.style.display = 'block';
+  }
+
+  // 지금 모달에 띄운 사진의 원본을 즉시 표시 (있다면)
+  const direct = window._fileMap[r.fileName];
+  if (direct) {
+    try {
+      const url = await _fileToDataUrl(direct);
       document.getElementById('thumbModalImg').src = url;
       r.fullImageUrl = url;
-      // 모달을 다시 렌더해서 캐시 상태 반영
-      setTimeout(() => showThumbDetail(idx), 100);
-    };
-    reader.onerror = () => showToast('원본 불러오기 실패');
-    reader.readAsDataURL(file);
-  } catch (e) {
-    showToast('원본 불러오기 실패: ' + e.message);
-  } finally {
-    inputEl.value = '';
+      showToast(matched > 0 ? `✓ ${matched}장 매칭됨 · 원본 표시` : '✓ 원본 사진 표시', 2200);
+      // 모달 다시 그려서 "원본 사진 보기" 버튼 상태로 전환
+      setTimeout(() => showThumbDetail(idx), 150);
+    } catch (e) {
+      showToast('원본 표시 실패: ' + e.message);
+    }
+  } else {
+    // 해당 사진 매칭 못함 — 안내
+    if (matched > 0) {
+      showToast(`${matched}장 매칭됐어요. 다른 사진은 매칭 가능해요. 이 사진은 다른 폴더에 있나봐요`, 3500);
+    } else {
+      showToast('이 폴더에서 분석에 쓴 사진을 찾지 못했어요. 다른 폴더를 골라주세요', 3500);
+    }
   }
+
+  inputEl.value = '';
+}
+
+function _fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => resolve(ev.target.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 // 백버튼 클릭 핸들러: 모달 열려 있으면 모달만 닫고, 아니면 SCREEN_FLOW 이전 단계
