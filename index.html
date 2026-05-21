@@ -377,14 +377,44 @@
       background: var(--bg-card);
       border: 1px solid var(--line);
       border-radius: 16px; padding: 16px; margin-bottom: 10px;
+      word-break: keep-all;       /* 한국어 단어 단위 줄바꿈 */
+      overflow-wrap: break-word;   /* 한 단어가 너무 길 때만 깸 */
     }
-    .insight-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 8px; }
-    .insight-head-left { display: flex; gap: 10px; align-items: center; }
-    .insight-icon { font-size: 18px; }
-    .insight-title { font-size: 15px; font-weight: 700; color: var(--text-1); letter-spacing: -0.3px; }
-    .insight-delta { font-size: 15px; font-weight: 800; }
-    .insight-body { font-size: 13px; color: var(--text-2); margin-bottom: 6px; line-height: 1.5; }
-    .insight-meta { font-size: 11px; color: var(--text-3); font-weight: 500; }
+    .insight-head {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 8px; gap: 10px;
+      flex-wrap: nowrap;
+    }
+    .insight-head-left {
+      display: flex; gap: 8px; align-items: center;
+      flex: 1; min-width: 0;        /* 제목이 너무 길 때 줄임표 가능 */
+      flex-wrap: nowrap;
+    }
+    .insight-icon {
+      font-size: 18px;
+      flex-shrink: 0;               /* 아이콘은 절대 안 줄어듦 */
+      line-height: 1;
+    }
+    .insight-title {
+      font-size: 15px; font-weight: 700; color: var(--text-1); letter-spacing: -0.3px;
+      white-space: nowrap;          /* 제목은 한 줄로 */
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+    .insight-delta {
+      font-size: 13px; font-weight: 700;
+      flex-shrink: 0;
+      white-space: nowrap;          /* 우측 수치는 한 줄로 */
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: var(--bg-subtle);
+      color: var(--text-2);
+    }
+    .insight-delta.delta-younger { background: var(--younger-soft); color: #00A87C; }
+    .insight-delta.delta-older { background: var(--older-soft); color: #E55A3C; }
+    .insight-body { font-size: 13px; color: var(--text-2); margin-bottom: 6px; line-height: 1.55; }
+    .insight-meta { font-size: 11px; color: var(--text-3); font-weight: 500; line-height: 1.5; }
 
     .tabs {
       display: flex; gap: 4px; margin-bottom: 16px;
@@ -833,6 +863,106 @@
       line-height: 1.55; margin-top: 12px;
     }
 
+    /* v5.3.2 얼굴 애니메이션 CTA + 풀스크린 플레이어 */
+    .face-anim-cta {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--primary); color: #fff;
+      border: none; border-radius: 999px;
+      padding: 8px 14px; font-size: 13px; font-weight: 700;
+      font-family: inherit; cursor: pointer;
+      box-shadow: 0 2px 8px rgba(49,130,246,0.25);
+      flex-shrink: 0;
+      transition: transform 0.1s, background 0.15s;
+    }
+    .face-anim-cta:active { transform: scale(0.96); background: var(--primary-deep); }
+
+    .face-anim-overlay {
+      position: fixed; inset: 0;
+      background: #0F0F18;
+      z-index: 10000;
+      display: none;
+      flex-direction: column;
+      color: #fff;
+    }
+    .face-anim-overlay.show { display: flex; }
+
+    .face-anim-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 18px 20px 12px;
+      flex-shrink: 0;
+    }
+    .face-anim-meta { min-width: 0; }
+    .face-anim-date {
+      font-size: 13px; color: rgba(255,255,255,0.6);
+      font-weight: 500; margin-bottom: 2px;
+    }
+    .face-anim-age {
+      font-size: 22px; font-weight: 800; color: #fff;
+      letter-spacing: -0.5px;
+    }
+    .face-anim-close {
+      background: rgba(255,255,255,0.12); border: none;
+      width: 38px; height: 38px; border-radius: 12px;
+      color: #fff; font-size: 16px; cursor: pointer; flex-shrink: 0;
+    }
+    .face-anim-close:active { background: rgba(255,255,255,0.2); }
+
+    .face-anim-stage {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 20px;
+      position: relative;
+      min-height: 0;
+    }
+    #faceAnimCanvas {
+      max-width: 100%; max-height: 100%;
+      width: auto; height: auto;
+      aspect-ratio: 1;
+      border-radius: 24px;
+      background: #1A1A24;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .face-anim-loading {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 16px; color: rgba(255,255,255,0.7);
+      font-size: 13px;
+    }
+    .face-anim-loading.hide { display: none; }
+
+    .face-anim-controls {
+      padding: 16px 20px 28px;
+      flex-shrink: 0;
+    }
+    .face-anim-progress {
+      height: 4px; background: rgba(255,255,255,0.15);
+      border-radius: 2px; overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .face-anim-progress-fill {
+      height: 100%; background: var(--primary);
+      width: 0%;
+      transition: width 0.1s linear;
+      border-radius: 2px;
+    }
+    .face-anim-btns {
+      display: flex; gap: 10px;
+    }
+    .face-anim-btn {
+      flex: 1; padding: 13px 14px;
+      background: var(--primary); color: #fff;
+      border: none; border-radius: 12px;
+      font-size: 14px; font-weight: 700;
+      font-family: inherit; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .face-anim-btn:active { background: var(--primary-deep); }
+    .face-anim-btn-secondary {
+      background: rgba(255,255,255,0.12);
+    }
+    .face-anim-btn-secondary:active { background: rgba(255,255,255,0.2); }
+
     /* Modal */
     .modal {
       display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
@@ -907,26 +1037,26 @@
       padding: 10px; border: 0.5px solid var(--line);
       transition: background 0.15s;
     }
-    .compare-side:active { background: rgba(199,178,255,0.08); }
+    .compare-side:active { background: var(--bg-subtle); }
     .compare-side img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; margin-bottom: 8px; }
     .compare-side .side-label { font-size: 10px; color: var(--text-3); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .compare-side .side-age { font-size: 22px; font-weight: 700; color: #3182F6; }
+    .compare-side .side-age { font-size: 22px; font-weight: 700; color: var(--primary); }
     .compare-side .side-date { font-size: 11px; color: var(--text-2); margin-top: 2px; }
-    .compare-side .side-hint { font-size: 10px; color: #3182F6; margin-top: 6px; opacity: 0.85; }
+    .compare-side .side-hint { font-size: 10px; color: var(--primary); margin-top: 6px; opacity: 0.85; }
 
-    .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 0.5px solid var(--bg-subtle); font-size: 13px; }
+    .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 0.5px solid var(--line); font-size: 13px; gap: 10px; }
     .info-row:last-child { border-bottom: none; }
-    .info-row .k { color: var(--text-3); }
-    .info-row .v { font-weight: 500; }
-    .info-section { background: rgba(255,255,255,0.02); border-radius: 10px; padding: 4px 12px; }
-    .info-divider { height: 1px; background: linear-gradient(to right, transparent, rgba(199,178,255,0.3), transparent); margin: 12px 0; }
+    .info-row .k { color: var(--text-3); flex-shrink: 0; }
+    .info-row .v { font-weight: 600; color: var(--text-1); text-align: right; }
+    .info-section { background: var(--bg-subtle); border-radius: 10px; padding: 4px 12px; }
+    .info-divider { height: 1px; background: var(--line-strong); margin: 14px 0; }
     .info-reason {
-      font-size: 12px; color: rgba(199,178,255,0.9);
-      padding: 6px 8px 8px; line-height: 1.5;
-      border-left: 2px solid rgba(49,130,246,0.3);
-      margin: 2px 0 6px 8px;
-      background: rgba(199,178,255,0.05);
-      border-radius: 0 6px 6px 0;
+      font-size: 12px; color: var(--text-2);
+      padding: 8px 10px; line-height: 1.55;
+      border-left: 2px solid var(--primary);
+      margin: 6px 0 8px 4px;
+      background: var(--primary-soft);
+      border-radius: 0 8px 8px 0;
     }
 
     .insight.clickable { cursor: pointer; transition: background 0.15s; }
@@ -962,7 +1092,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo" onclick="resetApp()" style="cursor:pointer;">Face<span class="accent">AGE</span></div>
-    <div class="badge" id="topBadge">POC v5.3</div>
+    <div class="badge" id="topBadge">POC v5.4</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -1315,8 +1445,14 @@
       </div>
     </div>
 
-    <h3 style="margin-top: 24px;">시계열 추이</h3>
-    <p class="small" style="line-height:1.6; color: var(--text-3); margin-bottom: 10px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 24px; gap: 10px;">
+      <h3 style="margin: 0;">시계열 추이</h3>
+      <button class="face-anim-cta" onclick="openFaceAnimation()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;"><polygon points="8,5 19,12 8,19"/></svg>
+        <span>영상으로 보기</span>
+      </button>
+    </div>
+    <p class="small" style="line-height:1.6; color: var(--text-3); margin: 6px 0 10px;">
       <span style="color:var(--younger);">●</span> 어려보임 ·
       <span style="color:var(--equal);">●</span> 비슷 ·
       <span style="color:var(--older);">●</span> 들어보임 · 점 탭하면 사진 미리보기
@@ -1399,16 +1535,26 @@
         <div style="flex:1; min-width:0;">
           <p style="font-weight:700; font-size:14px; margin-bottom:4px; color: var(--text-1);">원본 사진을 빠르게 보고 싶다면</p>
           <p class="small" style="line-height:1.55; margin-bottom:10px;">
-            사진 폴더를 한 번 더 선택해두면, 상세 보기에서 원본을 바로 띄울 수 있어요.
+            사진 폴더(또는 분석에 쓴 사진들)를 한 번 더 선택해두면, 상세 보기에서 원본을 바로 띄울 수 있어요.
             (안 해도 OK — 상세 보기에서 그때그때 갤러리를 열어요)
           </p>
           <p id="originLinkStatus" class="small" style="color: var(--younger); font-weight:600; margin-bottom:10px; display:none;">
             ✓ 매칭됨 — <span id="originLinkCount">0</span>장
           </p>
-          <div class="file-input-wrap">
-            <button class="btn btn-secondary" style="margin:0; padding:11px 14px; font-size:13.5px;">📂 원본 폴더/사진 선택</button>
-            <input type="file" id="originPicker" accept="image/*" multiple>
+          <!-- v5.3.2: 폴더 버튼과 사진 버튼 분리 -->
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <div class="file-input-wrap" id="originFolderWrap" style="flex:1; min-width:140px;">
+              <button class="btn btn-secondary" style="margin:0; padding:11px 12px; font-size:13px; width:100%;">📂 폴더에서 선택</button>
+              <input type="file" id="originFolderPicker" webkitdirectory directory multiple>
+            </div>
+            <div class="file-input-wrap" style="flex:1; min-width:140px;">
+              <button class="btn btn-secondary" style="margin:0; padding:11px 12px; font-size:13px; width:100%;">🖼️ 사진 다중 선택</button>
+              <input type="file" id="originPicker" accept="image/*" multiple>
+            </div>
           </div>
+          <p id="originFolderHint" class="small" style="font-size:11.5px; color: var(--text-3); margin: 8px 0 0; display:none;">
+            iPhone은 폴더 선택을 지원하지 않아요. 오른쪽 "사진 다중 선택"을 써주세요.
+          </p>
         </div>
       </div>
     </div>
@@ -1435,6 +1581,33 @@
       <div class="fs-overlay-count" id="iosPhotoOverlayCount">0 / 0</div>
     </div>
     <div class="fs-overlay-hint" id="iosPhotoOverlayHint">사진이 많으면 최대 30초가 걸릴 수 있어요. 잠시만 기다려주세요.</div>
+  </div>
+</div>
+
+<!-- v5.3.2: 얼굴 변화 애니메이션 플레이어 -->
+<div class="face-anim-overlay" id="faceAnimOverlay">
+  <div class="face-anim-header">
+    <div class="face-anim-meta">
+      <div class="face-anim-date" id="faceAnimDate">—</div>
+      <div class="face-anim-age" id="faceAnimAge">—</div>
+    </div>
+    <button class="face-anim-close" onclick="closeFaceAnimation()">✕</button>
+  </div>
+  <div class="face-anim-stage">
+    <canvas id="faceAnimCanvas" width="540" height="540"></canvas>
+    <div class="face-anim-loading" id="faceAnimLoading">
+      <div class="fs-spinner-ring"></div>
+      <p>사진을 준비하는 중이에요</p>
+    </div>
+  </div>
+  <div class="face-anim-controls">
+    <div class="face-anim-progress">
+      <div class="face-anim-progress-fill" id="faceAnimProgressFill"></div>
+    </div>
+    <div class="face-anim-btns">
+      <button class="face-anim-btn" id="faceAnimPlayBtn" onclick="toggleFaceAnimation()">⏸ 일시정지</button>
+      <button class="face-anim-btn face-anim-btn-secondary" onclick="restartFaceAnimation()">⟲ 처음부터</button>
+    </div>
   </div>
 </div>
 
@@ -1843,21 +2016,40 @@ async function clearSession() {
 function serializeAnalysisResults(results) {
   return results
     .filter(r => r.passed) // 그래프에 포함된 것만
-    .map(r => ({
-      fileName: r.fileName,
-      fileSize: r.fileSize || null,
-      timestamp: r.timestamp instanceof Date ? r.timestamp.getTime() : r.timestamp,
-      hasFace: !!r.hasFace,
-      passed: !!r.passed,
-      estimatedAge: r.estimatedAge,
-      rawAge: r.rawAge,
-      qualityScore: r.qualityScore,
-      qualityBreakdown: r.qualityBreakdown || {},
-      thumbUrl: r.thumbUrl, // ← 썸네일만 보존 (data URL)
-      // fullImageUrl은 의도적으로 제외 (용량 절약 + 갤러리에서 다시 불러옴)
-      totalFacesInPhoto: r.totalFacesInPhoto,
-      rejectionReason: r.rejectionReason,
-    }));
+    .map(r => {
+      // v5.3.2: 애니메이션용 — face box와 원본 이미지 크기 직렬화
+      let faceBox = null;
+      if (r.box) {
+        faceBox = {
+          x: r.box.x ?? r.box._x ?? null,
+          y: r.box.y ?? r.box._y ?? null,
+          w: r.box.width ?? r.box._width ?? null,
+          h: r.box.height ?? r.box._height ?? null,
+        };
+        if (faceBox.x === null || faceBox.w === null) faceBox = null;
+      }
+      // 이미 직렬화된 결과(resume된 데이터를 재저장하는 경우)는 그대로 들어옴
+      if (!faceBox && r.faceBox) faceBox = r.faceBox;
+
+      return {
+        fileName: r.fileName,
+        fileSize: r.fileSize || null,
+        timestamp: r.timestamp instanceof Date ? r.timestamp.getTime() : r.timestamp,
+        hasFace: !!r.hasFace,
+        passed: !!r.passed,
+        estimatedAge: r.estimatedAge,
+        rawAge: r.rawAge,
+        qualityScore: r.qualityScore,
+        qualityBreakdown: r.qualityBreakdown || {},
+        thumbUrl: r.thumbUrl, // ← 썸네일만 보존 (data URL)
+        // fullImageUrl은 의도적으로 제외 (용량 절약 + 갤러리에서 다시 불러옴)
+        totalFacesInPhoto: r.totalFacesInPhoto,
+        rejectionReason: r.rejectionReason,
+        faceBox: faceBox,                                  // {x,y,w,h} 원본 좌표
+        imgW: r.imgW || r.originalWidth || null,           // 원본 이미지 너비
+        imgH: r.imgH || r.originalHeight || null,          // 원본 이미지 높이
+      };
+    });
 }
 
 function deserializeAnalysisResults(arr) {
@@ -1957,7 +2149,10 @@ function resetPickScreen() {
   collectedFiles = [];
   if (typeof updateCollectedDisplay === 'function') updateCollectedDisplay();
   sampledFiles = [];
-  analysisResults = [];
+  // v5.3.2 핵심 수정: 사진 선택 화면에 재진입할 때 analysisResults를 비우면 안 됨
+  // resume 후 사진 추가 흐름에서 이게 비워지면 머지 대상이 사라짐
+  // 이전 분석은 메모리/IndexedDB에 그대로 보존됨
+  // analysisResults = [];  ← 제거됨
   analysisCancelled = false;
   // OS별 UI 분기 적용
   if (typeof adaptUIForOS === 'function') adaptUIForOS();
@@ -1966,6 +2161,18 @@ function resetPickScreen() {
 // 뒤로가기 (백키 / 브라우저 뒤로가기) 처리
 window.addEventListener('popstate', (e) => {
   isPoppingState = true;
+
+  // v5.3.2: 얼굴 애니메이션 열려있으면 그것부터 닫기
+  const animOverlay = document.getElementById('faceAnimOverlay');
+  if (animOverlay && animOverlay.classList.contains('show')) {
+    closeFaceAnimation();
+    const currentScreen = document.querySelector('.screen.active');
+    if (currentScreen) {
+      history.pushState({ screen: currentScreen.id }, '', '#' + currentScreen.id);
+    }
+    isPoppingState = false;
+    return;
+  }
 
   // 모달이 열려 있으면 모달만 닫고 현재 화면 history는 다시 push (스택 보존)
   const openModalEl = document.querySelector('.modal.show');
@@ -2599,40 +2806,71 @@ document.getElementById('folderPicker').addEventListener('change', async (e) => 
 // === v5.3: 결과 화면의 "원본 폴더 다시 선택" 핸들러 ===
 // 사용자가 폴더/사진을 다시 선택하면 fileName→File 매핑 캐시 생성
 // 이후 모달에서 fullImageUrl이 없는 사진을 보면 이 캐시에서 즉시 찾아 표시
+async function _handleOriginFilesSelected(files, isFolder) {
+  if (files.length === 0) return;
+
+  const status = document.getElementById('originLinkStatus');
+  const countEl = document.getElementById('originLinkCount');
+
+  // 폴더 선택은 이미지 외 파일도 포함하니 필터링
+  let imageFiles = files;
+  if (isFolder) {
+    const imageExts = /\.(jpe?g|png|webp|heic|heif|bmp)$/i;
+    imageFiles = files.filter(f => (f.type && f.type.startsWith('image/')) || imageExts.test(f.name));
+  }
+
+  // 매칭 대상: analysisResults의 fileName들
+  const targetNames = new Set(analysisResults.filter(r => r.passed).map(r => r.fileName));
+  let matched = 0;
+  for (const f of imageFiles) {
+    if (targetNames.has(f.name)) {
+      window._fileMap[f.name] = f;
+      matched++;
+    }
+  }
+  // 매칭이 없어도 모든 파일을 저장 (다른 이름 변형 가능성 대비)
+  for (const f of imageFiles) {
+    if (!window._fileMap[f.name]) window._fileMap[f.name] = f;
+  }
+  if (status && countEl) {
+    countEl.textContent = matched.toString();
+    status.style.display = 'block';
+  }
+  if (matched > 0) {
+    showToast(`✓ ${matched}장의 원본과 매칭됐어요`, 2500);
+  } else if (imageFiles.length === 0) {
+    showToast('이미지 파일이 없어요');
+  } else {
+    showToast(`매칭 0장 — 분석에 쓴 사진들이 맞나요?`, 3000);
+  }
+}
+
 function _setupOriginPickerHandler() {
-  const originPicker = document.getElementById('originPicker');
-  if (!originPicker || originPicker._handlerAttached) return;
-  originPicker._handlerAttached = true;
-  originPicker.addEventListener('change', async (e) => {
+  const sharedHandler = (isFolder) => async (e) => {
     const files = Array.from(e.target.files);
-    if (files.length === 0) return;
-    const status = document.getElementById('originLinkStatus');
-    const countEl = document.getElementById('originLinkCount');
-    // 매칭 대상: analysisResults의 fileName들
-    const targetNames = new Set(analysisResults.filter(r => r.passed).map(r => r.fileName));
-    let matched = 0;
-    for (const f of files) {
-      if (targetNames.has(f.name)) {
-        window._fileMap[f.name] = f;
-        matched++;
-      }
-    }
-    // 매칭이 없어도 모든 파일을 저장 (다른 이름 변형 가능성 대비)
-    for (const f of files) {
-      if (!window._fileMap[f.name]) window._fileMap[f.name] = f;
-    }
-    if (status && countEl) {
-      countEl.textContent = matched.toString();
-      status.style.display = 'block';
-    }
-    if (matched > 0) {
-      showToast(`✓ ${matched}장의 원본과 매칭됐어요`, 2500);
-    } else {
-      showToast('매칭되는 사진이 없어요. 분석에 쓴 폴더가 맞나요?', 3000);
-    }
-    // input 초기화 — 같은 폴더 다시 고를 수 있게
-    e.target.value = '';
-  });
+    await _handleOriginFilesSelected(files, isFolder);
+    e.target.value = ''; // 같은 폴더 다시 고를 수 있게
+  };
+
+  const originPicker = document.getElementById('originPicker');
+  if (originPicker && !originPicker._handlerAttached) {
+    originPicker._handlerAttached = true;
+    originPicker.addEventListener('change', sharedHandler(false));
+  }
+  const folderPicker = document.getElementById('originFolderPicker');
+  if (folderPicker && !folderPicker._handlerAttached) {
+    folderPicker._handlerAttached = true;
+    folderPicker.addEventListener('change', sharedHandler(true));
+  }
+
+  // iOS는 webkitdirectory 미지원 → 폴더 버튼 숨기고 사진 버튼만
+  const os = typeof detectOS === 'function' ? detectOS() : { isIOS: false };
+  if (os.isIOS) {
+    const folderWrap = document.getElementById('originFolderWrap');
+    const hint = document.getElementById('originFolderHint');
+    if (folderWrap) folderWrap.style.display = 'none';
+    if (hint) hint.style.display = 'block';
+  }
 }
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', _setupOriginPickerHandler);
@@ -3789,6 +4027,8 @@ async function analyzePhoto(file, timestamp) {
 
     result.hasFace = true;
     result.box = box;
+    result.imgW = img.width;          // v5.3.2: 애니메이션 정렬용
+    result.imgH = img.height;
     result.landmarks = detection.landmarks;
 
     const q = await assessQuality(img, detection);
@@ -4126,6 +4366,274 @@ function generateDemoThumb(c1, c2, idx) {
   return canvas.toDataURL('image/jpeg', 0.7);
 }
 
+// ============================================
+// v5.3.2 얼굴 변화 애니메이션 플레이어
+// ============================================
+// - 시간순으로 passed 사진들을 균등 샘플링 (20~30장)
+// - 각 사진의 face box를 정렬해서 crop → crossfade 재생
+// - 원본 있으면 원본, 없으면 썸네일 사용
+// - 사진당 ~500ms 노출, 총 10~15초 정도
+
+const FACE_ANIM = {
+  frames: [],            // [{img, box, age, date, ageStr, dateStr}]
+  currentIdx: 0,
+  playing: false,
+  rafId: null,
+  startTime: 0,
+  durationPerFrame: 500, // ms
+  crossfadeMs: 220,      // 인접 프레임 알파 블렌딩 시간
+  targetFrames: 25,
+};
+
+async function openFaceAnimation() {
+  const passed = analysisResults.filter(r => r.passed);
+  if (passed.length < 3) {
+    showToast('애니메이션은 3장 이상부터 가능해요');
+    return;
+  }
+
+  // 오버레이 열고 로딩 표시
+  const overlay = document.getElementById('faceAnimOverlay');
+  const loading = document.getElementById('faceAnimLoading');
+  overlay.classList.add('show');
+  loading.classList.remove('hide');
+
+  // 균등 샘플링 (시간순)
+  const sorted = [...passed].sort((a, b) => a.timestamp - b.timestamp);
+  const target = Math.min(FACE_ANIM.targetFrames, sorted.length);
+  const pickedResults = pickEvenlySpaced(sorted, target);
+
+  // 각 사진의 이미지 + box 준비
+  FACE_ANIM.frames = [];
+  for (let i = 0; i < pickedResults.length; i++) {
+    const r = pickedResults[i];
+    try {
+      const frame = await prepareAnimFrame(r);
+      if (frame) FACE_ANIM.frames.push(frame);
+    } catch (e) {
+      console.warn('[anim] 프레임 준비 실패:', r.fileName, e);
+    }
+  }
+
+  if (FACE_ANIM.frames.length < 2) {
+    showToast('애니메이션을 만들 사진이 부족해요');
+    closeFaceAnimation();
+    return;
+  }
+
+  loading.classList.add('hide');
+  FACE_ANIM.currentIdx = 0;
+  FACE_ANIM.startTime = performance.now();
+  FACE_ANIM.playing = true;
+  document.getElementById('faceAnimPlayBtn').textContent = '⏸ 일시정지';
+  faceAnimTick();
+}
+
+// 시간순 균등 샘플링
+function pickEvenlySpaced(sorted, count) {
+  if (sorted.length <= count) return sorted;
+  const result = [];
+  const step = (sorted.length - 1) / (count - 1);
+  for (let i = 0; i < count; i++) {
+    const idx = Math.round(i * step);
+    result.push(sorted[idx]);
+  }
+  return result;
+}
+
+// 한 프레임의 이미지를 Image 객체로 로드 + box 좌표 환산
+async function prepareAnimFrame(r) {
+  // 우선순위: 원본(fullImageUrl) > _fileMap의 File > 썸네일
+  let url = r.fullImageUrl;
+  let useThumbBox = false;
+
+  if (!url && window._fileMap && window._fileMap[r.fileName]) {
+    url = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(window._fileMap[r.fileName]);
+    });
+  }
+  if (!url) {
+    url = r.thumbUrl;
+    useThumbBox = true; // 썸네일 좌표 변환 필요
+  }
+  if (!url) return null;
+
+  const img = await loadImageFromUrl(url);
+
+  // box를 현재 사용 이미지(img) 좌표로 환산
+  // r.box는 원본 좌표 (faceBox는 직렬화된 버전)
+  let bx, by, bw, bh;
+  if (r.box) {
+    bx = r.box.x ?? r.box._x;
+    by = r.box.y ?? r.box._y;
+    bw = r.box.width ?? r.box._width;
+    bh = r.box.height ?? r.box._height;
+  } else if (r.faceBox) {
+    bx = r.faceBox.x; by = r.faceBox.y;
+    bw = r.faceBox.w; bh = r.faceBox.h;
+  }
+
+  if (bx == null || bw == null) {
+    // 박스가 없으면 중앙 기준 fallback
+    const s = Math.min(img.width, img.height) * 0.6;
+    bx = (img.width - s) / 2;
+    by = (img.height - s) / 2;
+    bw = s; bh = s;
+  } else {
+    // 좌표가 어떤 이미지 기준인지 확인하고 환산
+    const refW = r.imgW || (useThumbBox ? img.width : img.width);
+    const refH = r.imgH || (useThumbBox ? img.height : img.height);
+    if (refW && refH && (refW !== img.width || refH !== img.height)) {
+      const sx = img.width / refW;
+      const sy = img.height / refH;
+      bx *= sx; by *= sy; bw *= sx; bh *= sy;
+    }
+  }
+
+  const ageStr = r.estimatedAge != null ? r.estimatedAge.toFixed(1) + '세' : '—';
+  const ts = r.timestamp instanceof Date ? r.timestamp : new Date(r.timestamp);
+  const dateStr = `${ts.getFullYear()}.${String(ts.getMonth()+1).padStart(2,'0')}.${String(ts.getDate()).padStart(2,'0')}`;
+
+  return { img, bx, by, bw, bh, ageStr, dateStr };
+}
+
+function loadImageFromUrl(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+// 한 프레임을 캔버스에 그리기 (얼굴 중심에 맞춰 정사각형 crop)
+// alpha: 0~1 (crossfade용)
+function drawAnimFrame(canvas, frame, alpha) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  // 얼굴 박스 중심 + 박스 크기의 1.6배를 보이도록 (얼굴 + 머리 + 어깨 일부)
+  const cx = frame.bx + frame.bw / 2;
+  const cy = frame.by + frame.bh / 2;
+  const cropSize = Math.max(frame.bw, frame.bh) * 1.7;
+
+  // crop 영역 (이미지 좌표)
+  const sx = cx - cropSize / 2;
+  const sy = cy - cropSize / 2;
+  const sw = cropSize;
+  const sh = cropSize;
+
+  ctx.globalAlpha = alpha;
+  // 캔버스 전체에 정사각형 crop
+  // 이미지 범위 밖으로 나가는 부분은 검정 배경으로
+  ctx.drawImage(frame.img, sx, sy, sw, sh, 0, 0, W, H);
+  ctx.globalAlpha = 1.0;
+}
+
+function clearAnimCanvas() {
+  const canvas = document.getElementById('faceAnimCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#1A1A24';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+// 매 프레임 호출 — 시간 기반 진행
+function faceAnimTick() {
+  if (!FACE_ANIM.playing) return;
+  const elapsed = performance.now() - FACE_ANIM.startTime;
+  const totalDur = FACE_ANIM.frames.length * FACE_ANIM.durationPerFrame;
+
+  if (elapsed >= totalDur) {
+    // 끝 — 마지막 프레임에 멈춤
+    FACE_ANIM.currentIdx = FACE_ANIM.frames.length - 1;
+    const last = FACE_ANIM.frames[FACE_ANIM.currentIdx];
+    clearAnimCanvas();
+    drawAnimFrame(document.getElementById('faceAnimCanvas'), last, 1);
+    updateAnimMeta(last);
+    updateAnimProgress(1);
+    FACE_ANIM.playing = false;
+    document.getElementById('faceAnimPlayBtn').textContent = '▶ 다시 재생';
+    return;
+  }
+
+  const floatIdx = elapsed / FACE_ANIM.durationPerFrame;
+  const idxA = Math.floor(floatIdx);
+  const idxB = Math.min(idxA + 1, FACE_ANIM.frames.length - 1);
+  const frameProgress = floatIdx - idxA; // 0~1
+  // crossfade 영역: 프레임 후반부 일부에서 blend
+  const fadeStart = 1 - FACE_ANIM.crossfadeMs / FACE_ANIM.durationPerFrame;
+  let alphaA = 1, alphaB = 0;
+  if (frameProgress >= fadeStart && idxA !== idxB) {
+    const t = (frameProgress - fadeStart) / (1 - fadeStart);
+    alphaA = 1 - t;
+    alphaB = t;
+  }
+
+  const canvas = document.getElementById('faceAnimCanvas');
+  clearAnimCanvas();
+  drawAnimFrame(canvas, FACE_ANIM.frames[idxA], alphaA);
+  if (idxA !== idxB && alphaB > 0) {
+    drawAnimFrame(canvas, FACE_ANIM.frames[idxB], alphaB);
+  }
+
+  FACE_ANIM.currentIdx = idxA;
+  updateAnimMeta(FACE_ANIM.frames[idxA]);
+  updateAnimProgress(elapsed / totalDur);
+
+  FACE_ANIM.rafId = requestAnimationFrame(faceAnimTick);
+}
+
+function updateAnimMeta(frame) {
+  document.getElementById('faceAnimDate').textContent = frame.dateStr;
+  document.getElementById('faceAnimAge').textContent = frame.ageStr;
+}
+function updateAnimProgress(ratio) {
+  const fill = document.getElementById('faceAnimProgressFill');
+  if (fill) fill.style.width = (Math.min(1, Math.max(0, ratio)) * 100) + '%';
+}
+
+function toggleFaceAnimation() {
+  const btn = document.getElementById('faceAnimPlayBtn');
+  if (FACE_ANIM.playing) {
+    FACE_ANIM.playing = false;
+    cancelAnimationFrame(FACE_ANIM.rafId);
+    btn.textContent = '▶ 재생';
+  } else {
+    // 끝나서 멈춰있다면 처음부터
+    const elapsed = performance.now() - FACE_ANIM.startTime;
+    const totalDur = FACE_ANIM.frames.length * FACE_ANIM.durationPerFrame;
+    if (elapsed >= totalDur) {
+      FACE_ANIM.startTime = performance.now();
+    } else {
+      // 일시정지 위치에서 재개
+      FACE_ANIM.startTime = performance.now() - elapsed;
+    }
+    FACE_ANIM.playing = true;
+    btn.textContent = '⏸ 일시정지';
+    faceAnimTick();
+  }
+}
+
+function restartFaceAnimation() {
+  if (FACE_ANIM.frames.length === 0) return;
+  FACE_ANIM.startTime = performance.now();
+  FACE_ANIM.playing = true;
+  document.getElementById('faceAnimPlayBtn').textContent = '⏸ 일시정지';
+  cancelAnimationFrame(FACE_ANIM.rafId);
+  faceAnimTick();
+}
+
+function closeFaceAnimation() {
+  FACE_ANIM.playing = false;
+  cancelAnimationFrame(FACE_ANIM.rafId);
+  document.getElementById('faceAnimOverlay').classList.remove('show');
+  // 프레임 데이터 해제 (이미지 객체)
+  FACE_ANIM.frames = [];
+}
+
 // ===== 결과 화면 =====
 function showResults() {
   // v5.3: 이전 세션 결과와 새 분석 결과 머지
@@ -4142,7 +4650,8 @@ function showResults() {
     console.log(`[merge] ${mergedCount}장의 이전 결과를 새 분석에 합쳤어요`);
     window._mergeWithPrev = null;
     if (mergedCount > 0) {
-      setTimeout(() => showToast(`이전 ${mergedCount}장 + 새 분석을 합쳤어요`, 2800), 800);
+      const newCount = analysisResults.filter(r => r.passed && !r._fromStorage).length;
+      setTimeout(() => showToast(`기존 ${mergedCount}장 + 새 사진 ${newCount}장 = 총 ${mergedCount + newCount}장`, 3200), 800);
     }
   }
 
@@ -4504,8 +5013,8 @@ function renderInsights(passed, birthDate) {
       insights.push({
         icon: seasonIcons[youngest.season] + ' vs ' + seasonIcons[oldest.season],
         title: `${seasonNames[youngest.season]}이 가장 어려보임`,
-        delta: `차이 ${diff.toFixed(1)}세`,
-        deltaClass: 'delta-neutral',
+        delta: `−${diff.toFixed(1)}세`,
+        deltaClass: 'delta-younger',
         body: `${seasonNames[youngest.season]} 사진이 ${seasonNames[oldest.season]} 사진보다 평균 ${diff.toFixed(1)}세 더 어려 보였어요.`,
         meta: `${seasonNames[youngest.season]} ${youngest.count}장 vs ${seasonNames[oldest.season]} ${oldest.count}장`,
         comparison: {
@@ -4548,9 +5057,9 @@ function renderInsights(passed, birthDate) {
       const old = hourGroups[oldest.band];
       insights.push({
         icon: hourBands[youngest.band].icon + ' vs ' + hourBands[oldest.band].icon,
-        title: `${hourBands[youngest.band].name} 사진이 가장 좋음`,
-        delta: `차이 ${diff.toFixed(1)}세`,
-        deltaClass: 'delta-neutral',
+        title: `${hourBands[youngest.band].name}이 더 어려보임`,
+        delta: `−${diff.toFixed(1)}세`,
+        deltaClass: 'delta-younger',
         body: `${hourBands[youngest.band].name}에 찍은 사진이 ${hourBands[oldest.band].name} 사진보다 평균 ${diff.toFixed(1)}세 어려 보였어요.`,
         meta: `${hourBands[youngest.band].name} ${youngest.count}장 vs ${hourBands[oldest.band].name} ${oldest.count}장`,
         comparison: {
@@ -4581,8 +5090,8 @@ function renderInsights(passed, birthDate) {
       insights.push({
         icon: '📅',
         title: `${youngerLabel}이 더 어려보임`,
-        delta: `차이 ${Math.abs(diff).toFixed(1)}세`,
-        deltaClass: 'delta-neutral',
+        delta: `−${Math.abs(diff).toFixed(1)}세`,
+        deltaClass: 'delta-younger',
         body: `${youngerLabel} 사진이 ${olderLabel} 사진보다 평균 ${Math.abs(diff).toFixed(1)}세 어려 보였어요.`,
         meta: `${youngerLabel} ${youngerGroup.length}장 vs ${olderLabel} ${olderGroup.length}장`,
         comparison: {
@@ -4639,7 +5148,7 @@ function renderInsights(passed, birthDate) {
     if (diff >= 1.0) {
       insights.push({
         icon: '🎯', title: '베스트 vs 워스트',
-        delta: diff.toFixed(1) + '세 차이',
+        delta: `±${diff.toFixed(1)}세`,
         deltaClass: 'delta-neutral',
         body: `가장 어려 보였던 사진과 가장 들어 보였던 사진의 얼굴 나이 차이.`,
         meta: '단일 사진 비교 · 노이즈 가능성 있음',
@@ -4795,18 +5304,18 @@ function showThumbDetail(idx) {
       </div>
       <div class="info-row">
         <span class="k">실제 나이</span>
-        <span class="v" style="color:#fff;">${realAgeAtPhoto.toFixed(1)}세</span>
+        <span class="v">${realAgeAtPhoto.toFixed(1)}세</span>
       </div>`;
 
   if (r.hasFace) {
     const ageDiff = r.estimatedAge - realAgeAtPhoto;
     const ageDiffStr = ageDiff >= 0 ? `+${ageDiff.toFixed(1)}` : ageDiff.toFixed(1);
-    const ageDiffColor = ageDiff < -0.5 ? '#4ADE80' : (ageDiff > 0.5 ? '#F87171' : 'rgba(255,255,255,0.7)');
+    const ageDiffColor = ageDiff < -0.5 ? 'var(--younger)' : (ageDiff > 0.5 ? 'var(--older)' : 'var(--text-3)');
     const diffReason = analyzeAgeDiffReason(r, realAgeAtPhoto);
     infoHtml += `
       <div class="info-row">
-        <span class="k">얼굴 나이 (AI 추정)</span>
-        <span class="v" style="color:#3182F6; font-weight:600;">${r.estimatedAge.toFixed(1)}세 <span style="color:${ageDiffColor}; font-size:11px; font-weight:500;">(${ageDiffStr})</span></span>
+        <span class="k">얼굴 나이 (AI)</span>
+        <span class="v" style="color: var(--primary); font-weight:700;">${r.estimatedAge.toFixed(1)}세 <span style="color:${ageDiffColor}; font-size:11px; font-weight:600;">(${ageDiffStr})</span></span>
       </div>`;
     if (diffReason) {
       infoHtml += `
@@ -4816,7 +5325,7 @@ function showThumbDetail(idx) {
     }
     if (r.totalFacesInPhoto && r.totalFacesInPhoto > 1) {
       infoHtml += `
-        <div class="info-reason" style="color: rgba(49,130,246,0.85);">
+        <div class="info-reason" style="color: var(--primary-deep);">
           👥 사진 속 ${r.totalFacesInPhoto}명 중 본인 1명만 분석됨
         </div>`;
     }
@@ -4824,7 +5333,7 @@ function showThumbDetail(idx) {
     infoHtml += `
       <div class="info-row">
         <span class="k">얼굴 나이</span>
-        <span class="v" style="color:rgba(255,255,255,0.4);">측정 불가</span>
+        <span class="v" style="color: var(--text-4);">측정 불가</span>
       </div>`;
   }
 
@@ -4850,18 +5359,18 @@ function showThumbDetail(idx) {
     infoHtml += `
       <div class="info-row">
         <span class="k">얼굴 검출</span>
-        <span class="v" style="color:#4ADE80;">✓ 됨</span>
+        <span class="v" style="color: var(--younger);">✓ 됨</span>
       </div>
       <div class="info-row">
         <span class="k">품질 점수</span>
-        <span class="v">${r.qualityScore} / 100 ${r.passed ? '✓' : '<span style="color:#F87171;">(미달)</span>'}</span>
+        <span class="v">${r.qualityScore} / 100 ${r.passed ? '<span style="color: var(--younger);">✓</span>' : '<span style="color: var(--older);">(미달)</span>'}</span>
       </div>`;
 
     if (r.qualityBreakdown) {
       const q = r.qualityBreakdown;
       const occlusion = q.occlusionReason;
       if (occlusion) {
-        infoHtml += `<div class="info-row"><span class="k">└ 가려짐 감지</span><span class="v" style="color:#F87171;">${occlusion === 'sunglasses' ? '🕶️ 선글라스' : '😷 마스크'}</span></div>`;
+        infoHtml += `<div class="info-row"><span class="k">└ 가려짐 감지</span><span class="v" style="color: var(--older);">${occlusion === 'sunglasses' ? '🕶️ 선글라스' : '😷 마스크'}</span></div>`;
       }
       infoHtml += `
         <div class="info-row"><span class="k">└ 얼굴 크기</span><span class="v">${q.size || '-'}</span></div>
@@ -5024,6 +5533,12 @@ async function loadOriginalFromPicker(idx, inputEl) {
 
 // 백버튼 클릭 핸들러: 모달 열려 있으면 모달만 닫고, 아니면 SCREEN_FLOW 이전 단계
 function handleBackButton() {
+  // v5.3.2: 얼굴 애니메이션 열려있으면 그것부터 닫기
+  const animOverlay = document.getElementById('faceAnimOverlay');
+  if (animOverlay && animOverlay.classList.contains('show')) {
+    closeFaceAnimation();
+    return;
+  }
   const openModalEl = document.querySelector('.modal.show');
   if (openModalEl) {
     openModalEl.classList.remove('show');
@@ -6154,13 +6669,30 @@ function switchInsightTab(el, key) {
 }
 
 function resetApp() {
-  // v5.3: "사진 추가해서 다시 분석하기" - 저장된 데이터는 그대로 두고 사진 선택만 다시
-  // 단, 결과 화면 상태와 collectedFiles는 비움
-  analysisResults = [];
+  // v5.3.2 핵심 수정: "사진 추가해서 다시 분석하기" 시 기존 분석 결과 보존
+  // - analysisResults는 비우지 않음 → startAnalysis가 자동으로 머지함
+  // - 사용자가 새로고침/세션 끊겼다가 들어와도 IndexedDB에서 복원 가능
+  // - 수동 삭제는 confirmDeleteAllData에서만 일어남
+
+  // 만약 메모리가 비어있고 IndexedDB에 데이터가 있으면 복원 (안전망)
+  if (analysisResults.length === 0) {
+    loadSession().then(data => {
+      if (data && Array.isArray(data.results) && data.results.length > 0) {
+        analysisResults = deserializeAnalysisResults(data.results);
+        if (data.referenceDescriptor && !referenceDescriptor) {
+          referenceDescriptor = deserializeDescriptor(data.referenceDescriptor);
+        }
+        console.log(`[resetApp] IndexedDB에서 ${data.results.length}장 복원 (안전망)`);
+      }
+    }).catch(() => {});
+  }
+
+  // 분석 진행 상태와 선택 사진만 초기화 (결과는 보존)
   sampledFiles = [];
-  isDemoMode = false;
-  isResumedSession = false;
   collectedFiles = [];
+  isDemoMode = false;
+  // isResumedSession은 그대로 두는 게 맞음 — 이어서 분석하는 흐름이므로
+
   document.getElementById('filePicker').value = '';
   const fp = document.getElementById('folderPicker');
   if (fp) fp.value = '';
@@ -6172,8 +6704,8 @@ function resetApp() {
   if (btn) btn.textContent = '갤러리에서 사진 선택';
   const folderBtn = document.getElementById('folderBtn');
   if (folderBtn) folderBtn.textContent = '셀카 폴더 선택';
-  // 사진 선택 화면으로 직진 (온보딩 다시 안 보임)
-  // 단, 모델이 로딩 안됐으면 로딩 화면 거쳐야 함
+
+  // 사진 선택 화면으로 직진
   if (modelsLoaded) {
     showScreen('screen-pick');
   } else {
