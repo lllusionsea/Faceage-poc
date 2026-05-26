@@ -415,6 +415,277 @@
     .insight-delta.delta-older { background: var(--older-soft); color: #E55A3C; }
     .insight-body { font-size: 13px; color: var(--text-2); margin-bottom: 6px; line-height: 1.55; }
     .insight-meta { font-size: 11px; color: var(--text-3); font-weight: 500; line-height: 1.5; }
+    .insight-place-edit {
+      display: inline-flex; align-items: center; gap: 4px;
+      margin-top: 10px;
+      padding: 6px 10px;
+      background: var(--bg-subtle);
+      border-radius: 999px;
+      font-size: 11.5px;
+      color: var(--primary);
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .insight-place-edit:active { background: var(--primary-soft); }
+
+    /* v5.7 콜라주 CTA */
+    .collage-cta {
+      display: flex; align-items: center; gap: 14px;
+      padding: 16px 18px;
+      background: linear-gradient(135deg, var(--primary-soft) 0%, #FFFFFF 100%);
+      border: 1px solid rgba(49,130,246,0.22);
+      border-radius: 16px;
+      margin-bottom: 14px;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.15s;
+      box-shadow: 0 2px 10px rgba(49,130,246,0.08);
+    }
+    .collage-cta:active { transform: scale(0.98); }
+    .collage-cta-icon {
+      font-size: 28px; flex-shrink: 0;
+      width: 48px; height: 48px;
+      background: #fff;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+    .collage-cta-body { flex: 1; min-width: 0; }
+    .collage-cta-title {
+      font-size: 15px; font-weight: 700;
+      color: var(--text-1); margin-bottom: 2px;
+      letter-spacing: -0.3px;
+    }
+    .collage-cta-desc {
+      font-size: 12.5px; color: var(--text-2);
+      line-height: 1.4;
+    }
+    .collage-cta-arrow {
+      color: var(--primary); font-size: 18px;
+      font-weight: 700; flex-shrink: 0;
+    }
+
+    /* 콜라주 미리보기 오버레이 (영상과 동일 톤) */
+    .collage-overlay {
+      position: fixed; inset: 0;
+      background: #0F0F18;
+      z-index: 10000;
+      display: none;
+      flex-direction: column;
+      color: #fff;
+    }
+    .collage-overlay.show { display: flex; }
+    .collage-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 18px 20px 12px;
+      flex-shrink: 0;
+    }
+    .collage-title {
+      font-size: 18px; font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+    .collage-close {
+      background: rgba(255,255,255,0.12); border: none;
+      width: 38px; height: 38px; border-radius: 12px;
+      color: #fff; font-size: 16px; cursor: pointer;
+    }
+    .collage-stage {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 20px;
+      overflow: auto;
+      min-height: 0;
+    }
+    #collagePreviewImg {
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: 14px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+    }
+    .collage-loading {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 14px;
+      color: rgba(255,255,255,0.7); font-size: 13px;
+    }
+    .collage-year-tabs {
+      display: flex; gap: 6px; overflow-x: auto;
+      padding: 10px 20px 4px;
+      flex-shrink: 0;
+      scrollbar-width: none;
+    }
+    .collage-year-tabs::-webkit-scrollbar { display: none; }
+    .collage-year-tab {
+      flex-shrink: 0;
+      padding: 8px 14px;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 999px;
+      font-size: 13px; font-weight: 600;
+      color: rgba(255,255,255,0.75);
+      cursor: pointer;
+      transition: background 0.15s;
+      font-family: inherit;
+    }
+    .collage-year-tab.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+    .collage-controls {
+      padding: 14px 20px 28px;
+      flex-shrink: 0;
+    }
+    .collage-controls .face-anim-btn {
+      width: 100%;
+    }
+
+    /* v5.7 Then & Now CTA */
+    .then-now-cta {
+      display: flex; align-items: center; gap: 14px;
+      padding: 16px 18px;
+      background: linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 100%);
+      border: 1px solid rgba(255,123,92,0.22);
+      border-radius: 16px;
+      margin: 16px 0 8px;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.15s;
+      box-shadow: 0 2px 10px rgba(255,123,92,0.08);
+    }
+    .then-now-cta:active { transform: scale(0.98); }
+    .then-now-cta-icon {
+      font-size: 26px; font-weight: 900;
+      flex-shrink: 0;
+      width: 48px; height: 48px;
+      background: #fff;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+      color: var(--primary);
+    }
+    .then-now-cta-body { flex: 1; min-width: 0; }
+    .then-now-cta-title {
+      font-size: 15px; font-weight: 700;
+      color: var(--text-1); margin-bottom: 2px;
+      letter-spacing: -0.3px;
+    }
+    .then-now-cta-desc {
+      font-size: 12.5px; color: var(--text-2);
+      line-height: 1.4;
+    }
+
+    /* Then & Now 슬라이더 본체 */
+    .then-now-stage {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center;
+      padding: 12px 20px;
+      min-height: 0;
+      position: relative;
+    }
+    .then-now-container {
+      position: relative;
+      width: 100%;
+      max-width: 480px;
+      aspect-ratio: 1;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #1A1A24;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      user-select: none;
+      touch-action: none;
+    }
+    .then-now-img {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+    }
+    .then-now-now-wrap {
+      position: absolute; inset: 0;
+      width: 50%;
+      overflow: hidden;
+      transition: none; /* dragging */
+    }
+    .then-now-now-wrap .then-now-img {
+      width: 200%; /* 부모 폭의 2배라 원본 비율 유지 */
+    }
+    .then-now-handle {
+      position: absolute;
+      top: 0; bottom: 0;
+      left: 50%;
+      width: 2px;
+      background: #fff;
+      transform: translateX(-50%);
+      box-shadow: 0 0 12px rgba(0,0,0,0.4);
+      pointer-events: none;
+    }
+    .then-now-handle-line {
+      position: absolute;
+      top: 0; bottom: 0; left: 0;
+      width: 100%; background: #fff;
+    }
+    .then-now-handle-grip {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      color: #0F0F18;
+      font-size: 14px; font-weight: 900;
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+      letter-spacing: -1px;
+    }
+    .then-now-label {
+      position: absolute;
+      top: 14px;
+      padding: 6px 12px;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      color: #fff;
+      font-size: 12px; font-weight: 700;
+      border-radius: 999px;
+      letter-spacing: -0.2px;
+      pointer-events: none;
+    }
+    .then-now-label-left { left: 14px; }
+    .then-now-label-right { right: 14px; }
+
+    .then-now-info {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 24px 28px;
+      gap: 10px;
+      flex-shrink: 0;
+      color: #fff;
+    }
+    .then-now-info-side {
+      flex: 1; min-width: 0;
+    }
+    .then-now-info-label {
+      font-size: 11px; color: rgba(255,255,255,0.55);
+      font-weight: 600; margin-bottom: 4px; letter-spacing: 0.3px;
+    }
+    .then-now-info-age {
+      font-size: 22px; font-weight: 800;
+      letter-spacing: -0.5px;
+      font-variant-numeric: tabular-nums;
+    }
+    .then-now-info-date {
+      font-size: 11.5px; color: rgba(255,255,255,0.65);
+      font-weight: 500; margin-top: 1px;
+      font-variant-numeric: tabular-nums;
+    }
+    .then-now-info-diff {
+      padding: 6px 12px;
+      background: rgba(255,255,255,0.10);
+      border-radius: 999px;
+      font-size: 13px; font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+    }
+    .then-now-info-diff.diff-younger { background: rgba(0,200,150,0.25); color: #00D89F; }
+    .then-now-info-diff.diff-older { background: rgba(255,123,92,0.25); color: #FF9577; }
 
     .tabs {
       display: flex; gap: 4px; margin-bottom: 16px;
@@ -1139,7 +1410,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo" onclick="resetApp()" style="cursor:pointer;">Face<span class="accent">AGE</span></div>
-    <div class="badge" id="topBadge">POC v5.6</div>
+    <div class="badge" id="topBadge">POC v5.7</div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -1509,6 +1780,16 @@
       <div id="chartPreview" class="chart-preview"></div>
     </div>
 
+    <!-- v5.7: Then & Now 비교 슬라이더 CTA -->
+    <div class="then-now-cta" id="thenNowCta" onclick="openThenNowSlider()">
+      <div class="then-now-cta-icon">↔</div>
+      <div class="then-now-cta-body">
+        <div class="then-now-cta-title">처음 vs 지금</div>
+        <div class="then-now-cta-desc">슬라이더를 좌우로 움직여 가장 오래된 사진과 가장 최근 사진을 비교해보세요</div>
+      </div>
+      <div class="collage-cta-arrow">→</div>
+    </div>
+
     <!-- === 발견된 패턴 (구 인사이트 화면 통합) === -->
     <h3 style="margin-top: 28px;">발견된 패턴</h3>
     <p class="small" style="color: var(--text-3); margin-bottom: 12px;">계절·시간대·요일별 변화를 분석했어요</p>
@@ -1520,6 +1801,16 @@
     </div>
 
     <div id="tab-pattern">
+      <!-- v5.7: 콜라주 만들기 카드 (인사이트 최상단) -->
+      <div class="collage-cta" id="collageCta" onclick="openCollageBuilder()">
+        <div class="collage-cta-icon">🖼️</div>
+        <div class="collage-cta-body">
+          <div class="collage-cta-title">한 해의 나, 콜라주로</div>
+          <div class="collage-cta-desc">시간순으로 골라낸 나의 사진들을 한 장의 이미지로 저장하세요</div>
+        </div>
+        <div class="collage-cta-arrow">→</div>
+      </div>
+
       <div id="patternInsights"></div>
     </div>
 
@@ -1681,6 +1972,72 @@
         <span id="faceAnimShareLabel">⬇ 영상 저장</span>
       </button>
     </div>
+    <!-- v5.7: 영상 끝나면 슬라이더 진입 버튼 노출 -->
+    <div class="face-anim-btns" style="margin-top: 10px; display: none;" id="faceAnimEndCta">
+      <button class="face-anim-btn face-anim-btn-tertiary" onclick="closeFaceAnimation(); setTimeout(openThenNowSlider, 200);">
+        ↔ 처음 vs 지금 비교하기
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- v5.7: Then & Now 비교 슬라이더 오버레이 -->
+<div class="collage-overlay" id="thenNowOverlay">
+  <div class="collage-header">
+    <div class="collage-title">처음 vs 지금</div>
+    <button class="collage-close" onclick="closeThenNowSlider()">✕</button>
+  </div>
+  <div class="then-now-stage">
+    <div class="then-now-container" id="thenNowContainer">
+      <img id="thenImg" class="then-now-img" alt="Then">
+      <div class="then-now-now-wrap" id="thenNowNowWrap">
+        <img id="nowImg" class="then-now-img" alt="Now">
+      </div>
+      <div class="then-now-handle" id="thenNowHandle">
+        <div class="then-now-handle-line"></div>
+        <div class="then-now-handle-grip">‹ ›</div>
+      </div>
+      <div class="then-now-label then-now-label-left" id="thenLabel">—</div>
+      <div class="then-now-label then-now-label-right" id="nowLabel">—</div>
+    </div>
+    <div class="collage-loading" id="thenNowLoading">
+      <div class="fs-spinner-ring"></div>
+      <p>사진을 불러오는 중...</p>
+    </div>
+  </div>
+  <div class="then-now-info" id="thenNowInfo">
+    <div class="then-now-info-side">
+      <div class="then-now-info-label">처음 (Then)</div>
+      <div class="then-now-info-age" id="thenAge">—</div>
+      <div class="then-now-info-date" id="thenDate">—</div>
+    </div>
+    <div class="then-now-info-diff" id="thenNowDiff">—</div>
+    <div class="then-now-info-side" style="text-align:right;">
+      <div class="then-now-info-label">지금 (Now)</div>
+      <div class="then-now-info-age" id="nowAge">—</div>
+      <div class="then-now-info-date" id="nowDate">—</div>
+    </div>
+  </div>
+</div>
+
+<!-- v5.7: 콜라주 오버레이 -->
+<div class="collage-overlay" id="collageOverlay">
+  <div class="collage-header">
+    <div class="collage-title" id="collageTitleEl">한 해의 콜라주</div>
+    <button class="collage-close" onclick="closeCollage()">✕</button>
+  </div>
+  <div class="collage-year-tabs" id="collageYearTabs"></div>
+  <div class="collage-stage">
+    <img id="collagePreviewImg" alt="콜라주 미리보기" style="display:none;">
+    <div class="collage-loading" id="collageLoading">
+      <div class="fs-spinner-ring"></div>
+      <p id="collageLoadingMsg">콜라주를 만들고 있어요</p>
+    </div>
+  </div>
+  <div class="collage-controls">
+    <button class="face-anim-btn" id="collageSaveBtn" onclick="saveOrShareCollage()" disabled>
+      <span id="collageSaveLabel">⬇ 저장 / 공유</span>
+    </button>
   </div>
 </div>
 
@@ -2121,6 +2478,7 @@ function serializeAnalysisResults(results) {
         faceBox: faceBox,                                  // {x,y,w,h} 원본 좌표
         imgW: r.imgW || r.originalWidth || null,           // 원본 이미지 너비
         imgH: r.imgH || r.originalHeight || null,          // 원본 이미지 높이
+        exifMeta: r.exifMeta || null,                      // v5.7: EXIF 메타
       };
     });
 }
@@ -2247,6 +2605,30 @@ window.addEventListener('popstate', (e) => {
   const animOverlay = document.getElementById('faceAnimOverlay');
   if (animOverlay && animOverlay.classList.contains('show')) {
     closeFaceAnimation();
+    const currentScreen = document.querySelector('.screen.active');
+    if (currentScreen) {
+      history.pushState({ screen: currentScreen.id }, '', '#' + currentScreen.id);
+    }
+    isPoppingState = false;
+    return;
+  }
+
+  // v5.7: 콜라주 오버레이
+  const collageOverlayEl = document.getElementById('collageOverlay');
+  if (collageOverlayEl && collageOverlayEl.classList.contains('show')) {
+    closeCollage();
+    const currentScreen = document.querySelector('.screen.active');
+    if (currentScreen) {
+      history.pushState({ screen: currentScreen.id }, '', '#' + currentScreen.id);
+    }
+    isPoppingState = false;
+    return;
+  }
+
+  // v5.7: Then & Now 슬라이더
+  const sliderOverlayEl = document.getElementById('thenNowOverlay');
+  if (sliderOverlayEl && sliderOverlayEl.classList.contains('show')) {
+    closeThenNowSlider();
     const currentScreen = document.querySelector('.screen.active');
     if (currentScreen) {
       history.pushState({ screen: currentScreen.id }, '', '#' + currentScreen.id);
@@ -4013,7 +4395,57 @@ async function analyzePhoto(file, timestamp) {
     estimatedAge: null, qualityScore: 0,
     qualityBreakdown: {}, thumbUrl: null,
     fullImageUrl: null,
+    exifMeta: null, // v5.7
   };
+
+  // v5.7: EXIF 메타데이터 추출 (장소/카메라/조명/보정앱)
+  try {
+    const ex = await exifr.parse(file, [
+      'Make', 'Model', 'LensModel', 'LensMake',
+      'FocalLength', 'FocalLengthIn35mmFormat',
+      'ISO', 'ISOSpeedRatings',
+      'FNumber', 'ExposureTime',
+      'Flash', 'WhiteBalance',
+      'Software',
+      'GPSLatitude', 'GPSLongitude',
+      'latitude', 'longitude', // exifr 친절 변환
+    ]);
+    if (ex) {
+      result.exifMeta = {
+        make: ex.Make || null,
+        model: ex.Model || null,
+        lensModel: ex.LensModel || null,
+        focalLength: ex.FocalLength || null,
+        focalLength35: ex.FocalLengthIn35mmFormat || null,
+        iso: ex.ISO || ex.ISOSpeedRatings || null,
+        fNumber: ex.FNumber || null,
+        exposureTime: ex.ExposureTime || null,
+        flash: ex.Flash != null ? ex.Flash : null,
+        software: ex.Software || null,
+        lat: ex.latitude ?? null,
+        lng: ex.longitude ?? null,
+      };
+      // 셀카(앞카메라) 추정: LensModel에 "front" 키워드 또는 FocalLength <= 3mm
+      const lensStr = (result.exifMeta.lensModel || '').toLowerCase();
+      if (lensStr.includes('front') || lensStr.includes('selfie')) {
+        result.exifMeta.cameraSide = 'front';
+      } else if (lensStr.includes('back') || lensStr.includes('rear') || lensStr.includes('wide')) {
+        // "back" "rear"는 명확히 후면. "wide"는 후면 광각이 일반적
+        result.exifMeta.cameraSide = 'rear';
+      } else if (result.exifMeta.focalLength != null && result.exifMeta.focalLength <= 3.0) {
+        // 짧은 초점거리 = 앞카메라 가능성 높음
+        result.exifMeta.cameraSide = 'front';
+      } else if (result.exifMeta.focalLength != null && result.exifMeta.focalLength >= 4.5) {
+        result.exifMeta.cameraSide = 'rear';
+      } else {
+        result.exifMeta.cameraSide = null;
+      }
+      // 보정 앱 감지 (Software 필드)
+      result.exifMeta.beautified = detectBeautifyApp(result.exifMeta.software);
+    }
+  } catch (e) {
+    // EXIF 없거나 파싱 실패 — 무시
+  }
 
   try {
     const img = await loadImage(file);
@@ -4154,11 +4586,51 @@ async function analyzePhoto(file, timestamp) {
       result.rejectionReason = q.breakdown.occlusionReason;
       result.passed = false;
     }
+
+    // v5.7: 보정 앱 감지 → 품질 점수 -10 차감 + 마크
+    if (result.exifMeta && result.exifMeta.beautified) {
+      result.qualityScore = Math.max(0, result.qualityScore - 10);
+      result.qualityBreakdown.beautified = result.exifMeta.beautified; // 앱 이름
+      // 점수가 50 미만으로 떨어졌으면 자동 거부
+      if (result.qualityScore < 50) {
+        result.passed = false;
+        if (!result.rejectionReason) result.rejectionReason = 'beautified';
+      }
+    }
   } catch (e) {
     console.error('analyzePhoto error:', e);
   }
 
   return result;
+}
+
+// v5.7: 보정 앱 감지 (Software 필드 기준)
+// 알려진 보정 앱 키워드 매칭 → 감지된 앱 이름 반환 (없으면 null)
+function detectBeautifyApp(software) {
+  if (!software || typeof software !== 'string') return null;
+  const s = software.toLowerCase();
+  // 한국에서 흔한 보정/카메라 앱들
+  const apps = [
+    { key: 'facetune', name: 'FaceTune' },
+    { key: 'snow', name: 'SNOW' },
+    { key: 'b612', name: 'B612' },
+    { key: 'soda', name: 'SODA' },
+    { key: 'foodie', name: 'Foodie' },
+    { key: 'picsart', name: 'PicsArt' },
+    { key: 'beautyplus', name: 'BeautyPlus' },
+    { key: 'youcam', name: 'YouCam' },
+    { key: 'meitu', name: '메이투' },
+    { key: 'ulike', name: 'Ulike' },
+    { key: 'bestie', name: 'Bestie' },
+    { key: 'beautycam', name: 'BeautyCam' },
+    { key: 'lightroom', name: 'Lightroom' }, // 일반 편집기지만 보정 가능성
+    { key: 'vsco', name: 'VSCO' },
+    { key: 'photoshop', name: 'Photoshop' },
+  ];
+  for (const app of apps) {
+    if (s.includes(app.key)) return app.name;
+  }
+  return null;
 }
 
 function loadImage(file) {
@@ -4684,6 +5156,9 @@ function faceAnimTick() {
     updateAnimProgress(1);
     FACE_ANIM.playing = false;
     document.getElementById('faceAnimPlayBtn').textContent = '▶ 다시 재생';
+    // v5.7: 영상 끝났을 때 Then&Now 슬라이더 진입 버튼 노출
+    const endCta = document.getElementById('faceAnimEndCta');
+    if (endCta) endCta.style.display = 'flex';
     return;
   }
 
@@ -4969,6 +5444,9 @@ function restartFaceAnimation() {
   FACE_ANIM.startTime = performance.now();
   FACE_ANIM.playing = true;
   document.getElementById('faceAnimPlayBtn').textContent = '⏸ 일시정지';
+  // v5.7: 다시 재생 시작 → EndCta 숨김
+  const endCta = document.getElementById('faceAnimEndCta');
+  if (endCta) endCta.style.display = 'none';
   cancelAnimationFrame(FACE_ANIM.rafId);
   faceAnimTick();
 }
@@ -4977,8 +5455,421 @@ function closeFaceAnimation() {
   FACE_ANIM.playing = false;
   cancelAnimationFrame(FACE_ANIM.rafId);
   document.getElementById('faceAnimOverlay').classList.remove('show');
+  // v5.7: EndCta 숨김 (다음 열림 대비)
+  const endCta = document.getElementById('faceAnimEndCta');
+  if (endCta) endCta.style.display = 'none';
   // 프레임 데이터 해제 (이미지 객체)
   FACE_ANIM.frames = [];
+}
+
+// ============================================
+// v5.7 콜라주 빌더 (연도별)
+// ============================================
+const COLLAGE = {
+  currentYear: null,
+  currentBlob: null,
+  yearsAvailable: [],
+};
+
+async function openCollageBuilder() {
+  const passed = analysisResults.filter(r => r.passed);
+  if (passed.length < 3) {
+    showToast('콜라주는 3장 이상부터 가능해요');
+    return;
+  }
+  // 연도별 그룹화
+  const byYear = {};
+  passed.forEach(r => {
+    const ts = r.timestamp instanceof Date ? r.timestamp : new Date(r.timestamp);
+    const y = ts.getFullYear();
+    if (!byYear[y]) byYear[y] = [];
+    byYear[y].push(r);
+  });
+  // 2장 이상인 연도만
+  const years = Object.keys(byYear).map(Number).filter(y => byYear[y].length >= 2).sort((a, b) => b - a);
+  if (years.length === 0) {
+    showToast('한 해에 2장 이상 있는 사진이 없어요');
+    return;
+  }
+  COLLAGE.yearsAvailable = years;
+  COLLAGE.byYear = byYear;
+
+  // 오버레이 열고 탭 그리기
+  const overlay = document.getElementById('collageOverlay');
+  overlay.classList.add('show');
+  const tabsEl = document.getElementById('collageYearTabs');
+  tabsEl.innerHTML = years.map(y => `
+    <button class="collage-year-tab" data-year="${y}" onclick="selectCollageYear(${y})">${y}년</button>
+  `).join('');
+
+  // 가장 최근 연도부터
+  await selectCollageYear(years[0]);
+}
+
+async function selectCollageYear(year) {
+  COLLAGE.currentYear = year;
+  // 탭 활성화
+  document.querySelectorAll('.collage-year-tab').forEach(t => {
+    t.classList.toggle('active', Number(t.dataset.year) === year);
+  });
+  // 생성
+  await buildCollageForYear(year);
+}
+
+async function buildCollageForYear(year) {
+  const img = document.getElementById('collagePreviewImg');
+  const loading = document.getElementById('collageLoading');
+  const loadingMsg = document.getElementById('collageLoadingMsg');
+  const saveBtn = document.getElementById('collageSaveBtn');
+  const title = document.getElementById('collageTitleEl');
+
+  img.style.display = 'none';
+  loading.style.display = 'flex';
+  saveBtn.disabled = true;
+  loadingMsg.textContent = `${year}년 사진을 모으는 중...`;
+  title.textContent = `${year}년의 나`;
+
+  const photos = COLLAGE.byYear[year];
+  if (!photos || photos.length === 0) return;
+
+  // 시간순 + 최대 12장으로 균등 샘플링
+  const sorted = [...photos].sort((a, b) => a.timestamp - b.timestamp);
+  const maxCount = 12;
+  const picked = pickEvenlySpaced(sorted, Math.min(maxCount, sorted.length));
+
+  try {
+    // 각 사진의 이미지 + box 로드 (영상 프레임 준비 함수 재사용)
+    const frames = [];
+    for (let i = 0; i < picked.length; i++) {
+      loadingMsg.textContent = `${year}년 콜라주 — ${i+1}/${picked.length}`;
+      try {
+        const f = await prepareAnimFrame(picked[i]);
+        if (f) frames.push(f);
+      } catch (e) { console.warn('frame skip:', e); }
+    }
+    if (frames.length === 0) {
+      loading.style.display = 'none';
+      showToast('이미지를 불러올 수 없어요');
+      return;
+    }
+
+    loadingMsg.textContent = '콜라주 그리는 중...';
+    const blob = await makeCollagePNGFromFrames(frames, { year, birthInput: document.getElementById('birthDate') });
+    if (!blob) {
+      loading.style.display = 'none';
+      showToast('콜라주 생성 실패');
+      return;
+    }
+    COLLAGE.currentBlob = blob;
+    const url = URL.createObjectURL(blob);
+    img.src = url;
+    img.onload = () => {
+      loading.style.display = 'none';
+      img.style.display = 'block';
+      saveBtn.disabled = false;
+      // 이전 URL 해제
+      if (COLLAGE._prevUrl) URL.revokeObjectURL(COLLAGE._prevUrl);
+      COLLAGE._prevUrl = url;
+    };
+  } catch (e) {
+    console.error('[collage]', e);
+    loading.style.display = 'none';
+    showToast('콜라주 생성 중 오류: ' + e.message);
+  }
+}
+
+// 프레임 배열을 콜라주 PNG로 (기존 makeCollagePNG의 일반화 버전)
+async function makeCollagePNGFromFrames(frames, opts = {}) {
+  const n = frames.length;
+  if (n === 0) return null;
+  // 정사각형 그리드 결정
+  let cols;
+  if (n <= 2) cols = n;
+  else if (n <= 4) cols = 2;
+  else if (n <= 9) cols = 3;
+  else cols = 4;
+  const rows = Math.ceil(n / cols);
+  const cellSize = 380;
+  const padding = 10;
+  const headerH = 80; // 상단 타이틀 영역
+  const footerH = 50; // 하단 워터마크
+  const W = cols * cellSize + (cols + 1) * padding;
+  const H = headerH + rows * cellSize + (rows + 1) * padding + footerH;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // 배경 그라데이션
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+  bgGrad.addColorStop(0, '#0F0F18');
+  bgGrad.addColorStop(1, '#1A1A24');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // 상단 타이틀
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 36px -apple-system, "Pretendard", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(opts.year ? `${opts.year}년의 나` : 'FaceAge 콜라주', W/2, 50);
+  // 부제: 평균 얼굴 나이
+  const realAges = frames.map(f => f.realAge).filter(v => v != null);
+  const estAges = frames.map(f => f.estAge).filter(v => v != null);
+  if (estAges.length > 0 && realAges.length > 0) {
+    const avgEst = estAges.reduce((s,v)=>s+v,0) / estAges.length;
+    const avgReal = realAges.reduce((s,v)=>s+v,0) / realAges.length;
+    const diff = avgEst - avgReal;
+    const diffStr = diff < -0.3 ? `평균 ${(-diff).toFixed(1)}세 어려보임` :
+                    diff > 0.3 ? `평균 ${diff.toFixed(1)}세 들어보임` :
+                    '실제 나이와 비슷';
+    ctx.font = '15px -apple-system, "Pretendard", sans-serif';
+    ctx.fillStyle = diff < -0.3 ? '#00C896' : (diff > 0.3 ? '#FF7B5C' : 'rgba(255,255,255,0.7)');
+    ctx.fillText(`${frames.length}장 · ${diffStr}`, W/2, 72);
+  }
+
+  // 사진 그리드
+  for (let i = 0; i < frames.length; i++) {
+    const r = Math.floor(i / cols), c = i % cols;
+    const x = padding + c * (cellSize + padding);
+    const y = headerH + padding + r * (cellSize + padding);
+    const f = frames[i];
+    const cx = f.bx + f.bw/2, cy = f.by + f.bh/2;
+    const cropSize = Math.max(f.bw, f.bh) * 1.7;
+    const sx = cx - cropSize/2, sy = cy - cropSize/2;
+    // 둥근 모서리
+    ctx.save();
+    ctx.beginPath();
+    const radius = 18;
+    roundedRect(ctx, x, y, cellSize, cellSize, radius);
+    ctx.clip();
+    ctx.fillStyle = '#1A1A24';
+    ctx.fillRect(x, y, cellSize, cellSize);
+    ctx.drawImage(f.img, sx, sy, cropSize, cropSize, x, y, cellSize, cellSize);
+    // 하단 라벨 그라데이션
+    const labelGrad = ctx.createLinearGradient(x, y + cellSize - 60, x, y + cellSize);
+    labelGrad.addColorStop(0, 'rgba(0,0,0,0)');
+    labelGrad.addColorStop(1, 'rgba(0,0,0,0.75)');
+    ctx.fillStyle = labelGrad;
+    ctx.fillRect(x, y + cellSize - 60, cellSize, 60);
+    // 라벨 텍스트
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 18px -apple-system, "Pretendard", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(f.dateStr, x + 16, y + cellSize - 32);
+    ctx.font = '14px -apple-system, "Pretendard", sans-serif';
+    let ageStr = f.ageStr;
+    if (f.realAge != null && f.estAge != null) {
+      const d = f.estAge - f.realAge;
+      const sign = d >= 0 ? '+' : '';
+      ageStr += `  (${sign}${d.toFixed(1)})`;
+    }
+    ctx.fillText(ageStr, x + 16, y + cellSize - 12);
+    ctx.restore();
+  }
+
+  // 하단 워터마크
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.font = '600 14px -apple-system, "Pretendard", sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText('FaceAge', W - padding * 2, H - 18);
+
+  return new Promise(resolve => canvas.toBlob(resolve, 'image/png', 0.92));
+}
+
+function roundedRect(ctx, x, y, w, h, r) {
+  if (ctx.roundRect) {
+    ctx.roundRect(x, y, w, h, r);
+  } else {
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+  }
+}
+
+async function saveOrShareCollage() {
+  if (!COLLAGE.currentBlob) return;
+  const btn = document.getElementById('collageSaveBtn');
+  const label = document.getElementById('collageSaveLabel');
+  btn.disabled = true;
+  if (label) label.textContent = '저장 중...';
+  try {
+    await shareOrDownloadBlob(COLLAGE.currentBlob, `faceage_${COLLAGE.currentYear}.png`, `FaceAge ${COLLAGE.currentYear}`);
+  } catch (e) {
+    showToast('저장 실패: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    if (label) label.textContent = '⬇ 저장 / 공유';
+  }
+}
+
+function closeCollage() {
+  const overlay = document.getElementById('collageOverlay');
+  overlay.classList.remove('show');
+  if (COLLAGE._prevUrl) {
+    URL.revokeObjectURL(COLLAGE._prevUrl);
+    COLLAGE._prevUrl = null;
+  }
+  COLLAGE.currentBlob = null;
+  document.getElementById('collagePreviewImg').src = '';
+}
+
+// ============================================
+// v5.7 Then & Now 비교 슬라이더
+// ============================================
+const THEN_NOW = {
+  thenFrame: null,
+  nowFrame: null,
+  dragging: false,
+};
+
+async function openThenNowSlider() {
+  const passed = analysisResults.filter(r => r.passed);
+  if (passed.length < 2) {
+    showToast('비교에는 2장 이상 필요해요');
+    return;
+  }
+  const sorted = [...passed].sort((a, b) => a.timestamp - b.timestamp);
+  const thenR = sorted[0];
+  const nowR = sorted[sorted.length - 1];
+
+  const overlay = document.getElementById('thenNowOverlay');
+  const loading = document.getElementById('thenNowLoading');
+  overlay.classList.add('show');
+  loading.style.display = 'flex';
+  document.getElementById('thenNowContainer').style.visibility = 'hidden';
+
+  try {
+    const [thenFrame, nowFrame] = await Promise.all([
+      prepareAnimFrame(thenR),
+      prepareAnimFrame(nowR),
+    ]);
+    if (!thenFrame || !nowFrame) throw new Error('이미지 로드 실패');
+
+    THEN_NOW.thenFrame = thenFrame;
+    THEN_NOW.nowFrame = nowFrame;
+
+    // 얼굴 정렬해서 같은 캔버스에 그리고, 그 dataURL을 img에 설정
+    const thenUrl = renderAlignedFaceToDataUrl(thenFrame);
+    const nowUrl = renderAlignedFaceToDataUrl(nowFrame);
+
+    document.getElementById('thenImg').src = thenUrl;
+    document.getElementById('nowImg').src = nowUrl;
+
+    // 라벨 & 정보 채우기
+    document.getElementById('thenLabel').textContent = thenFrame.dateStr.slice(2);
+    document.getElementById('nowLabel').textContent = nowFrame.dateStr.slice(2);
+    document.getElementById('thenAge').textContent = thenFrame.ageStr;
+    document.getElementById('nowAge').textContent = nowFrame.ageStr;
+    document.getElementById('thenDate').textContent = thenFrame.dateStr;
+    document.getElementById('nowDate').textContent = nowFrame.dateStr;
+
+    // 두 사진의 얼굴 나이 차이
+    const diffEl = document.getElementById('thenNowDiff');
+    if (thenFrame.estAge != null && nowFrame.estAge != null) {
+      const d = nowFrame.estAge - thenFrame.estAge;
+      const sign = d >= 0 ? '+' : '';
+      diffEl.textContent = `${sign}${d.toFixed(1)}세`;
+      diffEl.className = 'then-now-info-diff';
+      if (d < -0.5) diffEl.classList.add('diff-younger');
+      else if (d > 0.5) diffEl.classList.add('diff-older');
+    } else {
+      diffEl.textContent = '—';
+    }
+
+    loading.style.display = 'none';
+    document.getElementById('thenNowContainer').style.visibility = 'visible';
+
+    _setupThenNowDrag();
+    _setThenNowSplit(50);
+  } catch (e) {
+    loading.style.display = 'none';
+    showToast('비교 이미지 로드 실패: ' + e.message);
+    closeThenNowSlider();
+  }
+}
+
+// 프레임을 정사각형 캔버스에 얼굴 정렬된 상태로 그려서 data URL 반환
+function renderAlignedFaceToDataUrl(frame) {
+  const SIZE = 540;
+  const c = document.createElement('canvas');
+  c.width = SIZE; c.height = SIZE;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#1A1A24';
+  ctx.fillRect(0, 0, SIZE, SIZE);
+  const cx = frame.bx + frame.bw/2, cy = frame.by + frame.bh/2;
+  const cropSize = Math.max(frame.bw, frame.bh) * 1.7;
+  const sx = cx - cropSize/2, sy = cy - cropSize/2;
+  ctx.drawImage(frame.img, sx, sy, cropSize, cropSize, 0, 0, SIZE, SIZE);
+  return c.toDataURL('image/jpeg', 0.9);
+}
+
+function _setupThenNowDrag() {
+  const container = document.getElementById('thenNowContainer');
+  if (container._dragSetup) return;
+  container._dragSetup = true;
+
+  const onMove = (clientX) => {
+    const rect = container.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const pct = Math.max(0, Math.min(100, (x / rect.width) * 100));
+    _setThenNowSplit(pct);
+  };
+
+  // 마우스
+  container.addEventListener('mousedown', (e) => {
+    THEN_NOW.dragging = true;
+    onMove(e.clientX);
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (THEN_NOW.dragging) onMove(e.clientX);
+  });
+  window.addEventListener('mouseup', () => { THEN_NOW.dragging = false; });
+
+  // 터치
+  container.addEventListener('touchstart', (e) => {
+    THEN_NOW.dragging = true;
+    if (e.touches[0]) onMove(e.touches[0].clientX);
+  }, { passive: true });
+  container.addEventListener('touchmove', (e) => {
+    if (THEN_NOW.dragging && e.touches[0]) onMove(e.touches[0].clientX);
+  }, { passive: true });
+  container.addEventListener('touchend', () => { THEN_NOW.dragging = false; });
+}
+
+function _setThenNowSplit(pct) {
+  const wrap = document.getElementById('thenNowNowWrap');
+  const handle = document.getElementById('thenNowHandle');
+  if (!wrap || !handle) return;
+  wrap.style.width = pct + '%';
+  handle.style.left = pct + '%';
+  // 내부 이미지를 부모 폭에 맞춰 보정 (200% 너비라서 좌측 정렬 유지)
+  const img = wrap.querySelector('.then-now-img');
+  if (img) {
+    // wrap의 폭이 pct%인 컨테이너에서 nowImg를 보여줄 때
+    // 컨테이너 너비 = parent * pct/100. 이미지가 그 컨테이너의 200%니까
+    // 이미지가 실제로 보이는 영역은 (parent * pct/100) * 2 가 아니라
+    // 부모 전체 너비로 환산하면: 이미지는 (200% * pct/100)% = pct*2%
+    // 우리는 nowImg가 부모 컨테이너 기준으로 100% 너비여야 함.
+    // wrap이 pct%니까, img 폭 = (100/pct)*100%가 돼야 부모 기준 100%가 됨
+    if (pct > 0) {
+      img.style.width = (100 / pct * 100) + '%';
+    }
+  }
+}
+
+function closeThenNowSlider() {
+  const overlay = document.getElementById('thenNowOverlay');
+  overlay.classList.remove('show');
+  THEN_NOW.thenFrame = null;
+  THEN_NOW.nowFrame = null;
+  THEN_NOW.dragging = false;
 }
 
 // ============================================
@@ -5468,6 +6359,70 @@ function renderQualityBreakdown() {
   document.getElementById('qualityBreakdown').innerHTML = html;
 }
 
+// ============================================
+// v5.7 장소 클러스터링 (GPS 기반, 외부 API 없음)
+// ============================================
+// 좌표를 ~5km 그리드로 양자화해서 같은 셀에 있는 사진들을 한 군집으로 묶음.
+// 사진 수 3장 이상인 군집만 유효. 가장 큰 순서로 정렬.
+function clusterByLocation(results) {
+  const gridKm = 5; // 5km 단위
+  // 위도 1도 ≈ 111km, 경도 1도는 위도에 따라 다르지만 한국 위도(~37도)에서 약 89km
+  const latStep = gridKm / 111;
+  const lngStep = gridKm / 89;
+  const buckets = {};
+  results.forEach(r => {
+    const lat = r.exifMeta.lat;
+    const lng = r.exifMeta.lng;
+    const key = `${Math.round(lat / latStep)}_${Math.round(lng / lngStep)}`;
+    if (!buckets[key]) buckets[key] = [];
+    buckets[key].push(r);
+  });
+  // 3장 이상 군집만
+  const clusters = Object.entries(buckets)
+    .filter(([_, photos]) => photos.length >= 3)
+    .map(([key, photos], idx) => {
+      const realAgeOf = (r) => calculateAge(new Date(document.getElementById('birthDate').value), r.timestamp);
+      const gaps = photos.map(r => r.estimatedAge - realAgeOf(r));
+      const avg = gaps.reduce((s, v) => s + v, 0) / gaps.length;
+      return {
+        key,
+        photos,
+        avg,
+        defaultLabel: '', // 아래에서 채움
+      };
+    })
+    .sort((a, b) => b.photos.length - a.photos.length);
+
+  // 가장 사진 많은 순으로 "가장 자주 가는 곳", "두 번째 자주 가는 곳"
+  const ordinals = ['가장 자주 가는 곳', '두 번째로 자주 가는 곳', '세 번째 장소', '네 번째 장소', '다섯 번째 장소'];
+  clusters.forEach((c, i) => {
+    c.defaultLabel = ordinals[i] || `장소 ${i+1}`;
+  });
+
+  return { clusters, gridKm };
+}
+
+// 사용자가 입력한 장소 라벨 (place key → custom label) — localStorage
+function loadPlaceLabels() {
+  try {
+    const raw = localStorage.getItem('faceage_place_labels');
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+function savePlaceLabel(key, label) {
+  try {
+    const all = loadPlaceLabels();
+    if (label && label.trim()) {
+      all[key] = label.trim().slice(0, 20);
+    } else {
+      delete all[key];
+    }
+    localStorage.setItem('faceage_place_labels', JSON.stringify(all));
+  } catch (e) {
+    console.warn('[place label] 저장 실패', e);
+  }
+}
+
 function renderInsights(passed, birthDate) {
   const container = document.getElementById('patternInsights');
   if (passed.length < 3) {
@@ -5683,6 +6638,47 @@ function renderInsights(passed, birthDate) {
     }
   }
 
+  // === 6. v5.7 장소 클러스터 (GPS 기반) ===
+  // 좌표를 그리드로 양자화해서 군집화. 외부 API 없음. 좌표는 표시 안 함.
+  const gpsResults = passed.filter(r => r.exifMeta && r.exifMeta.lat != null && r.exifMeta.lng != null);
+  if (gpsResults.length >= 6) {
+    const placeData = clusterByLocation(gpsResults);
+    // 사용자가 라벨 입력한 게 있으면 적용
+    const labels = loadPlaceLabels();
+    placeData.clusters.forEach(c => {
+      if (labels[c.key]) c.userLabel = labels[c.key];
+    });
+    // 가장 큰 두 군집 비교
+    if (placeData.clusters.length >= 2) {
+      const top2 = placeData.clusters.slice(0, 2);
+      const a = top2[0], b = top2[1];
+      const diff = b.avg - a.avg;
+      // 차이가 0.8 이상일 때만 인사이트
+      if (Math.abs(diff) >= 0.8 && a.photos.length >= 3 && b.photos.length >= 3) {
+        const younger = diff > 0 ? a : b;
+        const older = diff > 0 ? b : a;
+        const ydLabel = younger.userLabel || younger.defaultLabel;
+        const odLabel = older.userLabel || older.defaultLabel;
+        insights.push({
+          icon: '🌍',
+          title: `${ydLabel}에서 더 어려보임`,
+          delta: `−${Math.abs(diff).toFixed(1)}세`,
+          deltaClass: 'delta-younger',
+          body: `${ydLabel}에서 찍은 사진이 ${odLabel}보다 평균 ${Math.abs(diff).toFixed(1)}세 어려 보였어요.`,
+          meta: `${ydLabel} ${younger.photos.length}장 vs ${odLabel} ${older.photos.length}장 · 같은 좌표 ${placeData.gridKm}km 단위로 묶음`,
+          comparison: {
+            left: { label: `${ydLabel} (어려보임)`, rep: pickRep(younger.photos), groupAvg: younger.avg },
+            right: { label: `${odLabel} (들어보임)`, rep: pickRep(older.photos), groupAvg: older.avg },
+            diff: -Math.abs(diff),
+          },
+          // v5.7: 장소 라벨 편집을 위한 메타
+          placeKeys: [younger.key, older.key],
+          placeLabels: [ydLabel, odLabel],
+        });
+      }
+    }
+  }
+
   lastInsights = insights;
 
   // === 미래 기능 더미 카드 (Coming Soon) ===
@@ -5703,7 +6699,14 @@ function renderInsights(passed, birthDate) {
   if (insights.length === 0) {
     html += `<div class="insight"><p class="insight-body">아직 뚜렷한 패턴을 찾지 못했어요. 사진을 더 추가하거나 다양한 시기 사진을 넣어주세요.</p></div>`;
   } else {
-    html += insights.map((ins, idx) => `
+    html += insights.map((ins, idx) => {
+      // v5.7: 장소 인사이트일 때 라벨 편집 액션
+      const placeEdit = ins.placeKeys ? `
+        <div class="insight-place-edit" onclick="event.stopPropagation(); openPlaceLabelEditor(${idx})">
+          <span>✏️ 장소에 이름 붙이기</span>
+        </div>
+      ` : '';
+      return `
       <div class="insight clickable" onclick="showInsightDetail(${idx})">
         <div class="insight-head">
           <div class="insight-head-left">
@@ -5715,8 +6718,10 @@ function renderInsights(passed, birthDate) {
         <p class="insight-body">${ins.body}</p>
         <p class="insight-meta">${ins.meta}</p>
         ${ins.comparison ? '<p class="insight-hint">👆 탭하면 근거 사진 비교</p>' : ''}
+        ${placeEdit}
       </div>
-    `).join('');
+    `;
+    }).join('');
   }
 
   // 미래 기능 섹션
@@ -5740,6 +6745,30 @@ function renderInsights(passed, birthDate) {
   html += `</div>`;
 
   container.innerHTML = html;
+}
+
+// v5.7: 장소 라벨 편집 — 두 장소를 한 번에 편집
+function openPlaceLabelEditor(insightIdx) {
+  const ins = lastInsights[insightIdx];
+  if (!ins || !ins.placeKeys || ins.placeKeys.length !== 2) return;
+  const [keyA, keyB] = ins.placeKeys;
+  const [labelA, labelB] = ins.placeLabels;
+  const labels = loadPlaceLabels();
+  const curA = labels[keyA] || '';
+  const curB = labels[keyB] || '';
+  // 간단 prompt 두 번 — 모달이 더 좋지만 빠르고 직관적
+  const newA = prompt(`첫 번째 장소 (${labelA})에 이름을 붙여주세요\n예: 우리집 / 회사 / 자주 가는 카페\n\n비워두면 기본 이름으로 돌아갑니다.`, curA);
+  if (newA === null) return; // 취소
+  const newB = prompt(`두 번째 장소 (${labelB})에 이름을 붙여주세요`, curB);
+  if (newB === null) return;
+  savePlaceLabel(keyA, newA);
+  savePlaceLabel(keyB, newB);
+  // 인사이트 다시 그리기
+  const passed = analysisResults.filter(r => r.passed);
+  const birthInput = document.getElementById('birthDate');
+  const birthDate = birthInput ? new Date(birthInput.value) : new Date('1990-01-01');
+  renderInsights(passed, birthDate);
+  showToast('장소 이름을 저장했어요', 1800);
 }
 
 function showInsightDetail(idx) {
@@ -5894,6 +6923,10 @@ function showThumbDetail(idx) {
       if (occlusion) {
         infoHtml += `<div class="info-row"><span class="k">└ 가려짐 감지</span><span class="v" style="color: var(--older);">${occlusion === 'sunglasses' ? '🕶️ 선글라스' : '😷 마스크'}</span></div>`;
       }
+      // v5.7: 보정 앱 흔적
+      if (q.beautified) {
+        infoHtml += `<div class="info-row"><span class="k">└ 보정 앱 흔적</span><span class="v" style="color: var(--older);">✨ ${q.beautified} (−10점)</span></div>`;
+      }
       infoHtml += `
         <div class="info-row"><span class="k">└ 얼굴 크기</span><span class="v">${q.size || '-'}</span></div>
         <div class="info-row"><span class="k">└ 정면 각도</span><span class="v">${q.angle || '-'}</span></div>
@@ -5902,6 +6935,21 @@ function showThumbDetail(idx) {
         <div class="info-row"><span class="k">└ 검출 신뢰</span><span class="v">${q.confidence || '-'}</span></div>
       `;
     }
+    // v5.7: EXIF 메타 (있을 때만)
+    if (r.exifMeta) {
+      const m = r.exifMeta;
+      const exifLines = [];
+      if (m.model) exifLines.push(`<div class="info-row"><span class="k">└ 기기</span><span class="v">${(m.make || '') + ' ' + m.model}</span></div>`);
+      if (m.cameraSide) {
+        const sideLabel = m.cameraSide === 'front' ? '📷 셀카 (앞카메라)' : '📷 후면 카메라';
+        exifLines.push(`<div class="info-row"><span class="k">└ 카메라</span><span class="v">${sideLabel}</span></div>`);
+      }
+      if (m.iso != null) {
+        const isoTag = m.iso <= 200 ? '☀️ 밝음' : (m.iso > 800 ? '🌙 어두움' : '💡 보통');
+        exifLines.push(`<div class="info-row"><span class="k">└ 조명 (ISO ${m.iso})</span><span class="v">${isoTag}</span></div>`);
+      }
+      if (exifLines.length > 0) infoHtml += exifLines.join('');
+    }
     if (r.rawAge !== undefined) {
       infoHtml += `<div class="info-row" style="opacity:0.5; font-size:11px; margin-top:6px;"><span class="k">원본 모델 출력 (보정 전)</span><span class="v">${r.rawAge.toFixed(1)}세</span></div>`;
     }
@@ -5909,7 +6957,7 @@ function showThumbDetail(idx) {
     infoHtml += `
       <div class="info-row">
         <span class="k">얼굴 검출</span>
-        <span class="v" style="color:#F87171;">✕ 안 됨</span>
+        <span class="v" style="color: var(--older);">✕ 안 됨</span>
       </div>
     `;
   }
@@ -6141,6 +7189,18 @@ function handleBackButton() {
   const animOverlay = document.getElementById('faceAnimOverlay');
   if (animOverlay && animOverlay.classList.contains('show')) {
     closeFaceAnimation();
+    return;
+  }
+  // v5.7: 콜라주 오버레이
+  const collageOverlay = document.getElementById('collageOverlay');
+  if (collageOverlay && collageOverlay.classList.contains('show')) {
+    closeCollage();
+    return;
+  }
+  // v5.7: 비교 슬라이더
+  const sliderOverlay = document.getElementById('thenNowOverlay');
+  if (sliderOverlay && sliderOverlay.classList.contains('show')) {
+    closeThenNowSlider();
     return;
   }
   const openModalEl = document.querySelector('.modal.show');
