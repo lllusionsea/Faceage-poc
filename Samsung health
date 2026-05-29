@@ -905,12 +905,11 @@ function showToast(msg) {
 }
 function cardTap(name) { showToast(name + ' · 시안에서는 동작하지 않아요'); }
 function openFaceAge() {
-  // v1.1: FaceAge 본 앱으로 이동 (양방향 데모)
-  window.location.href = './FaceAge_POC_v59.html';
+  // v1.2: GitHub에서는 본 앱이 index.html
+  window.location.href = './index.html';
 }
 function goBackToFaceAge() {
-  // 안내 띠의 "FaceAge로 돌아가기" 버튼 — 즉시 본 앱으로
-  window.location.href = './FaceAge_POC_v59.html';
+  window.location.href = './index.html';
 }
 </script>
 
