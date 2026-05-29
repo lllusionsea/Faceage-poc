@@ -109,6 +109,22 @@
     .logo { font-size: 17px; font-weight: 800; letter-spacing: -0.6px; color: var(--text-1); }
     .logo .accent { color: var(--primary); }
     .badge { font-size: 11px; padding: 5px 10px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); font-weight: 600; }
+    /* v5.10: 삼성헬스 시안 진입 버튼 */
+    .samsung-health-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: #E0F7EE; color: #00A856;
+      border: 1px solid rgba(0,181,116,0.18);
+      border-radius: 999px;
+      padding: 5px 10px 5px 9px;
+      font-size: 11px; font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      letter-spacing: -0.2px;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .samsung-health-btn:active {
+      background: #C8F0DC; transform: scale(0.96);
+    }
     .back-btn {
       background: var(--bg-subtle); border: none; width: 36px; height: 36px;
       border-radius: 10px; color: var(--text-1); display: flex; align-items: center; justify-content: center;
@@ -576,153 +592,6 @@
       width: 100%;
     }
 
-    /* v5.7 Then & Now CTA */
-    .then-now-cta {
-      display: flex; align-items: center; gap: 14px;
-      padding: 16px 18px;
-      background: linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 100%);
-      border: 1px solid rgba(255,123,92,0.22);
-      border-radius: 16px;
-      margin: 16px 0 8px;
-      cursor: pointer;
-      transition: transform 0.1s, box-shadow 0.15s;
-      box-shadow: 0 2px 10px rgba(255,123,92,0.08);
-    }
-    .then-now-cta:active { transform: scale(0.98); }
-    .then-now-cta-icon {
-      font-size: 26px; font-weight: 900;
-      flex-shrink: 0;
-      width: 48px; height: 48px;
-      background: #fff;
-      border-radius: 14px;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-      color: var(--primary);
-    }
-    .then-now-cta-body { flex: 1; min-width: 0; }
-    .then-now-cta-title {
-      font-size: 15px; font-weight: 700;
-      color: var(--text-1); margin-bottom: 2px;
-      letter-spacing: -0.3px;
-    }
-    .then-now-cta-desc {
-      font-size: 12.5px; color: var(--text-2);
-      line-height: 1.4;
-    }
-
-    /* Then & Now 슬라이더 본체 */
-    .then-now-stage {
-      flex: 1;
-      display: flex; align-items: center; justify-content: center;
-      padding: 12px 20px;
-      min-height: 0;
-      position: relative;
-    }
-    .then-now-container {
-      position: relative;
-      width: 100%;
-      max-width: 480px;
-      aspect-ratio: 1;
-      border-radius: 18px;
-      overflow: hidden;
-      background: #1A1A24;
-      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
-      user-select: none;
-      touch-action: none;
-    }
-    .then-now-img {
-      position: absolute; inset: 0;
-      width: 100%; height: 100%;
-      object-fit: cover;
-      pointer-events: none;
-    }
-    .then-now-now-wrap {
-      position: absolute; inset: 0;
-      width: 50%;
-      overflow: hidden;
-      transition: none; /* dragging */
-    }
-    .then-now-now-wrap .then-now-img {
-      width: 200%; /* 부모 폭의 2배라 원본 비율 유지 */
-    }
-    .then-now-handle {
-      position: absolute;
-      top: 0; bottom: 0;
-      left: 50%;
-      width: 2px;
-      background: #fff;
-      transform: translateX(-50%);
-      box-shadow: 0 0 12px rgba(0,0,0,0.4);
-      pointer-events: none;
-    }
-    .then-now-handle-line {
-      position: absolute;
-      top: 0; bottom: 0; left: 0;
-      width: 100%; background: #fff;
-    }
-    .then-now-handle-grip {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      background: #fff;
-      color: #0F0F18;
-      font-size: 14px; font-weight: 900;
-      width: 44px; height: 44px;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.4);
-      letter-spacing: -1px;
-    }
-    .then-now-label {
-      position: absolute;
-      top: 14px;
-      padding: 6px 12px;
-      background: rgba(0,0,0,0.55);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-      color: #fff;
-      font-size: 12px; font-weight: 700;
-      border-radius: 999px;
-      letter-spacing: -0.2px;
-      pointer-events: none;
-    }
-    .then-now-label-left { left: 14px; }
-    .then-now-label-right { right: 14px; }
-
-    .then-now-info {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 24px 28px;
-      gap: 10px;
-      flex-shrink: 0;
-      color: #fff;
-    }
-    .then-now-info-side {
-      flex: 1; min-width: 0;
-    }
-    .then-now-info-label {
-      font-size: 11px; color: rgba(255,255,255,0.55);
-      font-weight: 600; margin-bottom: 4px; letter-spacing: 0.3px;
-    }
-    .then-now-info-age {
-      font-size: 22px; font-weight: 800;
-      letter-spacing: -0.5px;
-      font-variant-numeric: tabular-nums;
-    }
-    .then-now-info-date {
-      font-size: 11.5px; color: rgba(255,255,255,0.65);
-      font-weight: 500; margin-top: 1px;
-      font-variant-numeric: tabular-nums;
-    }
-    .then-now-info-diff {
-      padding: 6px 12px;
-      background: rgba(255,255,255,0.10);
-      border-radius: 999px;
-      font-size: 13px; font-weight: 700;
-      font-variant-numeric: tabular-nums;
-      flex-shrink: 0;
-    }
-    .then-now-info-diff.diff-younger { background: rgba(0,200,150,0.25); color: #00D89F; }
-    .then-now-info-diff.diff-older { background: rgba(255,123,92,0.25); color: #FF9577; }
 
     .tabs {
       display: flex; gap: 4px; margin-bottom: 16px;
@@ -1244,16 +1113,12 @@
       .face-anim-compare,
       .collage-header,
       .collage-year-tabs,
-      .collage-controls,
-      .then-now-info {
+      .collage-controls {
         max-width: 640px;
         margin-left: auto;
         margin-right: auto;
         width: 100%;
         box-sizing: border-box;
-      }
-      .then-now-container {
-        max-width: 540px;
       }
     }
     @media (min-width: 1024px) {
@@ -1262,12 +1127,8 @@
       .face-anim-compare,
       .collage-header,
       .collage-year-tabs,
-      .collage-controls,
-      .then-now-info {
+      .collage-controls {
         max-width: 720px;
-      }
-      .then-now-container {
-        max-width: 600px;
       }
     }
     .face-anim-loading {
@@ -1493,7 +1354,15 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
     <div class="logo" onclick="resetApp()" style="cursor:pointer;">Face<span class="accent">AGE</span></div>
-    <div class="badge" id="topBadge">POC v5.8</div>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <button class="samsung-health-btn" onclick="openSamsungHealthMockup()" aria-label="삼성헬스 시안 보기">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;">
+          <path d="M12 21s-7-4.5-7-10a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 19 11c0 5.5-7 10-7 10z"/>
+        </svg>
+        <span>삼성헬스</span>
+      </button>
+      <div class="badge" id="topBadge">POC v5.10</div>
+    </div>
   </div>
 
   <!-- SCREEN 1: 온보딩 -->
@@ -1662,7 +1531,7 @@
       <p class="muted" style="margin-bottom: 14px; font-size:13px;" id="galleryPickDesc">셀카 사진을 직접 골라요</p>
       <div class="file-input-wrap">
         <button class="btn btn-secondary" style="margin-top: 0;" id="galleryBtn">갤러리에서 사진 선택</button>
-        <input type="file" id="filePicker" accept="image/*" multiple onclick="showGalleryProcessing()">
+        <input type="file" id="filePicker" accept="image/*,image/heic,image/heif" multiple onclick="showGalleryProcessing()">
       </div>
       <p id="selectedCount" style="text-align: center; margin-top: 10px; color: var(--primary); font-weight: 600; font-size: 13px; display: none;"></p>
     </div>
@@ -1671,10 +1540,14 @@
     <div class="info-tip-card" id="iosHintCard" style="display:none;">
       <span style="font-size:18px;">💡</span>
       <div style="flex:1;">
-        <p style="font-size: 13px; line-height: 1.55; margin: 0; color: var(--text-2);">
+        <p style="font-size: 13px; line-height: 1.55; margin: 0 0 8px; color: var(--text-2);">
           <b style="color: var(--text-1);">iOS 팁:</b> 사진 앱 "셀카" 앨범에서 <b style="color:var(--text-1);">선택</b> 누르고
           첫 사진을 <b style="color:var(--text-1);">꾹 누른 채 쓸어내리세요</b>.
           <a onclick="showPhotoHelp()" style="color:var(--primary); text-decoration:underline; cursor:pointer; font-weight:600;">자세히 보기 →</a>
+        </p>
+        <p style="font-size: 12px; line-height: 1.5; margin: 0; padding-top: 8px; border-top: 1px solid var(--line); color: var(--older); font-weight: 600;">
+          ⚠️ 체크(✓)를 누른 뒤 사진 앱 화면이 <b>10-60초간 멈춘 듯 보일 수 있어요</b>. 정상이니 기다려주세요.
+          많이 선택할수록 더 오래 걸려요.
         </p>
       </div>
     </div>
@@ -1863,16 +1736,6 @@
       <div id="chartPreview" class="chart-preview"></div>
     </div>
 
-    <!-- v5.7: Then & Now 비교 슬라이더 CTA -->
-    <div class="then-now-cta" id="thenNowCta" onclick="openThenNowSlider()">
-      <div class="then-now-cta-icon">↔</div>
-      <div class="then-now-cta-body">
-        <div class="then-now-cta-title">처음 vs 지금</div>
-        <div class="then-now-cta-desc">슬라이더를 좌우로 움직여 가장 오래된 사진과 가장 최근 사진을 비교해보세요</div>
-      </div>
-      <div class="collage-cta-arrow">→</div>
-    </div>
-
     <!-- === 발견된 패턴 (구 인사이트 화면 통합) === -->
     <h3 style="margin-top: 28px;">발견된 패턴</h3>
     <p class="small" style="color: var(--text-3); margin-bottom: 12px;">계절·시간대·요일별 변화를 분석했어요</p>
@@ -2054,51 +1917,6 @@
       <button class="face-anim-btn face-anim-btn-tertiary" id="faceAnimShareBtn" onclick="shareOrDownloadAnimation()">
         <span id="faceAnimShareLabel">⬇ 영상 저장</span>
       </button>
-    </div>
-    <!-- v5.7: 영상 끝나면 슬라이더 진입 버튼 노출 -->
-    <div class="face-anim-btns" style="margin-top: 10px; display: none;" id="faceAnimEndCta">
-      <button class="face-anim-btn face-anim-btn-tertiary" onclick="closeFaceAnimation(); setTimeout(openThenNowSlider, 200);">
-        ↔ 처음 vs 지금 비교하기
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- v5.7: Then & Now 비교 슬라이더 오버레이 -->
-<div class="collage-overlay" id="thenNowOverlay">
-  <div class="collage-header">
-    <div class="collage-title">처음 vs 지금</div>
-    <button class="collage-close" onclick="closeThenNowSlider()">✕</button>
-  </div>
-  <div class="then-now-stage">
-    <div class="then-now-container" id="thenNowContainer">
-      <img id="thenImg" class="then-now-img" alt="Then">
-      <div class="then-now-now-wrap" id="thenNowNowWrap">
-        <img id="nowImg" class="then-now-img" alt="Now">
-      </div>
-      <div class="then-now-handle" id="thenNowHandle">
-        <div class="then-now-handle-line"></div>
-        <div class="then-now-handle-grip">‹ ›</div>
-      </div>
-      <div class="then-now-label then-now-label-left" id="thenLabel">—</div>
-      <div class="then-now-label then-now-label-right" id="nowLabel">—</div>
-    </div>
-    <div class="collage-loading" id="thenNowLoading">
-      <div class="fs-spinner-ring"></div>
-      <p>사진을 불러오는 중...</p>
-    </div>
-  </div>
-  <div class="then-now-info" id="thenNowInfo">
-    <div class="then-now-info-side">
-      <div class="then-now-info-label">처음 (Then)</div>
-      <div class="then-now-info-age" id="thenAge">—</div>
-      <div class="then-now-info-date" id="thenDate">—</div>
-    </div>
-    <div class="then-now-info-diff" id="thenNowDiff">—</div>
-    <div class="then-now-info-side" style="text-align:right;">
-      <div class="then-now-info-label">지금 (Now)</div>
-      <div class="then-now-info-age" id="nowAge">—</div>
-      <div class="then-now-info-date" id="nowDate">—</div>
     </div>
   </div>
 </div>
@@ -2315,6 +2133,47 @@
     </div>
 
     <button class="btn btn-primary" style="margin-top: 16px;" onclick="closeModal('photoHelpModal')">이해했어요</button>
+  </div>
+</div>
+
+<!-- v5.9: iOS freeze 사전 안내 모달 -->
+<div class="modal" id="iosFreezeModal" onclick="if(event.target===this)closeModal('iosFreezeModal')">
+  <div class="modal-content" style="max-width: 460px;">
+    <button class="modal-close" onclick="closeModal('iosFreezeModal')">✕</button>
+    <div style="text-align: center; font-size: 40px; margin-bottom: 10px;">⏳</div>
+    <h3 style="margin-bottom: 8px; text-align: center;">iPhone 사용자 안내</h3>
+    <p style="font-size: 13.5px; color: var(--text-2); text-align: center; margin-bottom: 18px; line-height: 1.55;">
+      체크(✓)를 누른 후 사진 앱 화면이 <b style="color: var(--older);">몇십 초간 멈춘 듯</b> 보일 수 있어요.
+    </p>
+
+    <div style="background: var(--bg-subtle); border-radius: 12px; padding: 14px 16px; margin-bottom: 14px;">
+      <p style="font-weight: 700; font-size: 13.5px; margin-bottom: 8px; color: var(--text-1);">왜 이런 일이 생기나요?</p>
+      <p style="font-size: 12.5px; line-height: 1.55; color: var(--text-2); margin: 0;">
+        iPhone은 사진을 웹에 보내기 전 HEIC를 JPEG로 변환해요. 사진이 많을수록 시간이 더 걸리고, 그 동안 사진 앱이 멈춘 것처럼 보입니다. <b style="color: var(--text-1);">고장이 아니에요.</b>
+      </p>
+    </div>
+
+    <div style="background: var(--primary-soft); border: 1px solid rgba(49,130,246,0.25); border-radius: 12px; padding: 14px 16px; margin-bottom: 14px;">
+      <p style="font-weight: 700; font-size: 13.5px; margin-bottom: 8px; color: var(--primary-deep);">💡 빠르게 처리하려면</p>
+      <ol style="margin: 0 0 0 18px; padding: 0; font-size: 12.5px; line-height: 1.7; color: var(--text-2);">
+        <li><b>iPhone 설정 → 사진</b> 들어가요</li>
+        <li>맨 아래 <b>"Mac 또는 PC로 전송"</b>에서</li>
+        <li><b>"원본 그대로"</b>를 선택해요</li>
+      </ol>
+      <p style="font-size: 11.5px; color: var(--text-3); margin: 10px 0 0; line-height: 1.5;">
+        이 설정은 한 번만 바꾸면 다음부터도 적용돼요. 사진 앱 freeze가 거의 사라집니다.
+      </p>
+    </div>
+
+    <div style="background: var(--bg-subtle); border-radius: 12px; padding: 12px 14px; margin-bottom: 18px;">
+      <p style="font-size: 12.5px; color: var(--text-2); line-height: 1.55; margin: 0;">
+        💪 <b style="color: var(--text-1);">한 번에 너무 많이</b> 선택하지 마세요.
+        50장 정도씩 나눠 추가하면 빠르게 진행돼요. (선택은 누적돼요)
+      </p>
+    </div>
+
+    <button class="btn btn-primary" style="margin-top: 0;" onclick="dismissIOSFreezeModal()">알았어요, 사진 고르러 갈게요</button>
+    <button class="btn btn-ghost" style="margin-top: 8px;" onclick="dismissIOSFreezeModalForever()">다시 보지 않기</button>
   </div>
 </div>
 
@@ -2678,6 +2537,24 @@ function resetPickScreen() {
   analysisCancelled = false;
   // OS별 UI 분기 적용
   if (typeof adaptUIForOS === 'function') adaptUIForOS();
+
+  // v5.9: iOS 사용자에게 freeze 사전 안내 (한 번만)
+  try {
+    const os = typeof detectOS === 'function' ? detectOS() : { isIOS: false };
+    if (os.isIOS && !localStorage.getItem('faceage_ios_freeze_seen')) {
+      // 약간 지연 후 모달 (화면 전환 애니메이션 끝난 뒤)
+      setTimeout(() => openModal('iosFreezeModal'), 500);
+    }
+  } catch (e) { /* 무시 */ }
+}
+
+function dismissIOSFreezeModal() {
+  closeModal('iosFreezeModal');
+}
+
+function dismissIOSFreezeModalForever() {
+  try { localStorage.setItem('faceage_ios_freeze_seen', '1'); } catch (e) {}
+  closeModal('iosFreezeModal');
 }
 
 // 뒤로가기 (백키 / 브라우저 뒤로가기) 처리
@@ -2700,18 +2577,6 @@ window.addEventListener('popstate', (e) => {
   const collageOverlayEl = document.getElementById('collageOverlay');
   if (collageOverlayEl && collageOverlayEl.classList.contains('show')) {
     closeCollage();
-    const currentScreen = document.querySelector('.screen.active');
-    if (currentScreen) {
-      history.pushState({ screen: currentScreen.id }, '', '#' + currentScreen.id);
-    }
-    isPoppingState = false;
-    return;
-  }
-
-  // v5.7: Then & Now 슬라이더
-  const sliderOverlayEl = document.getElementById('thenNowOverlay');
-  if (sliderOverlayEl && sliderOverlayEl.classList.contains('show')) {
-    closeThenNowSlider();
     const currentScreen = document.querySelector('.screen.active');
     if (currentScreen) {
       history.pushState({ screen: currentScreen.id }, '', '#' + currentScreen.id);
@@ -3261,6 +3126,13 @@ document.getElementById('filePicker').addEventListener('change', async (e) => {
     countEl.style.display = 'block';
     btn.textContent = `사진 추가 선택 (${collectedFiles.length.toLocaleString()}장 누적)`;
     console.log(`[filePicker] ${added}장 추가 완료, 누적 ${collectedFiles.length}장`);
+
+    // v5.9: iOS에서 한 번에 100장 이상 선택 시 분할 권장 안내
+    if (os.isIOS && files.length >= 100) {
+      setTimeout(() => {
+        showToast(`💡 다음부터는 50장씩 나눠 선택하면 사진 앱 멈춤이 줄어요`, 4500);
+      }, 800);
+    }
 
   } catch (err) {
     console.error('[filePicker] 에러:', err);
@@ -5239,9 +5111,6 @@ function faceAnimTick() {
     updateAnimProgress(1);
     FACE_ANIM.playing = false;
     document.getElementById('faceAnimPlayBtn').textContent = '▶ 다시 재생';
-    // v5.7: 영상 끝났을 때 Then&Now 슬라이더 진입 버튼 노출
-    const endCta = document.getElementById('faceAnimEndCta');
-    if (endCta) endCta.style.display = 'flex';
     return;
   }
 
@@ -5527,9 +5396,6 @@ function restartFaceAnimation() {
   FACE_ANIM.startTime = performance.now();
   FACE_ANIM.playing = true;
   document.getElementById('faceAnimPlayBtn').textContent = '⏸ 일시정지';
-  // v5.7: 다시 재생 시작 → EndCta 숨김
-  const endCta = document.getElementById('faceAnimEndCta');
-  if (endCta) endCta.style.display = 'none';
   cancelAnimationFrame(FACE_ANIM.rafId);
   faceAnimTick();
 }
@@ -5538,9 +5404,6 @@ function closeFaceAnimation() {
   FACE_ANIM.playing = false;
   cancelAnimationFrame(FACE_ANIM.rafId);
   document.getElementById('faceAnimOverlay').classList.remove('show');
-  // v5.7: EndCta 숨김 (다음 열림 대비)
-  const endCta = document.getElementById('faceAnimEndCta');
-  if (endCta) endCta.style.display = 'none';
   // 프레임 데이터 해제 (이미지 객체)
   FACE_ANIM.frames = [];
 }
@@ -5800,159 +5663,6 @@ function closeCollage() {
   }
   COLLAGE.currentBlob = null;
   document.getElementById('collagePreviewImg').src = '';
-}
-
-// ============================================
-// v5.7 Then & Now 비교 슬라이더
-// ============================================
-const THEN_NOW = {
-  thenFrame: null,
-  nowFrame: null,
-  dragging: false,
-};
-
-async function openThenNowSlider() {
-  const passed = analysisResults.filter(r => r.passed);
-  if (passed.length < 2) {
-    showToast('비교에는 2장 이상 필요해요');
-    return;
-  }
-  const sorted = [...passed].sort((a, b) => a.timestamp - b.timestamp);
-  const thenR = sorted[0];
-  const nowR = sorted[sorted.length - 1];
-
-  const overlay = document.getElementById('thenNowOverlay');
-  const loading = document.getElementById('thenNowLoading');
-  overlay.classList.add('show');
-  loading.style.display = 'flex';
-  document.getElementById('thenNowContainer').style.visibility = 'hidden';
-
-  try {
-    const [thenFrame, nowFrame] = await Promise.all([
-      prepareAnimFrame(thenR),
-      prepareAnimFrame(nowR),
-    ]);
-    if (!thenFrame || !nowFrame) throw new Error('이미지 로드 실패');
-
-    THEN_NOW.thenFrame = thenFrame;
-    THEN_NOW.nowFrame = nowFrame;
-
-    // 얼굴 정렬해서 같은 캔버스에 그리고, 그 dataURL을 img에 설정
-    const thenUrl = renderAlignedFaceToDataUrl(thenFrame);
-    const nowUrl = renderAlignedFaceToDataUrl(nowFrame);
-
-    document.getElementById('thenImg').src = thenUrl;
-    document.getElementById('nowImg').src = nowUrl;
-
-    // 라벨 & 정보 채우기
-    document.getElementById('thenLabel').textContent = thenFrame.dateStr.slice(2);
-    document.getElementById('nowLabel').textContent = nowFrame.dateStr.slice(2);
-    document.getElementById('thenAge').textContent = thenFrame.ageStr;
-    document.getElementById('nowAge').textContent = nowFrame.ageStr;
-    document.getElementById('thenDate').textContent = thenFrame.dateStr;
-    document.getElementById('nowDate').textContent = nowFrame.dateStr;
-
-    // 두 사진의 얼굴 나이 차이
-    const diffEl = document.getElementById('thenNowDiff');
-    if (thenFrame.estAge != null && nowFrame.estAge != null) {
-      const d = nowFrame.estAge - thenFrame.estAge;
-      const sign = d >= 0 ? '+' : '';
-      diffEl.textContent = `${sign}${d.toFixed(1)}세`;
-      diffEl.className = 'then-now-info-diff';
-      if (d < -0.5) diffEl.classList.add('diff-younger');
-      else if (d > 0.5) diffEl.classList.add('diff-older');
-    } else {
-      diffEl.textContent = '—';
-    }
-
-    loading.style.display = 'none';
-    document.getElementById('thenNowContainer').style.visibility = 'visible';
-
-    _setupThenNowDrag();
-    _setThenNowSplit(50);
-  } catch (e) {
-    loading.style.display = 'none';
-    showToast('비교 이미지 로드 실패: ' + e.message);
-    closeThenNowSlider();
-  }
-}
-
-// 프레임을 정사각형 캔버스에 얼굴 정렬된 상태로 그려서 data URL 반환
-function renderAlignedFaceToDataUrl(frame) {
-  const SIZE = 540;
-  const c = document.createElement('canvas');
-  c.width = SIZE; c.height = SIZE;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#1A1A24';
-  ctx.fillRect(0, 0, SIZE, SIZE);
-  const cx = frame.bx + frame.bw/2, cy = frame.by + frame.bh/2;
-  const cropSize = Math.max(frame.bw, frame.bh) * 1.7;
-  const sx = cx - cropSize/2, sy = cy - cropSize/2;
-  ctx.drawImage(frame.img, sx, sy, cropSize, cropSize, 0, 0, SIZE, SIZE);
-  return c.toDataURL('image/jpeg', 0.9);
-}
-
-function _setupThenNowDrag() {
-  const container = document.getElementById('thenNowContainer');
-  if (container._dragSetup) return;
-  container._dragSetup = true;
-
-  const onMove = (clientX) => {
-    const rect = container.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const pct = Math.max(0, Math.min(100, (x / rect.width) * 100));
-    _setThenNowSplit(pct);
-  };
-
-  // 마우스
-  container.addEventListener('mousedown', (e) => {
-    THEN_NOW.dragging = true;
-    onMove(e.clientX);
-    e.preventDefault();
-  });
-  window.addEventListener('mousemove', (e) => {
-    if (THEN_NOW.dragging) onMove(e.clientX);
-  });
-  window.addEventListener('mouseup', () => { THEN_NOW.dragging = false; });
-
-  // 터치
-  container.addEventListener('touchstart', (e) => {
-    THEN_NOW.dragging = true;
-    if (e.touches[0]) onMove(e.touches[0].clientX);
-  }, { passive: true });
-  container.addEventListener('touchmove', (e) => {
-    if (THEN_NOW.dragging && e.touches[0]) onMove(e.touches[0].clientX);
-  }, { passive: true });
-  container.addEventListener('touchend', () => { THEN_NOW.dragging = false; });
-}
-
-function _setThenNowSplit(pct) {
-  const wrap = document.getElementById('thenNowNowWrap');
-  const handle = document.getElementById('thenNowHandle');
-  if (!wrap || !handle) return;
-  wrap.style.width = pct + '%';
-  handle.style.left = pct + '%';
-  // 내부 이미지를 부모 폭에 맞춰 보정 (200% 너비라서 좌측 정렬 유지)
-  const img = wrap.querySelector('.then-now-img');
-  if (img) {
-    // wrap의 폭이 pct%인 컨테이너에서 nowImg를 보여줄 때
-    // 컨테이너 너비 = parent * pct/100. 이미지가 그 컨테이너의 200%니까
-    // 이미지가 실제로 보이는 영역은 (parent * pct/100) * 2 가 아니라
-    // 부모 전체 너비로 환산하면: 이미지는 (200% * pct/100)% = pct*2%
-    // 우리는 nowImg가 부모 컨테이너 기준으로 100% 너비여야 함.
-    // wrap이 pct%니까, img 폭 = (100/pct)*100%가 돼야 부모 기준 100%가 됨
-    if (pct > 0) {
-      img.style.width = (100 / pct * 100) + '%';
-    }
-  }
-}
-
-function closeThenNowSlider() {
-  const overlay = document.getElementById('thenNowOverlay');
-  overlay.classList.remove('show');
-  THEN_NOW.thenFrame = null;
-  THEN_NOW.nowFrame = null;
-  THEN_NOW.dragging = false;
 }
 
 // ============================================
@@ -7280,12 +6990,6 @@ function handleBackButton() {
     closeCollage();
     return;
   }
-  // v5.7: 비교 슬라이더
-  const sliderOverlay = document.getElementById('thenNowOverlay');
-  if (sliderOverlay && sliderOverlay.classList.contains('show')) {
-    closeThenNowSlider();
-    return;
-  }
   const openModalEl = document.querySelector('.modal.show');
   if (openModalEl) {
     openModalEl.classList.remove('show');
@@ -8413,6 +8117,12 @@ function switchInsightTab(el, key) {
   document.getElementById('tab-pattern').style.display = key === 'pattern' ? 'block' : 'none';
   document.getElementById('tab-parts').style.display = key === 'parts' ? 'block' : 'none';
   document.getElementById('tab-report').style.display = key === 'report' ? 'block' : 'none';
+}
+
+// v5.10: 삼성헬스 통합 시안 페이지로 이동
+function openSamsungHealthMockup() {
+  // 같은 폴더의 mockup HTML로 이동. 사용자가 "얼굴 나이" 카드를 누르면 다시 여기로 돌아옴.
+  window.location.href = './SamsungHealth_FaceAge_Mockup_v4.html';
 }
 
 function resetApp() {
