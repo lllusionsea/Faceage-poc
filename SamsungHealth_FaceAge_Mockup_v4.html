@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>삼성헬스 — FaceAge 통합 시안 v3</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+<style>
+  /* === 삼성헬스 토큰 (실제 앱 정확히 측정) === */
+  :root {
+    --bg-page: #F2F3F5;        /* 페이지 배경 */
+    --bg-card: #FFFFFF;
+    --line: #E8EAED;
+    --line-strong: #D9DCE0;
+
+    /* 텍스트 — 매우 진한 흑색 위주 */
+    --text-1: #0E1116;         /* 거의 검정 */
+    --text-2: #3A3F47;
+    --text-3: #767B85;
+    --text-4: #ABAFB8;
+
+    --shadow-card: 0 1px 2px rgba(0,0,0,0.03);
+
+    /* 카테고리 액센트 (절제) - 실제 삼성헬스 톤 */
+    --c-activity: #00B574;     /* 활동 그린 */
+    --c-steps: #F5B92E;        /* 걸음 황금 */
+    --c-heart: #FF4D5E;
+    --c-sleep: #6F5BE8;
+    --c-food: #FF7A3D;
+    --c-water: #4FB5F0;
+    --c-weight: #5B7BD1;
+    --c-distance: #00B574;
+
+    /* FaceAge 시그니처 (유지) */
+    --c-faceage: #3182F6;
+    --c-faceage-deep: #1B64DA;
+    --c-faceage-soft: #E8F0FE;
+    --c-younger: #00C896;
+    --c-older: #FF7B5C;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; background: var(--bg-page); }
+  body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--text-1);
+    font-size: 14px;
+    line-height: 1.35;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.3px;
+  }
+
+  /* v1.1: 시안 안내 띠 (페이지 최상단) */
+  .demo-banner {
+    background: linear-gradient(135deg, #3182F6 0%, #1B64DA 100%);
+    color: #fff;
+    padding: 10px 14px;
+    display: flex; align-items: center; gap: 10px;
+    position: sticky; top: 0; z-index: 200;
+    font-size: 12px;
+  }
+  .demo-back-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(255,255,255,0.18);
+    color: #fff;
+    border: none;
+    padding: 6px 10px 6px 8px;
+    border-radius: 100px;
+    font-size: 12px; font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s, transform 0.1s;
+    letter-spacing: -0.2px;
+  }
+  .demo-back-btn:active {
+    background: rgba(255,255,255,0.30);
+    transform: scale(0.97);
+  }
+  .demo-banner-text {
+    flex: 1; min-width: 0;
+    text-align: right;
+    font-weight: 600;
+    opacity: 0.92;
+    letter-spacing: -0.2px;
+  }
+
+  /* 모바일 컨테이너 */
+  #app {
+    max-width: 440px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: var(--bg-page);
+    padding-bottom: 80px;
+    position: relative;
+  }
+  /* Z폴드 펼친 모드 - 2열 유지하면서 컨테이너 넓어짐 */
+  @media (min-width: 600px) { #app { max-width: 560px; } }
+  @media (min-width: 768px) { #app { max-width: 720px; } }
+  @media (min-width: 1024px) { #app { max-width: 880px; } }
+
+  /* === Status bar === */
+  .status-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 22px 4px;
+    font-size: 15px; font-weight: 600;
+    color: var(--text-1);
+  }
+  .status-bar-right {
+    display: flex; gap: 6px; align-items: center;
+  }
+  .status-bar-right svg { display: block; }
+
+  /* === 헤더 큰 폰트 === */
+  .top-header {
+    padding: 10px 22px 6px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .header-title {
+    font-size: 28px; font-weight: 700;
+    letter-spacing: -0.6px; color: var(--text-1);
+  }
+  .header-icons { display: flex; gap: 2px; }
+  .header-icon-btn {
+    background: transparent; border: none;
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-1); cursor: pointer; padding: 0;
+  }
+  .header-icon-btn:active { background: rgba(0,0,0,0.06); }
+  .header-icon-btn svg { width: 24px; height: 24px; }
+
+  /* === 활동 요약 큰 카드 (Activity 3링) === */
+  .activity-card {
+    background: var(--bg-card);
+    border-radius: 24px;
+    margin: 8px 16px 8px;
+    padding: 22px 24px;
+    box-shadow: var(--shadow-card);
+    cursor: pointer;
+  }
+  .activity-card-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 18px;
+  }
+  .activity-card-title {
+    font-size: 17px; font-weight: 700;
+    color: var(--text-1);
+    letter-spacing: -0.4px;
+  }
+  .activity-card-date {
+    font-size: 13px; color: var(--text-3);
+    font-weight: 500;
+  }
+  .activity-rings-row {
+    display: flex; align-items: center; gap: 16px;
+  }
+  .activity-rings-wrap {
+    position: relative;
+    width: 110px; height: 110px;
+    flex-shrink: 0;
+  }
+  .activity-rings-wrap svg {
+    width: 110px; height: 110px;
+    transform: rotate(-90deg);
+  }
+  .activity-ring-bg-1 { fill: none; stroke: #F0F2F5; stroke-width: 8; }
+  .activity-ring-bg-2 { fill: none; stroke: #F0F2F5; stroke-width: 8; }
+  .activity-ring-bg-3 { fill: none; stroke: #F0F2F5; stroke-width: 8; }
+  .activity-ring-1 { fill: none; stroke: var(--c-activity); stroke-width: 8; stroke-linecap: round; }
+  .activity-ring-2 { fill: none; stroke: var(--c-steps); stroke-width: 8; stroke-linecap: round; }
+  .activity-ring-3 { fill: none; stroke: var(--c-heart); stroke-width: 8; stroke-linecap: round; }
+
+  .activity-stats { flex: 1; }
+  .activity-stat-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 5px 0;
+  }
+  .activity-stat-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .activity-stat-label {
+    flex: 1; font-size: 13px; color: var(--text-3);
+    font-weight: 500;
+  }
+  .activity-stat-value {
+    font-size: 16px; font-weight: 700;
+    color: var(--text-1);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.3px;
+  }
+  .activity-stat-value .unit {
+    font-size: 11px; color: var(--text-3);
+    font-weight: 500;
+    margin-left: 1px;
+  }
+
+  /* === 2열 타일 그리드 === */
+  .tile-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 0 16px;
+    margin-bottom: 8px;
+  }
+  /* 폴드 펼친 모드 — 4열로 확장 */
+  @media (min-width: 768px) {
+    .tile-grid {
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 10px;
+    }
+  }
+
+  .tile {
+    background: var(--bg-card);
+    border-radius: 22px;
+    padding: 18px 18px 20px;
+    box-shadow: var(--shadow-card);
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    min-height: 168px;
+    display: flex; flex-direction: column;
+  }
+  .tile:active { background: #FAFBFC; transform: scale(0.98); }
+
+  .tile-header {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 16px;
+  }
+  .tile-icon {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .tile-icon svg { width: 16px; height: 16px; }
+  .tile-label {
+    font-size: 15px; font-weight: 600;
+    color: var(--text-1); flex: 1; min-width: 0;
+    letter-spacing: -0.4px;
+  }
+
+  .tile-body {
+    flex: 1;
+    display: flex; flex-direction: column;
+    justify-content: flex-end;
+  }
+  .tile-value-row {
+    display: flex; align-items: baseline; gap: 3px;
+    margin-bottom: 4px;
+  }
+  /* === 메인 데이터 폰트 — 38px === */
+  .tile-value {
+    font-size: 38px; font-weight: 700;
+    color: var(--text-1);
+    line-height: 1;
+    letter-spacing: -1px;
+    font-variant-numeric: tabular-nums;
+  }
+  .tile-unit {
+    font-size: 14px; color: var(--text-2);
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+  .tile-sub {
+    font-size: 12.5px; color: var(--text-3);
+    font-weight: 500;
+    margin-top: 2px;
+    letter-spacing: -0.2px;
+  }
+  .tile-trend {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 12px; font-weight: 600;
+    margin-top: 3px;
+  }
+  .tile-trend.up { color: var(--c-activity); }
+  .tile-trend.down { color: var(--c-heart); }
+
+  /* === FaceAge 와이드 타일 (2칸 차지) === */
+  .tile-wide {
+    grid-column: span 2;
+    min-height: 168px;
+  }
+  /* 폴드에서는 폭이 더 크니까 4중 2 정도만 차지 */
+  @media (min-width: 768px) {
+    .tile-wide { grid-column: span 2; }
+  }
+
+  /* ⭐ FaceAge 타일 (특별) */
+  .faceage-tile {
+    background: linear-gradient(135deg, #FFFFFF 0%, var(--c-faceage-soft) 100%);
+    border-radius: 22px;
+    padding: 18px 18px 20px;
+    box-shadow: var(--shadow-card);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.1s;
+    grid-column: span 2;
+    min-height: 168px;
+    display: flex; flex-direction: column;
+  }
+  .faceage-tile:active { transform: scale(0.99); }
+  /* 우상단 데코 */
+  .faceage-tile::after {
+    content: ''; position: absolute;
+    top: -30px; right: -30px;
+    width: 120px; height: 120px;
+    background: radial-gradient(circle, rgba(49,130,246,0.10), transparent 65%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .faceage-tile-header {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 14px; position: relative; z-index: 1;
+  }
+  .faceage-tile-header .tile-icon {
+    background: var(--c-faceage);
+    color: #fff;
+  }
+  .faceage-new-badge {
+    background: var(--c-faceage);
+    color: #fff;
+    font-size: 10px; font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 100px;
+    letter-spacing: 0.5px;
+    line-height: 1;
+  }
+
+  .faceage-body {
+    flex: 1;
+    display: flex; align-items: center; gap: 16px;
+    position: relative; z-index: 1;
+  }
+  .faceage-hero {
+    flex-shrink: 0;
+  }
+  .faceage-hero-row {
+    display: flex; align-items: baseline; gap: 4px;
+    margin-bottom: 2px;
+  }
+  /* === FaceAge 메인 데이터 — 38px === */
+  .faceage-delta {
+    font-size: 38px; font-weight: 700;
+    line-height: 1;
+    letter-spacing: -1px;
+    color: var(--c-younger);
+    font-variant-numeric: tabular-nums;
+  }
+  .faceage-delta-unit {
+    font-size: 14px; font-weight: 600;
+    color: var(--c-younger);
+    letter-spacing: -0.3px;
+  }
+  .faceage-sub {
+    font-size: 12.5px; color: var(--text-3);
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+  .faceage-tag {
+    display: inline-block;
+    padding: 3px 9px;
+    background: rgba(0,200,150,0.13);
+    color: var(--c-younger);
+    font-size: 11.5px;
+    font-weight: 700;
+    border-radius: 100px;
+    letter-spacing: -0.2px;
+  }
+  /* 우측 미니 스파크라인 */
+  .faceage-spark {
+    flex: 1; min-width: 0;
+    height: 56px;
+  }
+  .faceage-spark svg {
+    width: 100%; height: 100%;
+    display: block; overflow: visible;
+  }
+  .faceage-spark-base {
+    stroke: var(--line-strong);
+    stroke-width: 1;
+    stroke-dasharray: 2 3;
+  }
+  .faceage-spark-area { fill: rgba(0,200,150,0.16); }
+  .faceage-spark-line {
+    fill: none;
+    stroke: var(--c-faceage);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .faceage-spark-dot {
+    fill: var(--c-faceage);
+    stroke: #fff;
+    stroke-width: 1.5;
+  }
+  .faceage-spark-dot.current {
+    fill: var(--c-younger);
+  }
+
+  /* === 미니 차트들 (각 타일별) === */
+  /* 심박 파동 */
+  .mini-heart-line {
+    margin-top: 6px;
+    height: 26px;
+  }
+  /* 수면 막대 */
+  .mini-sleep-bars {
+    margin-top: 6px;
+    display: flex; gap: 2px; align-items: flex-end;
+    height: 26px;
+  }
+  .mini-sleep-bars span {
+    flex: 1; background: var(--c-sleep);
+    border-radius: 2px;
+    opacity: 0.7;
+  }
+  /* 운동 7일 막대 */
+  .mini-week-bars {
+    margin-top: 6px;
+    display: flex; gap: 3px; align-items: flex-end;
+    height: 26px;
+  }
+  .mini-week-bars span {
+    flex: 1; border-radius: 2px;
+    min-height: 4px;
+  }
+
+  /* === 섹션 헤더 === */
+  .section-header {
+    padding: 18px 22px 8px;
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .section-header-title {
+    font-size: 18px; font-weight: 700;
+    color: var(--text-1);
+    letter-spacing: -0.5px;
+  }
+  .section-header-more {
+    font-size: 13px; color: var(--text-3);
+    font-weight: 600;
+  }
+
+  /* === Tip 카드 === */
+  .tip-card {
+    background: var(--bg-card);
+    border-radius: 18px;
+    padding: 16px 18px;
+    margin: 0 16px 8px;
+    box-shadow: var(--shadow-card);
+    display: flex; gap: 12px; align-items: center;
+    cursor: pointer;
+  }
+  .tip-card:active { background: #FAFBFC; }
+  .tip-card-icon {
+    width: 42px; height: 42px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .tip-card-icon svg { width: 20px; height: 20px; }
+  .tip-card-body { flex: 1; min-width: 0; }
+  .tip-card-title {
+    font-size: 14.5px; font-weight: 600;
+    color: var(--text-1);
+    letter-spacing: -0.3px;
+    line-height: 1.35;
+    margin-bottom: 3px;
+  }
+  .tip-card-desc {
+    font-size: 12.5px; color: var(--text-3);
+    line-height: 1.5;
+    font-weight: 500;
+  }
+  .tip-card-arrow {
+    color: var(--text-4); flex-shrink: 0;
+  }
+  .tip-card-arrow svg { width: 18px; height: 18px; }
+
+  /* === 하단 탭바 === */
+  .bottom-tabs {
+    position: fixed;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 440px;
+    background: rgba(255,255,255,0.97);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--line);
+    display: flex;
+    padding: 6px 0 calc(8px + env(safe-area-inset-bottom, 0));
+    z-index: 100;
+  }
+  @media (min-width: 600px) { .bottom-tabs { max-width: 560px; } }
+  @media (min-width: 768px) { .bottom-tabs { max-width: 720px; } }
+  @media (min-width: 1024px) { .bottom-tabs { max-width: 880px; } }
+
+  .bottom-tab {
+    flex: 1;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 3px;
+    background: transparent; border: none;
+    padding: 8px 4px;
+    color: var(--text-3);
+    font-size: 11px; font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: -0.2px;
+  }
+  .bottom-tab.active { color: var(--text-1); }
+  .bottom-tab svg { width: 24px; height: 24px; }
+
+  /* 컬러 헬퍼 */
+  .ic-steps { background: #FFF4DC; color: var(--c-steps); }
+  .ic-heart { background: #FFE7E9; color: var(--c-heart); }
+  .ic-sleep { background: #ECE9FE; color: var(--c-sleep); }
+  .ic-activity { background: #E0F7EE; color: var(--c-activity); }
+  .ic-food { background: #FFEAD7; color: var(--c-food); }
+  .ic-water { background: #E2F2FC; color: var(--c-water); }
+  .ic-weight { background: #E8EEF8; color: var(--c-weight); }
+  .ic-faceage { background: var(--c-faceage-soft); color: var(--c-faceage); }
+
+  /* 토스트 */
+  .toast {
+    position: fixed;
+    bottom: 90px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15,15,24,0.92);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 100px;
+    font-size: 13px;
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+    max-width: 90%;
+    text-align: center;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+  .toast.show { opacity: 1; }
+
+  /* 진입 애니메이션 */
+  @keyframes card-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .activity-card, .tile, .faceage-tile, .tip-card {
+    animation: card-in 0.32s ease both;
+  }
+  .activity-card { animation-delay: 0.02s; }
+  .tile:nth-child(1), .faceage-tile { animation-delay: 0.06s; }
+  .tile:nth-child(2) { animation-delay: 0.08s; }
+  .tile:nth-child(3) { animation-delay: 0.10s; }
+  .tile:nth-child(4) { animation-delay: 0.12s; }
+  .tile:nth-child(5) { animation-delay: 0.14s; }
+  .tip-card:nth-of-type(1) { animation-delay: 0.18s; }
+  .tip-card:nth-of-type(2) { animation-delay: 0.20s; }
+</style>
+</head>
+<body>
+
+<!-- v1.1: 시안 안내 띠 (실제 삼성헬스 화면이 아니라 데모임을 명시) -->
+<div class="demo-banner">
+  <button class="demo-back-btn" onclick="goBackToFaceAge()" aria-label="FaceAge로 돌아가기">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 18 9 12 15 6"/>
+    </svg>
+    FaceAge로 돌아가기
+  </button>
+  <div class="demo-banner-text">통합 시안 · 얼굴 나이 카드를 눌러보세요</div>
+</div>
+
+<div id="app">
+
+  <!-- 상태바 -->
+  <div class="status-bar">
+    <span>9:41</span>
+    <div class="status-bar-right">
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor">
+        <path d="M0 8h2v3H0zm3-2h2v5H3zm3-2h2v7H6zm3-2h2v9H9zm3-2h2v11h-2z"/>
+      </svg>
+      <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor">
+        <path d="M8 9c.55 0 1 .45 1 1H7c0-.55.45-1 1-1zm0-3c1.66 0 3.14.67 4.24 1.76l-1.41 1.41C9.95 8.45 9 8 8 8s-1.95.45-2.83 1.17L3.76 7.76A6 6 0 0 1 8 6zm0-3c2.49 0 4.74 1.01 6.36 2.64l-1.41 1.41A7 7 0 0 0 8 5a7 7 0 0 0-4.95 2.05L1.64 5.64A9 9 0 0 1 8 3z"/>
+      </svg>
+      <svg width="24" height="11" viewBox="0 0 24 11" fill="none">
+        <rect x="1" y="1" width="20" height="9" rx="2" stroke="currentColor" stroke-width="1"/>
+        <rect x="3" y="3" width="16" height="5" rx="1" fill="currentColor"/>
+        <rect x="22" y="3.5" width="1.5" height="4" rx="0.5" fill="currentColor"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- 헤더 -->
+  <div class="top-header">
+    <div class="header-title">홈</div>
+    <div class="header-icons">
+      <button class="header-icon-btn" aria-label="검색">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </button>
+      <button class="header-icon-btn" aria-label="알림">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+      </button>
+      <button class="header-icon-btn" aria-label="설정">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- 활동 큰 카드 (걸음+활동시간+칼로리 통합 링) -->
+  <div class="activity-card" onclick="cardTap('활동')">
+    <div class="activity-card-header">
+      <div class="activity-card-title">활동</div>
+      <div class="activity-card-date">목 · 5월 29일</div>
+    </div>
+    <div class="activity-rings-row">
+      <div class="activity-rings-wrap">
+        <svg viewBox="0 0 110 110">
+          <!-- 3개 동심원 링 -->
+          <circle class="activity-ring-bg-1" cx="55" cy="55" r="48"/>
+          <circle class="activity-ring-1" cx="55" cy="55" r="48"
+                  stroke-dasharray="301.6" stroke-dashoffset="60"/>
+          <circle class="activity-ring-bg-2" cx="55" cy="55" r="36"/>
+          <circle class="activity-ring-2" cx="55" cy="55" r="36"
+                  stroke-dasharray="226.2" stroke-dashoffset="18"/>
+          <circle class="activity-ring-bg-3" cx="55" cy="55" r="24"/>
+          <circle class="activity-ring-3" cx="55" cy="55" r="24"
+                  stroke-dasharray="150.8" stroke-dashoffset="42"/>
+        </svg>
+      </div>
+      <div class="activity-stats">
+        <div class="activity-stat-row">
+          <span class="activity-stat-dot" style="background: var(--c-activity);"></span>
+          <span class="activity-stat-label">활동 시간</span>
+          <span class="activity-stat-value">82<span class="unit">분</span></span>
+        </div>
+        <div class="activity-stat-row">
+          <span class="activity-stat-dot" style="background: var(--c-steps);"></span>
+          <span class="activity-stat-label">걸음 수</span>
+          <span class="activity-stat-value">9,847</span>
+        </div>
+        <div class="activity-stat-row">
+          <span class="activity-stat-dot" style="background: var(--c-heart);"></span>
+          <span class="activity-stat-label">활동 칼로리</span>
+          <span class="activity-stat-value">324<span class="unit">kcal</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2열 타일 그리드 -->
+  <div class="tile-grid">
+
+    <!-- 심박수 -->
+    <div class="tile" onclick="cardTap('심박수')">
+      <div class="tile-header">
+        <div class="tile-icon ic-heart">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7-4.5-7-10a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg>
+        </div>
+        <div class="tile-label">심박수</div>
+      </div>
+      <div class="tile-body">
+        <div class="tile-value-row">
+          <span class="tile-value">72</span>
+          <span class="tile-unit">BPM</span>
+        </div>
+        <div class="tile-sub">5분 전 측정</div>
+        <svg class="mini-heart-line" viewBox="0 0 100 26" fill="none" stroke="var(--c-heart)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" preserveAspectRatio="none">
+          <polyline points="0,13 18,13 24,4 30,22 36,13 54,13 60,7 66,19 72,13 100,13"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 수면 -->
+    <div class="tile" onclick="cardTap('수면')">
+      <div class="tile-header">
+        <div class="tile-icon ic-sleep">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </div>
+        <div class="tile-label">수면</div>
+      </div>
+      <div class="tile-body">
+        <div class="tile-value-row">
+          <span class="tile-value">7</span>
+          <span class="tile-unit">시간 12분</span>
+        </div>
+        <div class="tile-sub">7일 평균 6시간 50분</div>
+        <div class="mini-sleep-bars">
+          <span style="height: 50%"></span>
+          <span style="height: 85%"></span>
+          <span style="height: 65%"></span>
+          <span style="height: 95%"></span>
+          <span style="height: 70%"></span>
+          <span style="height: 80%"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⭐ FaceAge 와이드 타일 (2칸 차지) -->
+    <div class="faceage-tile" onclick="openFaceAge()">
+      <div class="faceage-tile-header">
+        <div class="tile-icon" style="background: var(--c-faceage); color: #fff;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+            <line x1="9" y1="9" x2="9.01" y2="9"/>
+            <line x1="15" y1="9" x2="15.01" y2="9"/>
+          </svg>
+        </div>
+        <div class="tile-label">얼굴 나이</div>
+        <span class="faceage-new-badge">NEW</span>
+      </div>
+      <div class="faceage-body">
+        <div class="faceage-hero">
+          <div class="faceage-sub">실제 나이 대비</div>
+          <div class="faceage-hero-row">
+            <span class="faceage-delta">−2.3</span>
+            <span class="faceage-delta-unit">세</span>
+          </div>
+          <span class="faceage-tag">어려보임</span>
+        </div>
+        <div class="faceage-spark">
+          <svg viewBox="0 0 200 56" preserveAspectRatio="none">
+            <line class="faceage-spark-base" x1="0" y1="30" x2="200" y2="30"/>
+            <path class="faceage-spark-area"
+                  d="M 0,30 L 0,22 L 40,15 L 80,10 L 120,18 L 160,13 L 200,16 L 200,30 Z"/>
+            <polyline class="faceage-spark-line"
+                      points="0,22 40,15 80,10 120,18 160,13 200,16"/>
+            <circle class="faceage-spark-dot" cx="0" cy="22" r="2.6"/>
+            <circle class="faceage-spark-dot" cx="40" cy="15" r="2.6"/>
+            <circle class="faceage-spark-dot" cx="80" cy="10" r="2.6"/>
+            <circle class="faceage-spark-dot" cx="120" cy="18" r="2.6"/>
+            <circle class="faceage-spark-dot" cx="160" cy="13" r="2.6"/>
+            <circle class="faceage-spark-dot current" cx="200" cy="16" r="4"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- 운동 -->
+    <div class="tile" onclick="cardTap('운동')">
+      <div class="tile-header">
+        <div class="tile-icon ic-activity">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2.05v3.03c3.39.49 6 3.39 6 6.92 0 .9-.18 1.75-.5 2.55l2.62 1.53c.56-1.24.88-2.62.88-4.08 0-5.18-3.95-9.45-9-9.95zM12 19c-3.87 0-7-3.13-7-7 0-3.53 2.61-6.43 6-6.92V2.05c-5.06.5-9 4.76-9 9.95 0 5.52 4.47 10 9.99 10 3.31 0 6.24-1.61 8.06-4.09l-2.6-1.53A6.99 6.99 0 0 1 12 19z"/></svg>
+        </div>
+        <div class="tile-label">운동</div>
+      </div>
+      <div class="tile-body">
+        <div class="tile-value-row">
+          <span class="tile-value">42</span>
+          <span class="tile-unit">분</span>
+        </div>
+        <div class="tile-sub">이번 주 4회 · 목표 5회</div>
+        <div class="mini-week-bars">
+          <span style="height: 80%; background: var(--c-activity);"></span>
+          <span style="height: 60%; background: var(--c-activity);"></span>
+          <span style="height: 90%; background: var(--c-activity);"></span>
+          <span style="height: 30%; background: var(--line-strong);"></span>
+          <span style="height: 100%; background: var(--c-activity);"></span>
+          <span style="height: 30%; background: var(--line-strong);"></span>
+          <span style="height: 30%; background: var(--line-strong);"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 체중 -->
+    <div class="tile" onclick="cardTap('체중')">
+      <div class="tile-header">
+        <div class="tile-icon ic-weight">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="5" width="18" height="14" rx="3"/>
+            <path d="M12 9v6M8 12h8"/>
+          </svg>
+        </div>
+        <div class="tile-label">체중</div>
+      </div>
+      <div class="tile-body">
+        <div class="tile-value-row">
+          <span class="tile-value">72.4</span>
+          <span class="tile-unit">kg</span>
+        </div>
+        <div class="tile-trend up">▼ 0.6kg (지난주)</div>
+        <svg style="margin-top: 4px; width: 100%; height: 26px;" viewBox="0 0 100 26" preserveAspectRatio="none">
+          <polyline points="2,8 18,11 34,9 50,14 66,16 84,20 98,22" fill="none" stroke="var(--c-weight)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="98" cy="22" r="2.5" fill="var(--c-weight)"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 칼로리 -->
+    <div class="tile" onclick="cardTap('칼로리')">
+      <div class="tile-header">
+        <div class="tile-icon ic-food">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+            <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+          </svg>
+        </div>
+        <div class="tile-label">칼로리</div>
+      </div>
+      <div class="tile-body">
+        <div class="tile-value-row">
+          <span class="tile-value">1,847</span>
+          <span class="tile-unit">kcal</span>
+        </div>
+        <div class="tile-sub">권장 2,200 kcal</div>
+        <!-- 진행률 바 -->
+        <div style="margin-top: 8px; height: 6px; background: #F0F2F5; border-radius: 3px; overflow: hidden;">
+          <div style="height: 100%; width: 84%; background: var(--c-food); border-radius: 3px;"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 오늘의 발견 -->
+  <div class="section-header">
+    <div class="section-header-title">오늘의 발견</div>
+    <div class="section-header-more">모두 보기</div>
+  </div>
+
+  <div class="tip-card" onclick="cardTap('FaceAge 인사이트')">
+    <div class="tip-card-icon ic-faceage">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+    </div>
+    <div class="tip-card-body">
+      <div class="tip-card-title">아침 사진이 저녁보다 1.8세 어려보여요</div>
+      <div class="tip-card-desc">최근 30장 분석 결과</div>
+    </div>
+    <div class="tip-card-arrow">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+  </div>
+
+  <div class="tip-card" onclick="cardTap('수면 인사이트')">
+    <div class="tip-card-icon ic-sleep">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </div>
+    <div class="tip-card-body">
+      <div class="tip-card-title">7일 평균보다 22분 더 자고 있어요</div>
+      <div class="tip-card-desc">수면 일관성이 좋아지고 있습니다</div>
+    </div>
+    <div class="tip-card-arrow">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+  </div>
+
+</div>
+
+<!-- 하단 탭바 -->
+<div class="bottom-tabs">
+  <button class="bottom-tab active">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 12l9-9 9 9v9a2 2 0 0 1-2 2h-4v-7h-6v7H5a2 2 0 0 1-2-2z"/></svg>
+    홈
+  </button>
+  <button class="bottom-tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+    함께
+  </button>
+  <button class="bottom-tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2C12 2 4 7 4 13a8 8 0 0 0 16 0c0-6-8-11-8-11z"/>
+    </svg>
+    웰니스
+  </button>
+  <button class="bottom-tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 21v-7H5v7M19 3v8H5V3"/>
+      <path d="M3 7h18M3 17h18"/>
+    </svg>
+    건강기록
+  </button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastT);
+  window._toastT = setTimeout(() => t.classList.remove('show'), 2000);
+}
+function cardTap(name) { showToast(name + ' · 시안에서는 동작하지 않아요'); }
+function openFaceAge() {
+  // v1.1: FaceAge 본 앱으로 이동 (양방향 데모)
+  window.location.href = './FaceAge_POC_v59.html';
+}
+function goBackToFaceAge() {
+  // 안내 띠의 "FaceAge로 돌아가기" 버튼 — 즉시 본 앱으로
+  window.location.href = './FaceAge_POC_v59.html';
+}
+</script>
+
+</body>
+</html>
